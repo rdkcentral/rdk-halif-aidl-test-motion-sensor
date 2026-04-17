@@ -12,16 +12,16 @@
 
 ## Acronyms, Terms and Abbreviations
 
-- `HAL`    - Hardware Abstraction Layer  
-- `API`    - Application Programming Interface  
-- `AIDL`   - Android Interface Definition Language  
-- `L2`     - Level 2 Testing  
-- `L3`     - Level 3 Testing  
-- `NA`     - Not Applicable  
-- `Caller` - Any user of the interface via the APIs  
-- `CB`     - Callback function  
-- `RTC`    - Real-Time Clock  
-- `SoC`    - System on Chip  
+- `HAL`    - Hardware Abstraction Layer
+- `API`    - Application Programming Interface
+- `AIDL`   - Android Interface Definition Language
+- `L2`     - Level 2 Testing
+- `L3`     - Level 3 Testing
+- `NA`     - Not Applicable
+- `Caller` - Any user of the interface via the APIs
+- `CB`     - Callback function
+- `RTC`    - Real-Time Clock
+- `SoC`    - System on Chip
 
 ---
 
@@ -37,10 +37,10 @@ The Thermal Sensor HAL enables monitoring of device thermal conditions and suppo
 
 The Thermal Sensor HAL provides:
 
-- Event-driven thermal state change notifications via registered listeners  
-- APIs to query current thermal state  
-- APIs to retrieve temperature telemetry from one or more sensors  
-- Policy-driven thermal state transitions based on YAML configuration  
+- Event-driven thermal state change notifications via registered listeners
+- APIs to query current thermal state
+- APIs to retrieve temperature telemetry from one or more sensors
+- Policy-driven thermal state transitions based on YAML configuration
 
 Thermal states include:
 - `NORMAL`
@@ -55,12 +55,17 @@ Thermal states include:
 | Test | Description | HAL APIs |
 |------|------------|----------|
 | Register Event Listener | Register a valid listener and verify success | `registerEventListener()` |
-| Duplicate Listener Registration | Register same listener twice and expect failure | `registerEventListener()` |
+| Duplicate Listener Registration | Register the same listener instance twice; expect first call to succeed and second call to fail | `registerEventListener()` |
+| Register Multiple Distinct Listeners | Register two different listener instances sequentially and verify both registrations succeed independently | `registerEventListener()` |
 | Unregister Listener | Unregister existing listener and verify success | `unregisterEventListener()` |
 | Unregister Invalid Listener | Attempt to unregister non-existent listener | `unregisterEventListener()` |
 | Get Current Thermal State | Validate returned state is a valid enum | `getCurrentThermalState()` |
-| Get Current Temperatures | Validate structure and correctness of returned data | `getCurrentTemperatures()` |
+| Get Current Temperatures | Validate structure and correctness of returned telemetry records | `getCurrentTemperatures()` |
+| Validate Temperature Reading Fields | Validate `sensorName`, `location`, `temperatureCelsius`, `timestampMonotonicMs`, `vendorCode`, and `vendorInfo` semantics | `getCurrentTemperatures()` |
 | Empty Temperature Support | Validate behavior when no sensors are reported | `getCurrentTemperatures()` |
+| Validate Optional Vendor Info Handling | Accept null or empty `vendorInfo` without failure | `getCurrentTemperatures()` |
+| Validate Multi-Sensor Snapshot Identity | Verify each reading preserves the correct sensor name and location mapping | `getCurrentTemperatures()` |
+| Validate Event Callback Payload | Verify callback event contains valid `state`, monotonic timestamp, and nullable `temperatureReading` | `registerEventListener()`, `onThermalStateChange()` |
 
 ---
 
@@ -68,9 +73,9 @@ Thermal states include:
 
 ### Prerequisites
 
-- Thermal sensors are functional and validated at L1/L2  
-- YAML policy configuration is correctly provisioned  
-- Thermal injection or simulation mechanism is available  
+- Thermal sensors are functional and validated at L1/L2
+- YAML policy configuration is correctly provisioned
+- Thermal injection or simulation mechanism is available
 
 ---
 
@@ -98,18 +103,30 @@ Thermal states include:
 ### Thermal Threshold Ordering (Mandatory)
 recovered < exceeded < shutdown
 
+### Recovery Policy Requirements
+- `CRITICAL_TEMPERATURE_RECOVERED` is emitted only after temperature falls below the recovered threshold
+- Return to `NORMAL` must honor the configured recovery cooldown policy
+- Recovery timing must follow the YAML policy strategy for the triggering sensor
+
 ### Timestamp Requirements
-- Must be monotonic (not wall-clock time)  
-- Used strictly for event ordering  
+- Must be monotonic (not wall-clock time)
+- Used strictly for event ordering and telemetry correlation
 
 ### Event Behavior
-- Events must only be emitted on state changes  
-- Duplicate events are not allowed  
+- Events must only be emitted on state changes
+- Duplicate events are not allowed
+- Event payload must contain a valid `state` and `timestampMonotonicMs`
+- `temperatureReading` may be null when no specific sensor context is available
+
+### Telemetry Requirements
+- `getCurrentTemperatures()` may return an empty array when telemetry is unsupported
+- Each `TemperatureReading` must preserve sensor identity and configured vendor metadata
+- `vendorInfo` may be null or empty without constituting a failure
 
 ### Shutdown Behavior
-- Shutdown is triggered autonomously by HAL  
-- Clients must not attempt to override or delay shutdown  
-- Only minimal cleanup is allowed  
+- Shutdown is triggered autonomously by HAL
+- Clients must not attempt to override or delay shutdown
+- Only minimal cleanup is allowed
 
 ---
 
@@ -117,9 +134,9 @@ recovered < exceeded < shutdown
 
 This document ensures comprehensive validation of:
 
-- Thermal state transitions  
-- Event-driven architecture  
-- Multi-sensor telemetry  
-- Vendor-defined thermal policy enforcement  
+- Thermal state transitions
+- Event-driven architecture
+- Multi-sensor telemetry
+- Vendor-defined thermal policy enforcement
 
 The test coverage aligns with AIDL interface definitions and platform thermal safety requirements.
