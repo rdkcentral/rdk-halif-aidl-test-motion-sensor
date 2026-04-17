@@ -69,27 +69,16 @@ Thermal states include:
 
 ---
 
-## L3 Test Specification
-
-### Prerequisites
-
-- Thermal sensors are functional and validated at L1/L2
-- YAML policy configuration is correctly provisioned
-- Thermal injection or simulation mechanism is available
-
----
-
-### Feature List
-
+### L3 Test Specification
 | # | Testing Feature | Description | Expected Scenario |
 |---|----------------|------------|------------------|
-
-| 1 | Verify thermal exceed and recovery lifecycle (NORMAL → EXCEEDED → RECOVERED) | Increase temperature beyond `critical_temperature_exceeded_celsius`, then reduce below `critical_temperature_recovered_celsius`, while verifying event timestamps | Device transitions `NORMAL → CRITICAL_TEMPERATURE_EXCEEDED → CRITICAL_TEMPERATURE_RECOVERED → NORMAL`, and `timestampMonotonicMs` increases monotonically across emitted events |
-| 2 | Verify critical shutdown trigger | Increase temperature beyond `entering_critical_shutdown_celsius` from normal operating range while observing event timestamps | Device transitions `NORMAL → CRITICAL_TEMPERATURE_EXCEEDED → CRITICAL_SHUTDOWN_IMMINENT`, initiates controlled shutdown, and `timestampMonotonicMs` increases monotonically across state transition events |
-| 3 | Verify multi-sensor thermal state aggregation, reporting, and telemetry | Simulate multiple sensors (e.g., SoC, Board) reporting different thermal states and temperatures, call `getCurrentThermalState()` and `getCurrentTemperatures()`, and validate sensor identifiers (Vendor metadata) and telemetry fields | All sensors are reported with correct identifiers, temperature readings are accurate and consistent, and the API reports the **highest severity thermal state** among all sensors |
+| 1 | Verify thermal exceed and recovery lifecycle (NORMAL to EXCEEDED to RECOVERED) | Increase temperature beyond critical_temperature_exceeded_celsius, then reduce below critical_temperature_recovered_celsius, while verifying event timestamps | Device transitions NORMAL to CRITICAL_TEMPERATURE_EXCEEDED to CRITICAL_TEMPERATURE_RECOVERED to NORMAL, and timestampMonotonicMs increases monotonically across emitted events |
+| 2 | Verify critical shutdown trigger | Increase temperature beyond entering_critical_shutdown_celsius from normal operating range while observing event timestamps | Device transitions NORMAL to CRITICAL_TEMPERATURE_EXCEEDED to CRITICAL_SHUTDOWN_IMMINENT, initiates controlled shutdown, and timestampMonotonicMs increases monotonically across state transition events |
+| 3 | Verify multi-sensor thermal state aggregation, reporting, and telemetry | Simulate multiple sensors (SoC, Board) reporting different thermal states and temperatures, call getCurrentThermalState and getCurrentTemperatures, and validate sensor identifiers, vendor metadata, and telemetry fields | All sensors are reported with correct identifiers, temperature readings are accurate and consistent, and the API reports the highest severity thermal state among all sensors |
 | 4 | Verify event callback delivery | Register listener and trigger thermal transitions | Listener receives asynchronous callbacks |
 | 5 | Verify listener lifecycle and no redundant callbacks | Register listener, trigger valid thermal transitions, unregister listener, and maintain temperature within the same range | Callbacks are received only for valid state changes while registered, no redundant callbacks are triggered without state change, and no callbacks are received after unregister |
-| 6 | Verify null temperature handling | Trigger event without associated sensor | `temperatureReading` handled as null safely |
+| 6 | Verify null temperature handling | Trigger event without associated sensor | temperatureReading is handled as null safely |
+
 ---
 
 ## Validation Constraints
