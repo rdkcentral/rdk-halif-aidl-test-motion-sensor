@@ -77,7 +77,6 @@ Thermal states include:
 | 3 | Verify multi-sensor thermal state aggregation, reporting, and telemetry | Simulate multiple sensors (SoC, Board) reporting different thermal states and temperatures, call getCurrentThermalState and getCurrentTemperatures, and validate sensor identifiers, vendor metadata, and telemetry fields | All sensors are reported with correct identifiers, temperature readings are accurate and consistent, and the API reports the highest severity thermal state among all sensors |
 | 4 | Verify event callback delivery | Register listener and trigger thermal transitions | Listener receives asynchronous callbacks |
 | 5 | Verify listener lifecycle and no redundant callbacks | Register listener, trigger valid thermal transitions, unregister listener, and maintain temperature within the same range | Callbacks are received only for valid state changes while registered, no redundant callbacks are triggered without state change, and no callbacks are received after unregister |
-| 6 | Verify null temperature handling | Trigger event without associated sensor | temperatureReading is handled as null safely |
 
 ---
 
