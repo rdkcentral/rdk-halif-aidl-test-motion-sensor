@@ -55,13 +55,11 @@ This feature does not define deterministic L2 system-level behaviors, as thermal
 
 
 ### L3 Test Specification
+
 | # | Testing Feature | Description | Expected Scenario |
 |---|----------------|------------|------------------|
-| 1 | Verify thermal exceed and recovery lifecycle (NORMAL to EXCEEDED to RECOVERED) | Increase temperature beyond critical_temperature_exceeded_celsius, then reduce below critical_temperature_recovered_celsius, while verifying event timestamps | Device transitions NORMAL to CRITICAL_TEMPERATURE_EXCEEDED to CRITICAL_TEMPERATURE_RECOVERED to NORMAL, and timestampMonotonicMs increases monotonically across emitted events |
-| 2 | Verify critical shutdown trigger | Increase temperature beyond entering_critical_shutdown_celsius from normal operating range while observing event timestamps | Device transitions NORMAL to CRITICAL_TEMPERATURE_EXCEEDED to CRITICAL_SHUTDOWN_IMMINENT, initiates controlled shutdown, and timestampMonotonicMs increases monotonically across state transition events |
-| 3 | Verify multi-sensor thermal state aggregation, reporting, and telemetry | Simulate multiple sensors (SoC, Board) reporting different thermal states and temperatures, call getCurrentThermalState and getCurrentTemperatures, and validate sensor identifiers, vendor metadata, and telemetry fields | All sensors are reported with correct identifiers, temperature readings are accurate and consistent, and the API reports the highest severity thermal state among all sensors |
-| 4 | Verify event callback delivery | Register listener and trigger thermal transitions | Listener receives asynchronous callbacks |
-| 5 | Verify listener lifecycle and no redundant callbacks | Register listener, trigger valid thermal transitions, unregister listener, and maintain temperature within the same range | Callbacks are received only for valid state changes while registered, no redundant callbacks are triggered without state change, and no callbacks are received after unregister |
+| 1 | Verify thermal exceed and recovery lifecycle with events and aggregation | Increase temperature beyond `critical_temperature_exceeded_celsius`, then reduce below `critical_temperature_recovered_celsius` while listeners are registered and multiple sensors are present, and verify that the emitted callback corresponds to the sensor reporting the highest‑severity thermal state | Device transitions `NORMAL` → `EXCEEDED` → `RECOVERED` → `NORMAL`; callbacks are delivered to registered listeners only on state changes; `timestampMonotonicMs` increases monotonically; getCurrentThermalState reflects the latest event state; when multiple sensors are present, the callback’s temperatureReading (if non‑null) corresponds to the sensor contributing the highest‑severity thermal state |
+| 2 | Verify critical shutdown trigger with events and suppression of recovery | Increase temperature beyond entering_critical_shutdown_celsius from normal operating range while listeners are registered | Device transitions `NORMAL` → `EXCEEDED` →  → `SHUTDOWN_IMMINENT` and initiates controlled shutdown; shutdown event is delivered to listeners with monotonic timestamps; getCurrentThermalState reflects shutdown state; no recovery or normal events are emitted after shutdown |
 
 ---
 
