@@ -50,24 +50,9 @@ Thermal states include:
 
 ---
 
-## L2 Test Specification
+Note:
+This feature does not define deterministic L2 system-level behaviors, as thermal events are generated asynchronously based on hardware conditions and vendor policy. Parameter and API validation are covered under L1. Callback behavior cannot be reliably triggered at L2, hence all functional validation is handled under L3 using controlled thermal simulation setups.
 
-| Test | Description | HAL APIs |
-|------|------------|----------|
-| Register Event Listener | Register a valid listener and verify success | `registerEventListener()` |
-| Duplicate Listener Registration | Register the same listener instance twice; expect first call to succeed and second call to fail | `registerEventListener()` |
-| Register Multiple Distinct Listeners | Register two different listener instances sequentially and verify both registrations succeed independently | `registerEventListener()` |
-| Unregister Listener | Unregister existing listener and verify success | `unregisterEventListener()` |
-| Unregister Invalid Listener | Attempt to unregister non-existent listener | `unregisterEventListener()` |
-| Get Current Thermal State | Validate returned state is a valid enum | `getCurrentThermalState()` |
-| Get Current Temperatures | Validate structure and correctness of returned telemetry records | `getCurrentTemperatures()` |
-| Validate Temperature Reading Fields | Validate `sensorName`, `location`, `temperatureCelsius`, `timestampMonotonicMs`, `vendorCode`, and `vendorInfo` semantics | `getCurrentTemperatures()` |
-| Empty Temperature Support | Validate behavior when no sensors are reported | `getCurrentTemperatures()` |
-| Validate Optional Vendor Info Handling | Accept null or empty `vendorInfo` without failure | `getCurrentTemperatures()` |
-| Validate Multi-Sensor Snapshot Identity | Verify each reading preserves the correct sensor name and location mapping | `getCurrentTemperatures()` |
-| Validate Event Callback Payload | Verify callback event contains valid `state`, monotonic timestamp, and nullable `temperatureReading` | `registerEventListener()`, `onThermalStateChange()` |
-
----
 
 ### L3 Test Specification
 | # | Testing Feature | Description | Expected Scenario |
