@@ -5,7 +5,6 @@
 - [Acronyms, Terms and Abbreviations](#acronyms-terms-and-abbreviations)
 - [Introduction](#introduction)
 - [Module Description](#module-description)
-- [L2 Test Specification](#l2-test-specification)
 - [L3 Test Specification](#l3-test-specification)
 
 ---
@@ -50,8 +49,12 @@ Thermal states include:
 
 ---
 
-Note:
-This feature does not define deterministic L2 system-level behaviors, as thermal events are generated asynchronously based on hardware conditions and vendor policy. Parameter and API validation are covered under L1. Callback behavior cannot be reliably triggered at L2, hence all functional validation is handled under L3 using controlled thermal simulation setups.
+#### Note:
+- This feature does not define deterministic L2 system-level behaviors, as thermal events are generated asynchronously based on hardware conditions and vendor-specific policies.
+- L1 covers parameter validation and API contract verification.
+- While L2 typically includes functional flows and deterministic callback validation, such validation is not applicable here because thermal state transitions cannot be reliably triggered through direct API control.
+ 
+Therefore, all functional and behavioral validation—including callback delivery, state transitions, and timing—is covered under L3 using controlled thermal simulation setups.
 
 
 ### L3 Test Specification
