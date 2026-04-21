@@ -103,11 +103,10 @@ Constraints:
  
 | Test | Description | HAL APIs |
 |------|------------|----------|
-| Verify sensor discovery | Validate motion sensor enumeration and retrieval via manager service | getMotionSensorIds(), getMotionSensor() |
-| Verify lifecycle start with auto‑stop | Start sensor with activeStopSeconds > 0 and verify eventual transition to STOPPED due to auto‑stop (no timing assertion) Validate STOPPED → STARTED transition | start(), getState() |
+| Verify sensor discovery (valid, invalid id's) | Validate motion sensor enumeration and retrieval via manager service | getMotionSensorIds(), getMotionSensor() |
+| Verify lifecycle start with auto‑stop | Start sensor with activeStopSeconds > 0 and verify eventual transition to STOPPED due to auto‑stop (no timing assertion) Validate STOPPED → STARTED transition. While in STARTED, verify getOperationalMode() succeeds and returns the configured mode. | start(), getState(), getOperationalMode() |
 | Verify lifecycle stop | Start sensor with auto‑stop disabled or large value (activeStopSeconds = 0 or large) and verify sensor remains STARTED until explicit stop() is called | start(), stop(), getState() |
 | Verify invalid lifecycle transitions | start()/stop() in wrong states fail | start(), stop() |
-| Verify operational mode availability | Validate getOperationalMode() succeeds only in valid running state and throws in STOPPED/ERROR | getOperationalMode() |
 | Verify configuration state restriction | Validate configuration APIs are allowed only in STOPPED and rejected otherwise | setSensitivity(), setActiveWindows(), setAutonomousDuringDeepSleep() |
  
 ---
@@ -116,14 +115,11 @@ Constraints:
  
 | # | Test | Description | HAL APIs used |
 |---|------|------------|---------------|
-| 1 | Motion & No-Motion Event Validation | Start sensor in both MOTION and NO_MOTION modes and verify correct event delivery based on motion presence and inactivity timing | start(), registerEventListener(), onEvent() |
-| 2 | Timing Behavior Validation | Validate activeStartSeconds delay, noMotionSeconds inactivity trigger, and activeStopSeconds auto-stop behavior | start(), getState(), onEvent() |
-| 3 | Active Window Behavior | Validate event generation within configured windows, including suppression outside windows, midnight wrap-around, and union of multiple windows | setActiveWindows(), start(), onEvent() |
-| 4 | Listener Lifecycle Validation | Verify events are delivered only to registered listeners and not after unregister; validate multiple listener behavior | registerEventListener(), unregisterEventListener(), onEvent() |
-| 5 | Rapid Lifecycle Stability | Perform repeated start/stop cycles and verify no stale events, correct state transitions, and stable behavior | start(), stop(), getState(), onEvent() |
-| 6 | Deep Sleep Autonomy | Validate motion detection behavior during simulated deep sleep when autonomy is enabled/disabled | setAutonomousDuringDeepSleep(), onEvent() |
-| 7 | Multi-Sensor Independence | Validate independent operation, configuration, and event isolation across multiple sensors | getMotionSensor(), start(), onEvent() |
-| 8 | Error Handling & Recovery | Simulate failure conditions and validate transition to ERROR state and subsequent behavior | getState(), onEvent() |
-| 9 | Event Timing & Accuracy | Validate event delivery latency and correctness of event type with respect to configured mode and conditions | onEvent() |
+| 1 | **Motion Event, Timing, Accuracy & Listener Validation** | Start sensor in **MOTION** mode and verify:<br/>• Events are delivered only after successful listener registration<br/>• No events before `activeStartSeconds` activation delay<br/>• Motion events are generated upon motion detection<br/>• Event type correctness (`OperationalMode.MOTION`)<br/>• Event delivery latency is within acceptable bounds<br/>• Events stop after `activeStopSeconds` auto-stop (if configured)<br/>• No events are received after listener unregistration<br/>• No spurious or stale events during normal operation or after stop | `start()`, `getState()`, `registerEventListener()`, `unregisterEventListener()`, `onEvent()` |
+| 2 | **No-Motion Event, Timing, Accuracy & Listener Validation** | Start sensor in **NO_MOTION** mode and verify:<br/>• Event is generated only after `noMotionSeconds` of continuous inactivity<br/>• No events before `activeStartSeconds` activation delay<br/>• Event type correctness (`OperationalMode.NO_MOTION`)<br/>• Event delivery latency after inactivity window is acceptable<br/>• Events stop after `activeStopSeconds` auto-stop (if configured)<br/>• No events are received after listener unregistration<br/>• No erroneous events during state transitions or stop | `start()`, `getState()`, `registerEventListener()`, `unregisterEventListener()`, `onEvent()` |
+| 3 | **Active Window Behavior** | Validate event generation within configured active windows, including:<br/>• Suppression of events outside configured windows<br/>• Correct handling of windows that wrap across midnight<br/>• Union behavior when multiple or overlapping windows are configured | `setActiveWindows()`, `start()`, `onEvent()` |
+| 4 | **Rapid Lifecycle Stability** | Perform repeated start/stop cycles and verify:<br/>• No stale or delayed events across restarts<br/>• Correct lifecycle state transitions<br/>• Stable operation without resource leaks or duplicate callbacks | `start()`, `stop()`, `getState()`, `onEvent()` |
+| 5 | **Deep Sleep Autonomy** | Validate motion detection and event behavior during simulated deep sleep when autonomy is enabled versus disabled | `setAutonomousDuringDeepSleep()`, `onEvent()` |
+| 6 | **Multi-Sensor Independence** | Validate independent configuration, operation, and event isolation across multiple motion sensors | `getMotionSensor()`, `start()`, `onEvent()` |
  
 ---
