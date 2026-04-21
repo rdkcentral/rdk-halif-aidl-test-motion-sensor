@@ -103,46 +103,27 @@ Constraints:
  
 | Test | Description | HAL APIs |
 |------|------------|----------|
-| Verify sensor discovery | Validate sensor IDs and retrieval of sensor instances | getMotionSensorIds(), getMotionSensor() |
-| Verify capabilities | Validate immutable capabilities match expected values | getCapabilities() |
-| Verify lifecycle start | Validate start() transitions state correctly | start(), getState() |
-| Verify lifecycle stop | Validate stop() transitions state correctly | stop(), getState() |
-| Verify invalid start state | Call start() when not STOPPED and expect failure | start() |
-| Verify getState | Validate correct state reporting across lifecycle | getState() |
-| Verify operational mode query | Validate getOperationalMode() in valid state | getOperationalMode() |
-| Verify operational mode invalid state | Call getOperationalMode() in STOPPED and expect exception | getOperationalMode() |
-| Verify sensitivity set/get | Validate sensitivity within valid range | setSensitivity(), getSensitivity() |
-| Verify invalid sensitivity | Set sensitivity outside range and expect failure | setSensitivity() |
-| Verify deep sleep autonomy | Validate enable/disable behavior | setAutonomousDuringDeepSleep(), isAutonomousDuringDeepSleepEnabled() |
-| Verify unsupported deep sleep autonomy | Validate behavior when capability is not supported | setAutonomousDuringDeepSleep() |
-| Verify listener lifecycle | Validate listener registration, event delivery, and unregister behavior | registerEventListener(), unregisterEventListener(), IMotionSensorEventListener.onEvent() |
-| Validate multiple listeners | Ensure multiple listeners receive events | registerEventListener() |
-| Validate duplicate listener registration | Register same listener twice and expect failure | registerEventListener() |
-| Validate active windows configuration | Validate setting and retrieving time windows | setActiveWindows(), getActiveWindows() |
-| Validate invalid time windows | Provide invalid time values and expect failure | setActiveWindows() |
-| Validate clear active windows | Validate clearing windows results in 24-hour monitoring | clearActiveWindows(), getActiveWindows() |
-| Validate configuration state restriction | Ensure configuration APIs fail when sensor is not STOPPED | setSensitivity(), setActiveWindows(), setAutonomousDuringDeepSleep() |
+| Verify sensor discovery | Validate sensor enumeration and retrieval flow | getMotionSensorIds(), getMotionSensor() |
+| Verify lifecycle start | Validate STOPPED → STARTED transition | start(), getState() |
+| Verify lifecycle stop | Validate STARTED → STOPPED transition | stop(), getState() |
+| Verify invalid lifecycle transitions | start()/stop() in wrong states fail | start(), stop() |
+| Verify state reporting | Validate state consistency across transitions | getState() |
+| Verify configuration state restriction | Ensure config APIs only allowed in STOPPED | setSensitivity(), setActiveWindows(), setAutonomousDuringDeepSleep() |
  
 ---
  
 ## L3 Test Specification
  
-| Test | Description | HAL APIs used |
-|------|------------|---------------|
-| Motion detection event | Start sensor in MOTION mode and verify motion event delivery | start(), registerEventListener(), onEvent() |
-| No-motion detection event | Start sensor in NO_MOTION mode and verify inactivity-based event | start(), onEvent() |
-| Active start delay behavior | Validate delayed activation using activeStartSeconds | start(), onEvent() |
-| Auto stop behavior | Validate sensor stops after activeStopSeconds duration | start(), getState() |
-| No-motion timing validation | Validate noMotionSeconds triggers correct event timing | start(), onEvent() |
-| Active window enforcement | Verify events are suppressed outside configured windows | setActiveWindows(), onEvent() |
-| Midnight window handling | Validate windows that wrap across midnight | setActiveWindows(), onEvent() |
-| Multiple window union behavior | Validate events occur within union of configured windows | setActiveWindows(), onEvent() |
-| Rapid start/stop cycles | Validate stability across repeated lifecycle transitions | start(), stop(), getState() |
-| Deep sleep autonomy behavior | Validate motion detection during simulated deep sleep | setAutonomousDuringDeepSleep(), onEvent() |
-| Multi-sensor independence | Validate independent operation of multiple sensors | getMotionSensor(), start(), onEvent() |
-| Error state handling | Simulate failure and validate transition to ERROR state | getState() |
-| Event mode correctness | Ensure events match configured mode (MOTION vs NO_MOTION) | start(), onEvent() |
-| Reaction time validation | Validate event delivery meets minimum reaction time | onEvent() |
-| Timing vs window precedence | Validate sensor inactive when timing disables it even if within window | start(), onEvent() |
+| # | Test | Description | HAL APIs used |
+|---|------|------------|---------------|
+| 1 | Motion & No-Motion Event Validation | Start sensor in both MOTION and NO_MOTION modes and verify correct event delivery based on motion presence and inactivity timing | start(), registerEventListener(), onEvent() |
+| 2 | Timing Behavior Validation | Validate activeStartSeconds delay, noMotionSeconds inactivity trigger, and activeStopSeconds auto-stop behavior | start(), getState(), onEvent() |
+| 3 | Active Window Behavior | Validate event generation within configured windows, including suppression outside windows, midnight wrap-around, and union of multiple windows | setActiveWindows(), start(), onEvent() |
+| 4 | Listener Lifecycle Validation | Verify events are delivered only to registered listeners and not after unregister; validate multiple listener behavior | registerEventListener(), unregisterEventListener(), onEvent() |
+| 5 | Rapid Lifecycle Stability | Perform repeated start/stop cycles and verify no stale events, correct state transitions, and stable behavior | start(), stop(), getState(), onEvent() |
+| 6 | Deep Sleep Autonomy | Validate motion detection behavior during simulated deep sleep when autonomy is enabled/disabled | setAutonomousDuringDeepSleep(), onEvent() |
+| 7 | Multi-Sensor Independence | Validate independent operation, configuration, and event isolation across multiple sensors | getMotionSensor(), start(), onEvent() |
+| 8 | Error Handling & Recovery | Simulate failure conditions and validate transition to ERROR state and subsequent behavior | getState(), onEvent() |
+| 9 | Event Timing & Accuracy | Validate event delivery latency and correctness of event type with respect to configured mode and conditions | onEvent() |
  
 ---
