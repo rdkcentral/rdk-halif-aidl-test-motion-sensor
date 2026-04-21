@@ -103,12 +103,12 @@ Constraints:
  
 | Test | Description | HAL APIs |
 |------|------------|----------|
-| Verify sensor discovery | Validate sensor enumeration and retrieval flow | getMotionSensorIds(), getMotionSensor() |
-| Verify lifecycle start | Validate STOPPED → STARTED transition | start(), getState() |
-| Verify lifecycle stop | Validate STARTED → STOPPED transition | stop(), getState() |
+| Verify sensor discovery | Validate motion sensor enumeration and retrieval via manager service | getMotionSensorIds(), getMotionSensor() |
+| Verify lifecycle start with auto‑stop | Start sensor with activeStopSeconds > 0 and verify eventual transition to STOPPED due to auto‑stop (no timing assertion) Validate STOPPED → STARTED transition | start(), getState() |
+| Verify lifecycle stop | Start sensor with auto‑stop disabled or large value (activeStopSeconds = 0 or large) and verify sensor remains STARTED until explicit stop() is called | start(), stop(), getState() |
 | Verify invalid lifecycle transitions | start()/stop() in wrong states fail | start(), stop() |
-| Verify state reporting | Validate state consistency across transitions | getState() |
-| Verify configuration state restriction | Ensure config APIs only allowed in STOPPED | setSensitivity(), setActiveWindows(), setAutonomousDuringDeepSleep() |
+| Verify operational mode availability | Validate getOperationalMode() succeeds only in valid running state and throws in STOPPED/ERROR | getOperationalMode() |
+| Verify configuration state restriction | Validate configuration APIs are allowed only in STOPPED and rejected otherwise | setSensitivity(), setActiveWindows(), setAutonomousDuringDeepSleep() |
  
 ---
  
