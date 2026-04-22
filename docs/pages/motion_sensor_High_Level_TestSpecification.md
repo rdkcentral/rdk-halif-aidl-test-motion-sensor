@@ -67,9 +67,9 @@ The Motion Sensor HAL consists of:
 ### Lifecycle Behavior
  
 State transitions:
-STOPPED → STARTING → STARTED
-STARTED → STOPPING → STOPPED
-ANY → ERROR
+- STOPPED → STARTING → STARTED
+- STARTED → STOPPING → STOPPED
+- ANY → ERROR
 Constraints:
 - start() valid only in STOPPED
 - stop() valid in STARTED
