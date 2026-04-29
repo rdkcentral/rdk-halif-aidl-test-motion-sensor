@@ -27,23 +27,23 @@
 using android::binder::Status;
 
 /* Exception code map table */
-ut_control_keyStringPair_t statusMotionSensorException_mapTable[] = {
-    { Status::EX_NONE,              "EX_NONE"              },
-    { Status::EX_SECURITY,         "EX_SECURITY"          },
-    { Status::EX_BAD_PARCELABLE,   "EX_BAD_PARCELABLE"    },
-    { Status::EX_ILLEGAL_ARGUMENT, "EX_ILLEGAL_ARGUMENT"  },
-    { Status::EX_NULL_POINTER,     "EX_NULL_POINTER"      },
-    { Status::EX_ILLEGAL_STATE,    "EX_ILLEGAL_STATE"      },
-    { Status::EX_NETWORK_MAIN_THREAD, "EX_NETWORK_MAIN_THREAD" },
-    { Status::EX_UNSUPPORTED_OPERATION, "EX_UNSUPPORTED_OPERATION" },
-    { Status::EX_SERVICE_SPECIFIC, "EX_SERVICE_SPECIFIC"  },
-    { Status::EX_PARCELABLE,       "EX_PARCELABLE"        },
-    { -1, nullptr }
+ut_control_keyStringMapping_t statusMotionSensorException_mapTable[] = {
+    { "EX_NONE", Status::EX_NONE },
+    { "EX_SECURITY", Status::EX_SECURITY },
+    { "EX_BAD_PARCELABLE", Status::EX_BAD_PARCELABLE },
+    { "EX_ILLEGAL_ARGUMENT", Status::EX_ILLEGAL_ARGUMENT },
+    { "EX_NULL_POINTER", Status::EX_NULL_POINTER },
+    { "EX_ILLEGAL_STATE", Status::EX_ILLEGAL_STATE },
+    { "EX_NETWORK_MAIN_THREAD", Status::EX_NETWORK_MAIN_THREAD },
+    { "EX_UNSUPPORTED_OPERATION", Status::EX_UNSUPPORTED_OPERATION },
+    { "EX_SERVICE_SPECIFIC", Status::EX_SERVICE_SPECIFIC },
+    { "EX_PARCELABLE", Status::EX_PARCELABLE },
+    { nullptr, -1 }
 };
 
 /* Boolean map table */
-ut_control_keyStringPair_t bool_mapTable_motionsensor[] = {
-    { 0, "false" },
-    { 1, "true"  },
-    { -1, nullptr }
+ut_control_keyStringMapping_t bool_mapTable_motionsensor[] = {
+    { "false", 0 },
+    { "true", 1 },
+    { nullptr, -1 }
 };

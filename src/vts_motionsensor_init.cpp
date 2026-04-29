@@ -68,32 +68,28 @@ using android::IPCThreadState;
 using namespace com::rdk::hal::sensor::motion;
 
 /* Global handle to IMotionSensorManager */
-sp<IMotionSensorManager> gMotionSensorManagerHandle = nullptr;
+sp<IMotionSensorManager> gMOTIONSENSORMGRHandle = nullptr;
+
+static UT_status_t vts_motionsensor_getService()
+{
+    gMOTIONSENSORMGRHandle = android::interface_cast<IMotionSensorManager>(
+            defaultServiceManager()->getService(String16(IMotionSensorManager::serviceName().c_str())));
+
+    if (gMOTIONSENSORMGRHandle == nullptr)
+    {
+        UT_LOG_ERROR("MOTIONSENSOR Service not available");
+        return UT_STATUS_FAILURE;
+    }
+    return UT_STATUS_OK;
+}
 
 void VTS_MOTIONSENSOR_init(void)
 {
     UT_LOG_INFO("VTS_MOTIONSENSOR_init: Starting binder thread pool");
 
-    /* Start binder thread pool */
-    ProcessState::self()->startThreadPool();
-
-    UT_LOG_INFO("VTS_MOTIONSENSOR_init: Connecting to IMotionSensorManager service");
-
-    /* Get IMotionSensorManager from service manager */
-    android::sp<android::IBinder> binder =
-        defaultServiceManager()->getService(String16(IMotionSensorManager::descriptor));
-
-    if (binder == nullptr)
+    if(vts_motionsensor_getService() != UT_STATUS_OK)
     {
-        UT_LOG_ERROR("VTS_MOTIONSENSOR_init: Failed to get IMotionSensorManager binder service");
-        return;
-    }
-
-    gMotionSensorManagerHandle = android::interface_cast<IMotionSensorManager>(binder);
-
-    if (gMotionSensorManagerHandle == nullptr)
-    {
-        UT_LOG_ERROR("VTS_MOTIONSENSOR_init: Failed to cast binder to IMotionSensorManager");
+        UT_LOG_ERROR("Failed to get MOTIONSENSOR Service");
         return;
     }
 
@@ -109,7 +105,7 @@ void VTS_MOTIONSENSOR_destroy(void)
 {
     UT_LOG_INFO("VTS_MOTIONSENSOR_destroy: Releasing IMotionSensorManager handle");
 
-    gMotionSensorManagerHandle = nullptr;
+    gMOTIONSENSORMGRHandle = nullptr;
 
     UT_LOG_INFO("VTS_MOTIONSENSOR_destroy: Cleanup complete");
 }

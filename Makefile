@@ -69,6 +69,7 @@ SRC_DIRS := $(MOTIONSENSOR_TEST_DIR)
 SRC_DIRS += $(ROOT_DIR)/test
 
 INC_DIRS := $(ROOT_DIR)/build/current/h/
+INC_DIRS += $(ROOT_DIR)/build/current/h/com
 INC_DIRS += $(ROOT_DIR)/build/usr/include
 INC_DIRS += $(SRC_DIRS)
 

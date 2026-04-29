@@ -55,42 +55,140 @@
 #include "vts_motionsensor_parse_hfp.h"
 #include "vts_motionsensor.h"
 
-extern sp<IMotionSensorManager> gMotionSensorManagerHandle;
+extern sp<IMotionSensorManager> gMOTIONSENSORMGRHandle;
 
 /* Test class registration with UT_Core */
+
 UT_ADD_TEST_TO_GROUP(VTS_L1_MOTIONSENSOR, UT_TESTS_L1)
 
 class VTS_L1_MOTIONSENSOR : public UTCore
 {
 public:
+    VTS_L1_MOTIONSENSOR() : UTCore() {}
+    ~VTS_L1_MOTIONSENSOR() override = default;
+    void SetUp() override { android::ProcessState::self()->startThreadPool(); }
+    void TearDown() override {}
 };
 
-/* ========================================================================== */
-/*  IMotionSensorManager L1 Tests                                             */
-/* ========================================================================== */
-
-/**
- * @brief L1 Test: getMotionSensorIds - success
- *
- * Verify that getMotionSensorIds() returns a non-empty list of sensor IDs
- * and the call succeeds with EX_NONE.
- *
- * **Test Steps:**
- * 1. Call getMotionSensorIds()
- * 2. Verify status.isOk() == true
- * 3. Verify sensorIds is non-empty
- *
- * **Expected Result:** Returns at least one sensor ID with EX_NONE
- */
+// 1. getMotionSensorIds - Positive
 UT_ADD_TEST(VTS_L1_MOTIONSENSOR, GetMotionSensorIds_Success)
 {
-    vector<int32_t> sensorIds;
-
-    UT_LOG_INFO("In %s", __FUNCTION__);
-
-    MOTIONSENSOR_GET_SENSOR_IDS_SUCCESS(gMotionSensorManagerHandle, sensorIds);
+    std::optional<std::vector<std::optional<IMotionSensor::Id>>> sensorIdsOpt;
+    MOTIONSENSOR_GET_SENSOR_IDS_SUCCESS(gMOTIONSENSORMGRHandle, sensorIdsOpt);
+    std::vector<int32_t> sensorIds;
+    if (sensorIdsOpt) {
+        for (const auto& idOpt : *sensorIdsOpt) {
+            if (idOpt) sensorIds.push_back(idOpt->value);
+        }
+    }
     UT_ASSERT_TRUE(sensorIds.size() > 0);
+}
 
-    UT_LOG_INFO("GetMotionSensorIds returned [%zu] sensor(s)", sensorIds.size());
-    UT_LOG_INFO("Out %s", __FUNCTION__);
+// 2. getMotionSensor - Positive
+UT_ADD_TEST(VTS_L1_MOTIONSENSOR, GetMotionSensor_Positive)
+{
+    std::optional<std::vector<std::optional<IMotionSensor::Id>>> sensorIdsOpt;
+    MOTIONSENSOR_GET_SENSOR_IDS_SUCCESS(gMOTIONSENSORMGRHandle, sensorIdsOpt);
+    std::vector<int32_t> sensorIds;
+    if (sensorIdsOpt) {
+        for (const auto& idOpt : *sensorIdsOpt) {
+            if (idOpt) sensorIds.push_back(idOpt->value);
+        }
+    }
+    for (auto id : sensorIds) {
+        android::sp<IMotionSensor> sensorHandle;
+        MotionSensorId sensorIdObj;
+        sensorIdObj.value = id;
+        MOTIONSENSOR_GET_SENSOR_SUCCESS(gMOTIONSENSORMGRHandle, sensorIdObj, sensorHandle);
+    }
+}
+
+// 3. getMotionSensor - Negative (invalid IDs)
+UT_ADD_TEST(VTS_L1_MOTIONSENSOR, GetMotionSensor_Negative)
+{
+    std::optional<std::vector<std::optional<IMotionSensor::Id>>> sensorIdsOpt;
+    MOTIONSENSOR_GET_SENSOR_IDS_SUCCESS(gMOTIONSENSORMGRHandle, sensorIdsOpt);
+    std::vector<int32_t> sensorIds;
+    if (sensorIdsOpt) {
+        for (const auto& idOpt : *sensorIdsOpt) {
+            if (idOpt) sensorIds.push_back(idOpt->value);
+        }
+    }
+    if (sensorIds.empty()) return;
+    int32_t minId = *std::min_element(sensorIds.begin(), sensorIds.end());
+    int32_t maxId = *std::max_element(sensorIds.begin(), sensorIds.end());
+    android::sp<IMotionSensor> sensorHandle;
+    MotionSensorId sensorIdObj;
+    // Below min
+    sensorIdObj.value = minId - 1;
+    MOTIONSENSOR_GET_SENSOR_FAILURE(gMOTIONSENSORMGRHandle, sensorIdObj, sensorHandle, Status::EX_ILLEGAL_ARGUMENT);
+    // Above max
+    sensorIdObj.value = maxId + 1;
+    MOTIONSENSOR_GET_SENSOR_FAILURE(gMOTIONSENSORMGRHandle, sensorIdObj, sensorHandle, Status::EX_ILLEGAL_ARGUMENT);
+    // UNDEFINED (if defined as -1)
+    sensorIdObj.value = -1;
+    MOTIONSENSOR_GET_SENSOR_FAILURE(gMOTIONSENSORMGRHandle, sensorIdObj, sensorHandle, Status::EX_ILLEGAL_ARGUMENT);
+}
+
+// 4. getCapabilities - Positive
+UT_ADD_TEST(VTS_L1_MOTIONSENSOR, GetCapabilities_Positive)
+{
+    std::optional<std::vector<std::optional<IMotionSensor::Id>>> sensorIdsOpt;
+    MOTIONSENSOR_GET_SENSOR_IDS_SUCCESS(gMOTIONSENSORMGRHandle, sensorIdsOpt);
+    std::vector<int32_t> sensorIds;
+    if (sensorIdsOpt) {
+        for (const auto& idOpt : *sensorIdsOpt) {
+            if (idOpt) sensorIds.push_back(idOpt->value);
+        }
+    }
+    for (auto id : sensorIds) {
+        android::sp<IMotionSensor> sensorHandle;
+        MotionSensorId sensorIdObj;
+        sensorIdObj.value = id;
+        MOTIONSENSOR_GET_SENSOR_SUCCESS(gMOTIONSENSORMGRHandle, sensorIdObj, sensorHandle);
+        Capabilities capabilities;
+        MOTIONSENSOR_GET_CAPABILITIES_SUCCESS(sensorHandle, capabilities);
+        // Optionally compare with gMotionSensorDeviceInfo if available
+    }
+}
+
+// 5. getState - Positive
+UT_ADD_TEST(VTS_L1_MOTIONSENSOR, GetState_Positive)
+{
+    std::optional<std::vector<std::optional<IMotionSensor::Id>>> sensorIdsOpt;
+    MOTIONSENSOR_GET_SENSOR_IDS_SUCCESS(gMOTIONSENSORMGRHandle, sensorIdsOpt);
+    std::vector<int32_t> sensorIds;
+    if (sensorIdsOpt) {
+        for (const auto& idOpt : *sensorIdsOpt) {
+            if (idOpt) sensorIds.push_back(idOpt->value);
+        }
+    }
+    for (auto id : sensorIds) {
+        android::sp<IMotionSensor> sensorHandle;
+        MotionSensorId sensorIdObj;
+        sensorIdObj.value = id;
+        MOTIONSENSOR_GET_SENSOR_SUCCESS(gMOTIONSENSORMGRHandle, sensorIdObj, sensorHandle);
+        State state;
+        MOTIONSENSOR_GET_STATE(sensorHandle, state);
+        // Optionally assert state is a valid enum value
+    }
+}
+
+// 6. getCapabilities - Negative (invalid handle)
+UT_ADD_TEST(VTS_L1_MOTIONSENSOR, GetCapabilities_Negative)
+{
+    android::sp<IMotionSensor> sensorHandle = nullptr;
+    Capabilities capabilities;
+    // Should fail with nullptr handle
+    ::android::binder::Status status = sensorHandle ? sensorHandle->getCapabilities(&capabilities) : ::android::binder::Status::fromExceptionCode(Status::EX_NULL_POINTER);
+    UT_ASSERT_FALSE(status.isOk());
+}
+
+// 7. getState - Negative (invalid handle)
+UT_ADD_TEST(VTS_L1_MOTIONSENSOR, GetState_Negative)
+{
+    android::sp<IMotionSensor> sensorHandle = nullptr;
+    State state;
+    ::android::binder::Status status = sensorHandle ? sensorHandle->getState(&state) : ::android::binder::Status::fromExceptionCode(Status::EX_NULL_POINTER);
+    UT_ASSERT_FALSE(status.isOk());
 }

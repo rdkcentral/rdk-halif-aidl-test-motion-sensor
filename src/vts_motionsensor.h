@@ -72,8 +72,8 @@
 #include <binder/Status.h>
 #include <utils/String16.h>
 
-#include "com/rdk/hal/sensor/motion/BnIMotionSensorControllerListener.h"
-#include "com/rdk/hal/sensor/motion/BnIMotionSensorEventListener.h"
+#include "com/rdk/hal/sensor/motion/BnMotionSensorControllerListener.h"
+#include "com/rdk/hal/sensor/motion/BnMotionSensorEventListener.h"
 #include "com/rdk/hal/sensor/motion/IMotionSensorManager.h"
 #include "com/rdk/hal/sensor/motion/IMotionSensor.h"
 #include "com/rdk/hal/sensor/motion/IMotionSensorController.h"
@@ -96,7 +96,6 @@ using namespace std;
 using namespace std::chrono;
 
 using namespace com::rdk::hal::sensor::motion;
-
 #define MAX_TRANSITORY_STATE_WAIT_MS   5
 #define MAX_FINAL_STATE_WAIT_MS        500
 #define MAX_EVENT_WAIT_MS              5000
@@ -112,18 +111,21 @@ using namespace com::rdk::hal::sensor::motion;
 #define UT_LOG_INFO(...)
 #endif
 #endif
+typedef com::rdk::hal::sensor::motion::IMotionSensor::Id MotionSensorId;
 
 /* ========================================================================== */
 /*  IMotionSensorManager Macros                                                */
 /* ========================================================================== */
 
-#define MOTIONSENSOR_GET_SENSOR_IDS_SUCCESS(managerHandle, sensorIds) \
+#define MOTIONSENSOR_GET_SENSOR_IDS_SUCCESS(managerHandle, sensorIdsOpt) \
     do { \
         ::android::binder::Status status; \
         UT_LOG_DEBUG("Calling getMotionSensorIds(OUT:sensorIds[])"); \
-        status = (managerHandle)->getMotionSensorIds(&sensorIds); \
+        status = (managerHandle)->getMotionSensorIds(&sensorIdsOpt); \
+        size_t count = 0; \
+        if (sensorIdsOpt && sensorIdsOpt->size()) count = sensorIdsOpt->size(); \
         UT_LOG_DEBUG("Result getMotionSensorIds(OUT:sensorIds[count:%zu]), status:[isOK:%s, exception:%s]", \
-            sensorIds.size(), \
+            count, \
             UT_Control_GetMapString(bool_mapTable_motionsensor, status.isOk()), \
             UT_Control_GetMapString(statusMotionSensorException_mapTable, status.exceptionCode())); \
         UT_ASSERT_TRUE(status.isOk()); \
@@ -553,7 +555,7 @@ using namespace com::rdk::hal::sensor::motion;
 /*  Listener Classes                                                           */
 /* ========================================================================== */
 
-class MotionSensorControllerListener : public BnIMotionSensorControllerListener
+class MotionSensorControllerListener : public BnMotionSensorControllerListener
 {
 public:
     MotionSensorControllerListener() {}
@@ -580,7 +582,7 @@ private:
     bool mActiveWindowExited{false};
 };
 
-class MotionSensorEventListener : public BnIMotionSensorEventListener
+class MotionSensorEventListener : public BnMotionSensorEventListener
 {
 public:
     MotionSensorEventListener() {}

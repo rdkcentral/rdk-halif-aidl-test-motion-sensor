@@ -20,7 +20,7 @@
 #* ******************************************************************************
 
 RUN_DIR=$(realpath "$(dirname "$0")")
-SERVICE_NAME=Vendor-MoionSensor
+SERVICE_NAME=Vendor-MotionSensor
 
 export LD_LIBRARY_PATH=${RUN_DIR}:${LD_LIBRARY_PATH}
 

@@ -57,10 +57,10 @@
 #include <ut_control_plane.h>
 
 /* Exception code map table for motion sensor status */
-extern ut_control_keyStringPair_t statusMotionSensorException_mapTable[];
+extern ut_control_keyStringMapping_t statusMotionSensorException_mapTable[];
 
 /* Boolean string map table */
-extern ut_control_keyStringPair_t bool_mapTable_motionsensor[];
+extern ut_control_keyStringMapping_t bool_mapTable_motionsensor[];
 
 /**
  * @brief Wait for a motion event with timeout
