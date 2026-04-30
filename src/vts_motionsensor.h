@@ -346,28 +346,23 @@ typedef com::rdk::hal::sensor::motion::IMotionSensor::Id MotionSensorId;
 #define MOTIONSENSOR_START_SUCCESS(controllerHandle, config) \
     do { \
         ::android::binder::Status status; \
-        bool _aidl_return; \
-        UT_LOG_DEBUG("Calling start(IN:config[mode:%s, noMotionSeconds:%d], OUT:_aidl_return[])", \
+        UT_LOG_DEBUG("Calling start(IN:config[mode:%s, noMotionSeconds:%d])", \
             ::com::rdk::hal::sensor::motion::toString(config.operationalMode).c_str(), config.noMotionSeconds); \
-        status = (controllerHandle)->start(config, &_aidl_return); \
-        UT_LOG_DEBUG("Result start(OUT:_aidl_return[%s]), status:[isOK:%s, exception:%s]", \
-            UT_Control_GetMapString(bool_mapTable_motionsensor, _aidl_return), \
+        status = (controllerHandle)->start(config); \
+        UT_LOG_DEBUG("Result start(), status:[isOK:%s, exception:%s]", \
             UT_Control_GetMapString(bool_mapTable_motionsensor, status.isOk()), \
             UT_Control_GetMapString(statusMotionSensorException_mapTable, status.exceptionCode())); \
         UT_ASSERT_TRUE(status.isOk()); \
-        UT_ASSERT_TRUE(_aidl_return); \
         UT_ASSERT_EQUAL(status.exceptionCode(), Status::EX_NONE); \
     } while (0)
 
 #define MOTIONSENSOR_START_FAILURE(controllerHandle, config, expectedException) \
     do { \
         ::android::binder::Status status; \
-        bool _aidl_return; \
-        UT_LOG_DEBUG("Calling start(IN:config[mode:%s, noMotionSeconds:%d], OUT:_aidl_return[])", \
+        UT_LOG_DEBUG("Calling start(IN:config[mode:%s, noMotionSeconds:%d])", \
             ::com::rdk::hal::sensor::motion::toString(config.operationalMode).c_str(), config.noMotionSeconds); \
-        status = (controllerHandle)->start(config, &_aidl_return); \
-        UT_LOG_DEBUG("Result start(OUT:_aidl_return[%s]), status:[isOK:%s, exception:%s]", \
-            UT_Control_GetMapString(bool_mapTable_motionsensor, _aidl_return), \
+        status = (controllerHandle)->start(config); \
+        UT_LOG_DEBUG("Result start(), status:[isOK:%s, exception:%s]", \
             UT_Control_GetMapString(bool_mapTable_motionsensor, status.isOk()), \
             UT_Control_GetMapString(statusMotionSensorException_mapTable, status.exceptionCode())); \
         if (expectedException == Status::EX_NONE) \
@@ -375,32 +370,26 @@ typedef com::rdk::hal::sensor::motion::IMotionSensor::Id MotionSensorId;
         else \
             UT_ASSERT_FALSE(status.isOk()); \
         UT_ASSERT_EQUAL(status.exceptionCode(), expectedException); \
-        UT_ASSERT_FALSE(_aidl_return); \
     } while (0)
 
 #define MOTIONSENSOR_STOP_SUCCESS(controllerHandle) \
     do { \
         ::android::binder::Status status; \
-        bool _aidl_return; \
-        UT_LOG_DEBUG("Calling stop(OUT:_aidl_return[])"); \
-        status = (controllerHandle)->stop(&_aidl_return); \
-        UT_LOG_DEBUG("Result stop(OUT:_aidl_return[%s]), status:[isOK:%s, exception:%s]", \
-            UT_Control_GetMapString(bool_mapTable_motionsensor, _aidl_return), \
+        UT_LOG_DEBUG("Calling stop()"); \
+        status = (controllerHandle)->stop(); \
+        UT_LOG_DEBUG("Result stop(), status:[isOK:%s, exception:%s]", \
             UT_Control_GetMapString(bool_mapTable_motionsensor, status.isOk()), \
             UT_Control_GetMapString(statusMotionSensorException_mapTable, status.exceptionCode())); \
         UT_ASSERT_TRUE(status.isOk()); \
-        UT_ASSERT_TRUE(_aidl_return); \
         UT_ASSERT_EQUAL(status.exceptionCode(), Status::EX_NONE); \
     } while (0)
 
 #define MOTIONSENSOR_STOP_FAILURE(controllerHandle, expectedException) \
     do { \
         ::android::binder::Status status; \
-        bool _aidl_return; \
-        UT_LOG_DEBUG("Calling stop(OUT:_aidl_return[])"); \
-        status = (controllerHandle)->stop(&_aidl_return); \
-        UT_LOG_DEBUG("Result stop(OUT:_aidl_return[%s]), status:[isOK:%s, exception:%s]", \
-            UT_Control_GetMapString(bool_mapTable_motionsensor, _aidl_return), \
+        UT_LOG_DEBUG("Calling stop()"); \
+        status = (controllerHandle)->stop(); \
+        UT_LOG_DEBUG("Result stop(), status:[isOK:%s, exception:%s]", \
             UT_Control_GetMapString(bool_mapTable_motionsensor, status.isOk()), \
             UT_Control_GetMapString(statusMotionSensorException_mapTable, status.exceptionCode())); \
         if (expectedException == Status::EX_NONE) \
@@ -408,7 +397,6 @@ typedef com::rdk::hal::sensor::motion::IMotionSensor::Id MotionSensorId;
         else \
             UT_ASSERT_FALSE(status.isOk()); \
         UT_ASSERT_EQUAL(status.exceptionCode(), expectedException); \
-        UT_ASSERT_FALSE(_aidl_return); \
     } while (0)
 
 #define MOTIONSENSOR_GET_START_CONFIG_SUCCESS(controllerHandle, config) \

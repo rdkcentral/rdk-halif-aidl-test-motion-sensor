@@ -390,3 +390,501 @@ UT_ADD_TEST(VTS_L1_MOTIONSENSOR, UnregisterEventListener_Negative_NotRegistered)
     android::sp<IMotionSensorEventListener> eventListener = android::sp<MotionSensorEventListener>::make();
     MOTIONSENSOR_UNREGISTER_EVENT_FAILURE(sensorHandle, eventListener, Status::EX_NONE);
 }
+
+/* ========================================================================== */
+/*  Helper: get first sensor handle + open controller                         */
+/* ========================================================================== */
+
+// Opens the sensor at the given index and returns sensorHandle + controllerHandle.
+// Returns false if the index is out of range or the sensor cannot be opened.
+static bool openSensorAtIndex(size_t index,
+                               android::sp<IMotionSensor>& sensorHandle,
+                               android::sp<IMotionSensorController>& controllerHandle,
+                               android::sp<IMotionSensorControllerListener>& listener)
+{
+    std::optional<std::vector<std::optional<IMotionSensor::Id>>> sensorIdsOpt;
+    android::sp<IMotionSensorManager>& mgr = gMOTIONSENSORMGRHandle;
+    ::android::binder::Status status = mgr->getMotionSensorIds(&sensorIdsOpt);
+    if (!status.isOk() || !sensorIdsOpt || sensorIdsOpt->empty()) return false;
+    if (index >= sensorIdsOpt->size())
+    {
+        UT_LOG_ERROR("openSensorAtIndex: index %zu out of range (sensor count: %zu)",
+            index, sensorIdsOpt->size());
+        return false;
+    }
+    const auto& idOpt = (*sensorIdsOpt)[index];
+    if (!idOpt) return false;
+    MotionSensorId id;
+    id.value = idOpt->value;
+    status = mgr->getMotionSensor(id, &sensorHandle);
+    if (!status.isOk() || !sensorHandle) return false;
+    listener = android::sp<MotionSensorControllerListener>::make();
+    status = sensorHandle->open(listener, &controllerHandle);
+    return status.isOk() && controllerHandle != nullptr;
+}
+
+/* ========================================================================== */
+/*  IMotionSensorController::start / stop test cases                          */
+/* ========================================================================== */
+
+// 18. start - Positive
+UT_ADD_TEST(VTS_L1_MOTIONSENSOR, Start_Positive)
+{
+    android::sp<IMotionSensor> sensorHandle;
+    android::sp<IMotionSensorController> controllerHandle;
+    android::sp<IMotionSensorControllerListener> listener;
+    if (!openSensorAtIndex(0, sensorHandle, controllerHandle, listener)) return;
+
+    StartConfig config;
+    config.operationalMode = OperationalMode::MOTION;
+    config.noMotionSeconds = 30;
+    MOTIONSENSOR_START_SUCCESS(controllerHandle, config);
+
+    // Cleanup
+    MOTIONSENSOR_STOP_SUCCESS(controllerHandle);
+    MOTIONSENSOR_CLOSE_SUCCESS(sensorHandle, controllerHandle);
+}
+
+// 19. start - Negative: EX_ILLEGAL_STATE when already STARTED
+UT_ADD_TEST(VTS_L1_MOTIONSENSOR, Start_Negative_AlreadyStarted)
+{
+    android::sp<IMotionSensor> sensorHandle;
+    android::sp<IMotionSensorController> controllerHandle;
+    android::sp<IMotionSensorControllerListener> listener;
+    if (!openSensorAtIndex(0, sensorHandle, controllerHandle, listener)) return;
+
+    StartConfig config;
+    config.operationalMode = OperationalMode::MOTION;
+    config.noMotionSeconds = 30;
+    MOTIONSENSOR_START_SUCCESS(controllerHandle, config);
+
+    // Second start while STARTED must fail with EX_ILLEGAL_STATE
+    MOTIONSENSOR_START_FAILURE(controllerHandle, config, Status::EX_ILLEGAL_STATE);
+
+    // Cleanup
+    MOTIONSENSOR_STOP_SUCCESS(controllerHandle);
+    MOTIONSENSOR_CLOSE_SUCCESS(sensorHandle, controllerHandle);
+}
+
+// 20. start - Negative: EX_ILLEGAL_ARGUMENT for invalid noMotionSeconds
+UT_ADD_TEST(VTS_L1_MOTIONSENSOR, Start_Negative_InvalidConfig)
+{
+    android::sp<IMotionSensor> sensorHandle;
+    android::sp<IMotionSensorController> controllerHandle;
+    android::sp<IMotionSensorControllerListener> listener;
+    if (!openSensorAtIndex(0, sensorHandle, controllerHandle, listener)) return;
+
+    StartConfig config;
+    config.operationalMode = OperationalMode::MOTION;
+    config.noMotionSeconds = 99999; // out of range
+    MOTIONSENSOR_START_FAILURE(controllerHandle, config, Status::EX_ILLEGAL_ARGUMENT);
+
+    MOTIONSENSOR_CLOSE_SUCCESS(sensorHandle, controllerHandle);
+}
+
+// 21. stop - Positive
+UT_ADD_TEST(VTS_L1_MOTIONSENSOR, Stop_Positive)
+{
+    android::sp<IMotionSensor> sensorHandle;
+    android::sp<IMotionSensorController> controllerHandle;
+    android::sp<IMotionSensorControllerListener> listener;
+    if (!openSensorAtIndex(0, sensorHandle, controllerHandle, listener)) return;
+
+    StartConfig config;
+    config.operationalMode = OperationalMode::MOTION;
+    config.noMotionSeconds = 30;
+    MOTIONSENSOR_START_SUCCESS(controllerHandle, config);
+    MOTIONSENSOR_STOP_SUCCESS(controllerHandle);
+
+    MOTIONSENSOR_CLOSE_SUCCESS(sensorHandle, controllerHandle);
+}
+
+// 22. stop - Negative: EX_ILLEGAL_STATE when already STOPPED
+UT_ADD_TEST(VTS_L1_MOTIONSENSOR, Stop_Negative_AlreadyStopped)
+{
+    android::sp<IMotionSensor> sensorHandle;
+    android::sp<IMotionSensorController> controllerHandle;
+    android::sp<IMotionSensorControllerListener> listener;
+    if (!openSensorAtIndex(0, sensorHandle, controllerHandle, listener)) return;
+
+    // Not started — must fail with EX_ILLEGAL_STATE
+    MOTIONSENSOR_STOP_FAILURE(controllerHandle, Status::EX_ILLEGAL_STATE);
+
+    MOTIONSENSOR_CLOSE_SUCCESS(sensorHandle, controllerHandle);
+}
+
+/* ========================================================================== */
+/*  IMotionSensorController::getStartConfig test cases                        */
+/* ========================================================================== */
+
+// 23. getStartConfig - Positive: returns config passed to start()
+UT_ADD_TEST(VTS_L1_MOTIONSENSOR, GetStartConfig_Positive)
+{
+    android::sp<IMotionSensor> sensorHandle;
+    android::sp<IMotionSensorController> controllerHandle;
+    android::sp<IMotionSensorControllerListener> listener;
+    if (!openSensorAtIndex(0, sensorHandle, controllerHandle, listener)) return;
+
+    StartConfig config;
+    config.operationalMode = OperationalMode::MOTION;
+    config.noMotionSeconds = 60;
+    MOTIONSENSOR_START_SUCCESS(controllerHandle, config);
+
+    StartConfig retrieved;
+    MOTIONSENSOR_GET_START_CONFIG_SUCCESS(controllerHandle, retrieved);
+    UT_ASSERT_EQUAL(retrieved.noMotionSeconds, config.noMotionSeconds);
+
+    MOTIONSENSOR_STOP_SUCCESS(controllerHandle);
+    MOTIONSENSOR_CLOSE_SUCCESS(sensorHandle, controllerHandle);
+}
+
+// 24. getStartConfig - Negative: EX_ILLEGAL_STATE when STOPPED
+UT_ADD_TEST(VTS_L1_MOTIONSENSOR, GetStartConfig_Negative_Stopped)
+{
+    android::sp<IMotionSensor> sensorHandle;
+    android::sp<IMotionSensorController> controllerHandle;
+    android::sp<IMotionSensorControllerListener> listener;
+    if (!openSensorAtIndex(0, sensorHandle, controllerHandle, listener)) return;
+
+    StartConfig config;
+    ::android::binder::Status status = controllerHandle->getStartConfig(&config);
+    UT_ASSERT_FALSE(status.isOk());
+    UT_ASSERT_EQUAL(status.exceptionCode(), Status::EX_ILLEGAL_STATE);
+
+    MOTIONSENSOR_CLOSE_SUCCESS(sensorHandle, controllerHandle);
+}
+
+/* ========================================================================== */
+/*  IMotionSensorController::getSensitivity / setSensitivity test cases       */
+/* ========================================================================== */
+
+// 25. getSensitivity - Positive: returns initialised value
+UT_ADD_TEST(VTS_L1_MOTIONSENSOR, GetSensitivity_Positive)
+{
+    android::sp<IMotionSensor> sensorHandle;
+    android::sp<IMotionSensorController> controllerHandle;
+    android::sp<IMotionSensorControllerListener> listener;
+    if (!openSensorAtIndex(0, sensorHandle, controllerHandle, listener)) return;
+
+    int32_t sensitivity;
+    MOTIONSENSOR_GET_SENSITIVITY_SUCCESS(controllerHandle, sensitivity);
+    UT_ASSERT_TRUE(sensitivity >= 0);
+
+    MOTIONSENSOR_CLOSE_SUCCESS(sensorHandle, controllerHandle);
+}
+
+// 26. setSensitivity - Positive: min value
+UT_ADD_TEST(VTS_L1_MOTIONSENSOR, SetSensitivity_Positive_Min)
+{
+    android::sp<IMotionSensor> sensorHandle;
+    android::sp<IMotionSensorController> controllerHandle;
+    android::sp<IMotionSensorControllerListener> listener;
+    if (!openSensorAtIndex(0, sensorHandle, controllerHandle, listener)) return;
+
+    Capabilities caps;
+    MOTIONSENSOR_GET_CAPABILITIES_SUCCESS(sensorHandle, caps);
+    MOTIONSENSOR_SET_SENSITIVITY_SUCCESS(controllerHandle, caps.minSensitivity);
+
+    // Verify round-trip
+    int32_t sensitivity;
+    MOTIONSENSOR_GET_SENSITIVITY_SUCCESS(controllerHandle, sensitivity);
+    UT_ASSERT_EQUAL(sensitivity, caps.minSensitivity);
+
+    MOTIONSENSOR_CLOSE_SUCCESS(sensorHandle, controllerHandle);
+}
+
+// 27. setSensitivity - Positive: max value
+UT_ADD_TEST(VTS_L1_MOTIONSENSOR, SetSensitivity_Positive_Max)
+{
+    android::sp<IMotionSensor> sensorHandle;
+    android::sp<IMotionSensorController> controllerHandle;
+    android::sp<IMotionSensorControllerListener> listener;
+    if (!openSensorAtIndex(0, sensorHandle, controllerHandle, listener)) return;
+
+    Capabilities caps;
+    MOTIONSENSOR_GET_CAPABILITIES_SUCCESS(sensorHandle, caps);
+    MOTIONSENSOR_SET_SENSITIVITY_SUCCESS(controllerHandle, caps.maxSensitivity);
+
+    int32_t sensitivity;
+    MOTIONSENSOR_GET_SENSITIVITY_SUCCESS(controllerHandle, sensitivity);
+    UT_ASSERT_EQUAL(sensitivity, caps.maxSensitivity);
+
+    MOTIONSENSOR_CLOSE_SUCCESS(sensorHandle, controllerHandle);
+}
+
+// 28. setSensitivity - Negative: below min
+UT_ADD_TEST(VTS_L1_MOTIONSENSOR, SetSensitivity_Negative_BelowMin)
+{
+    android::sp<IMotionSensor> sensorHandle;
+    android::sp<IMotionSensorController> controllerHandle;
+    android::sp<IMotionSensorControllerListener> listener;
+    if (!openSensorAtIndex(0, sensorHandle, controllerHandle, listener)) return;
+
+    Capabilities caps;
+    MOTIONSENSOR_GET_CAPABILITIES_SUCCESS(sensorHandle, caps);
+    MOTIONSENSOR_SET_SENSITIVITY_FAILURE(controllerHandle, caps.minSensitivity - 1, Status::EX_ILLEGAL_ARGUMENT);
+
+    MOTIONSENSOR_CLOSE_SUCCESS(sensorHandle, controllerHandle);
+}
+
+// 29. setSensitivity - Negative: above max
+UT_ADD_TEST(VTS_L1_MOTIONSENSOR, SetSensitivity_Negative_AboveMax)
+{
+    android::sp<IMotionSensor> sensorHandle;
+    android::sp<IMotionSensorController> controllerHandle;
+    android::sp<IMotionSensorControllerListener> listener;
+    if (!openSensorAtIndex(0, sensorHandle, controllerHandle, listener)) return;
+
+    Capabilities caps;
+    MOTIONSENSOR_GET_CAPABILITIES_SUCCESS(sensorHandle, caps);
+    MOTIONSENSOR_SET_SENSITIVITY_FAILURE(controllerHandle, caps.maxSensitivity + 1, Status::EX_ILLEGAL_ARGUMENT);
+
+    MOTIONSENSOR_CLOSE_SUCCESS(sensorHandle, controllerHandle);
+}
+
+// 30. setSensitivity - Negative: EX_ILLEGAL_STATE when STARTED
+UT_ADD_TEST(VTS_L1_MOTIONSENSOR, SetSensitivity_Negative_WhileStarted)
+{
+    android::sp<IMotionSensor> sensorHandle;
+    android::sp<IMotionSensorController> controllerHandle;
+    android::sp<IMotionSensorControllerListener> listener;
+    if (!openSensorAtIndex(0, sensorHandle, controllerHandle, listener)) return;
+
+    StartConfig config;
+    config.operationalMode = OperationalMode::MOTION;
+    config.noMotionSeconds = 30;
+    MOTIONSENSOR_START_SUCCESS(controllerHandle, config);
+
+    Capabilities caps;
+    MOTIONSENSOR_GET_CAPABILITIES_SUCCESS(sensorHandle, caps);
+    MOTIONSENSOR_SET_SENSITIVITY_FAILURE(controllerHandle, caps.minSensitivity, Status::EX_ILLEGAL_STATE);
+
+    MOTIONSENSOR_STOP_SUCCESS(controllerHandle);
+    MOTIONSENSOR_CLOSE_SUCCESS(sensorHandle, controllerHandle);
+}
+
+/* ========================================================================== */
+/*  IMotionSensorController::setAutonomousDuringDeepSleep test cases          */
+/* ========================================================================== */
+
+// 31. setAutonomousDuringDeepSleep - Positive (if supported)
+UT_ADD_TEST(VTS_L1_MOTIONSENSOR, SetAutonomous_Positive)
+{
+    android::sp<IMotionSensor> sensorHandle;
+    android::sp<IMotionSensorController> controllerHandle;
+    android::sp<IMotionSensorControllerListener> listener;
+    if (!openSensorAtIndex(0, sensorHandle, controllerHandle, listener)) return;
+
+    Capabilities caps;
+    MOTIONSENSOR_GET_CAPABILITIES_SUCCESS(sensorHandle, caps);
+    if (!caps.supportsDeepSleepAutonomy)
+    {
+        // Platform does not support this — verify false is returned, status ok
+        MOTIONSENSOR_SET_AUTONOMOUS_SUCCESS(controllerHandle, true);
+        bool enabled;
+        ::android::binder::Status status = controllerHandle->isAutonomousDuringDeepSleepEnabled(&enabled);
+        UT_ASSERT_TRUE(status.isOk());
+        UT_ASSERT_FALSE(enabled); // unchanged since not supported
+    }
+    else
+    {
+        MOTIONSENSOR_SET_AUTONOMOUS_SUCCESS(controllerHandle, true);
+        bool enabled;
+        ::android::binder::Status status = controllerHandle->isAutonomousDuringDeepSleepEnabled(&enabled);
+        UT_ASSERT_TRUE(status.isOk());
+        UT_ASSERT_TRUE(enabled);
+    }
+
+    MOTIONSENSOR_CLOSE_SUCCESS(sensorHandle, controllerHandle);
+}
+
+// 32. setAutonomousDuringDeepSleep - Negative: EX_ILLEGAL_STATE when STARTED
+UT_ADD_TEST(VTS_L1_MOTIONSENSOR, SetAutonomous_Negative_WhileStarted)
+{
+    android::sp<IMotionSensor> sensorHandle;
+    android::sp<IMotionSensorController> controllerHandle;
+    android::sp<IMotionSensorControllerListener> listener;
+    if (!openSensorAtIndex(0, sensorHandle, controllerHandle, listener)) return;
+
+    StartConfig config;
+    config.operationalMode = OperationalMode::MOTION;
+    config.noMotionSeconds = 30;
+    MOTIONSENSOR_START_SUCCESS(controllerHandle, config);
+
+    ::android::binder::Status status;
+    bool ret;
+    status = controllerHandle->setAutonomousDuringDeepSleep(true, &ret);
+    UT_ASSERT_FALSE(status.isOk());
+    UT_ASSERT_EQUAL(status.exceptionCode(), Status::EX_ILLEGAL_STATE);
+
+    MOTIONSENSOR_STOP_SUCCESS(controllerHandle);
+    MOTIONSENSOR_CLOSE_SUCCESS(sensorHandle, controllerHandle);
+}
+
+/* ========================================================================== */
+/*  IMotionSensorController::setActiveWindows / getActiveWindows /            */
+/*  clearActiveWindows test cases                                              */
+/* ========================================================================== */
+
+// 33. setActiveWindows - Positive: valid window
+UT_ADD_TEST(VTS_L1_MOTIONSENSOR, SetActiveWindows_Positive)
+{
+    android::sp<IMotionSensor> sensorHandle;
+    android::sp<IMotionSensorController> controllerHandle;
+    android::sp<IMotionSensorControllerListener> listener;
+    if (!openSensorAtIndex(0, sensorHandle, controllerHandle, listener)) return;
+
+    std::vector<TimeWindow> windows;
+    TimeWindow w;
+    w.startTimeOfDaySeconds = 28800; // 08:00
+    w.endTimeOfDaySeconds   = 72000; // 20:00
+    windows.push_back(w);
+    MOTIONSENSOR_SET_ACTIVE_WINDOWS_SUCCESS(controllerHandle, windows);
+
+    MOTIONSENSOR_CLOSE_SUCCESS(sensorHandle, controllerHandle);
+}
+
+// 34. setActiveWindows - Positive: midnight-wrapping window
+UT_ADD_TEST(VTS_L1_MOTIONSENSOR, SetActiveWindows_Positive_MidnightWrap)
+{
+    android::sp<IMotionSensor> sensorHandle;
+    android::sp<IMotionSensorController> controllerHandle;
+    android::sp<IMotionSensorControllerListener> listener;
+    if (!openSensorAtIndex(0, sensorHandle, controllerHandle, listener)) return;
+
+    std::vector<TimeWindow> windows;
+    TimeWindow w;
+    w.startTimeOfDaySeconds = 79200; // 22:00
+    w.endTimeOfDaySeconds   = 21600; // 06:00 (wraps midnight)
+    windows.push_back(w);
+    MOTIONSENSOR_SET_ACTIVE_WINDOWS_SUCCESS(controllerHandle, windows);
+
+    MOTIONSENSOR_CLOSE_SUCCESS(sensorHandle, controllerHandle);
+}
+
+// 35. setActiveWindows - Positive: empty array (24-hour monitoring)
+UT_ADD_TEST(VTS_L1_MOTIONSENSOR, SetActiveWindows_Positive_Empty)
+{
+    android::sp<IMotionSensor> sensorHandle;
+    android::sp<IMotionSensorController> controllerHandle;
+    android::sp<IMotionSensorControllerListener> listener;
+    if (!openSensorAtIndex(0, sensorHandle, controllerHandle, listener)) return;
+
+    std::vector<TimeWindow> windows; // empty
+    MOTIONSENSOR_SET_ACTIVE_WINDOWS_SUCCESS(controllerHandle, windows);
+
+    MOTIONSENSOR_CLOSE_SUCCESS(sensorHandle, controllerHandle);
+}
+
+// 36. setActiveWindows - Negative: value out of range
+UT_ADD_TEST(VTS_L1_MOTIONSENSOR, SetActiveWindows_Negative_OutOfRange)
+{
+    android::sp<IMotionSensor> sensorHandle;
+    android::sp<IMotionSensorController> controllerHandle;
+    android::sp<IMotionSensorControllerListener> listener;
+    if (!openSensorAtIndex(0, sensorHandle, controllerHandle, listener)) return;
+
+    std::vector<TimeWindow> windows;
+    TimeWindow w;
+    w.startTimeOfDaySeconds = 0;
+    w.endTimeOfDaySeconds   = 90000; // > 86399
+    windows.push_back(w);
+    MOTIONSENSOR_SET_ACTIVE_WINDOWS_FAILURE(controllerHandle, windows, Status::EX_ILLEGAL_ARGUMENT);
+
+    MOTIONSENSOR_CLOSE_SUCCESS(sensorHandle, controllerHandle);
+}
+
+// 37. setActiveWindows - Negative: EX_ILLEGAL_STATE when STARTED
+UT_ADD_TEST(VTS_L1_MOTIONSENSOR, SetActiveWindows_Negative_WhileStarted)
+{
+    android::sp<IMotionSensor> sensorHandle;
+    android::sp<IMotionSensorController> controllerHandle;
+    android::sp<IMotionSensorControllerListener> listener;
+    if (!openSensorAtIndex(0, sensorHandle, controllerHandle, listener)) return;
+
+    StartConfig config;
+    config.operationalMode = OperationalMode::MOTION;
+    config.noMotionSeconds = 30;
+    MOTIONSENSOR_START_SUCCESS(controllerHandle, config);
+
+    std::vector<TimeWindow> windows;
+    TimeWindow w;
+    w.startTimeOfDaySeconds = 0;
+    w.endTimeOfDaySeconds   = 3600;
+    windows.push_back(w);
+    MOTIONSENSOR_SET_ACTIVE_WINDOWS_FAILURE(controllerHandle, windows, Status::EX_ILLEGAL_STATE);
+
+    MOTIONSENSOR_STOP_SUCCESS(controllerHandle);
+    MOTIONSENSOR_CLOSE_SUCCESS(sensorHandle, controllerHandle);
+}
+
+// 38. getActiveWindows - Positive: reflects setActiveWindows result
+UT_ADD_TEST(VTS_L1_MOTIONSENSOR, GetActiveWindows_Positive)
+{
+    android::sp<IMotionSensor> sensorHandle;
+    android::sp<IMotionSensorController> controllerHandle;
+    android::sp<IMotionSensorControllerListener> listener;
+    if (!openSensorAtIndex(0, sensorHandle, controllerHandle, listener)) return;
+
+    std::vector<TimeWindow> windows;
+    TimeWindow w;
+    w.startTimeOfDaySeconds = 28800;
+    w.endTimeOfDaySeconds   = 72000;
+    windows.push_back(w);
+    MOTIONSENSOR_SET_ACTIVE_WINDOWS_SUCCESS(controllerHandle, windows);
+
+    std::vector<TimeWindow> retrieved;
+    MOTIONSENSOR_GET_ACTIVE_WINDOWS_SUCCESS(controllerHandle, retrieved);
+    UT_ASSERT_EQUAL(retrieved.size(), windows.size());
+    UT_ASSERT_EQUAL(retrieved[0].startTimeOfDaySeconds, w.startTimeOfDaySeconds);
+    UT_ASSERT_EQUAL(retrieved[0].endTimeOfDaySeconds,   w.endTimeOfDaySeconds);
+
+    MOTIONSENSOR_CLOSE_SUCCESS(sensorHandle, controllerHandle);
+}
+
+// 39. clearActiveWindows - Positive
+UT_ADD_TEST(VTS_L1_MOTIONSENSOR, ClearActiveWindows_Positive)
+{
+    android::sp<IMotionSensor> sensorHandle;
+    android::sp<IMotionSensorController> controllerHandle;
+    android::sp<IMotionSensorControllerListener> listener;
+    if (!openSensorAtIndex(0, sensorHandle, controllerHandle, listener)) return;
+
+    std::vector<TimeWindow> windows;
+    TimeWindow w;
+    w.startTimeOfDaySeconds = 28800;
+    w.endTimeOfDaySeconds   = 72000;
+    windows.push_back(w);
+    MOTIONSENSOR_SET_ACTIVE_WINDOWS_SUCCESS(controllerHandle, windows);
+
+    MOTIONSENSOR_CLEAR_ACTIVE_WINDOWS_SUCCESS(controllerHandle);
+
+    std::vector<TimeWindow> retrieved;
+    MOTIONSENSOR_GET_ACTIVE_WINDOWS_SUCCESS(controllerHandle, retrieved);
+    UT_ASSERT_TRUE(retrieved.empty());
+
+    MOTIONSENSOR_CLOSE_SUCCESS(sensorHandle, controllerHandle);
+}
+
+// 40. clearActiveWindows - Negative: EX_ILLEGAL_STATE when STARTED
+UT_ADD_TEST(VTS_L1_MOTIONSENSOR, ClearActiveWindows_Negative_WhileStarted)
+{
+    android::sp<IMotionSensor> sensorHandle;
+    android::sp<IMotionSensorController> controllerHandle;
+    android::sp<IMotionSensorControllerListener> listener;
+    if (!openSensorAtIndex(0, sensorHandle, controllerHandle, listener)) return;
+
+    StartConfig config;
+    config.operationalMode = OperationalMode::MOTION;
+    config.noMotionSeconds = 30;
+    MOTIONSENSOR_START_SUCCESS(controllerHandle, config);
+
+    ::android::binder::Status status;
+    bool ret;
+    status = controllerHandle->clearActiveWindows(&ret);
+    UT_ASSERT_FALSE(status.isOk());
+    UT_ASSERT_EQUAL(status.exceptionCode(), Status::EX_ILLEGAL_STATE);
+
+    MOTIONSENSOR_STOP_SUCCESS(controllerHandle);
+    MOTIONSENSOR_CLOSE_SUCCESS(sensorHandle, controllerHandle);
+}
