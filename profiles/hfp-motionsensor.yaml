@@ -1,0 +1,39 @@
+# profiles/hfp-motionsensor.yaml
+# Hardware Feature Profile (HFP) for MotionSensor.
+# Describes the capabilities and default configuration of motion sensors
+# on this platform. Parsed by vts_motionsensor_parse_hfp().
+
+sensor:
+  motion:
+    - id: 0
+      sensorName: "PIR-Front-1"
+
+      sensitivity_range:
+        minSensitivity: 1
+        maxSensitivity: 10
+
+      supportsDeepSleepAutonomy: true
+
+      operational_modes:
+        - MOTION
+        - NO_MOTION
+
+      defaultStartConfig:
+        operationalMode: MOTION
+        noMotionSeconds: 5
+        activeStartSeconds: 0
+        activeStopSeconds: 0
+
+      active_windows:
+        - startTimeOfDaySeconds: 32400   # 09:00:00
+          endTimeOfDaySeconds: 61200     # 17:00:00
+        - startTimeOfDaySeconds: 72000   # 20:00:00
+          endTimeOfDaySeconds: 79200     # 22:00:00
+
+      requirements:
+        min_reaction_time_ms: 500
+
+      notes:
+        - "Front-facing PIR motion detector."
+        - "Supports autonomous operation."
+        - "Active windows can be configured via IMotionSensorController.setActiveWindows()."
