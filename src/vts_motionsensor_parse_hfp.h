@@ -26,31 +26,80 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <string>
+#include <vector>
+
+#include "com/rdk/hal/sensor/motion/OperationalMode.h"
+#include <ut_control_plane.h>
+#include "vts_motionsensor_helper_functions.h"
+
+using namespace com::rdk::hal::sensor::motion;
 
 /**
- * @brief Structure holding parsed device capabilities from HFP profile
+ * @brief Single motion sensor entry parsed from HFP profile.
+ *
+ * Mirrors the structure of motionsensorConfig_t from the vcomponent helper.
  */
-typedef struct
-{
-    int32_t  numSensors;                  /**< Number of motion sensors available */
-    int32_t  minSensitivity;             /**< Minimum sensitivity level (0 = unsupported) */
-    int32_t  maxSensitivity;             /**< Maximum sensitivity level (0 = unsupported) */
-    bool     supportsMotionMode;         /**< Supports MOTION operational mode */
-    bool     supportsNoMotionMode;       /**< Supports NO_MOTION operational mode */
-    bool     supportsAutonomousDeepSleep;/**< Supports autonomous operation during deep sleep */
-    bool     supportsActiveWindows;      /**< Supports time-based active windows */
-    int32_t  maxActiveWindows;           /**< Maximum number of active windows */
-    int32_t  minNoMotionSeconds;         /**< Minimum valid noMotionSeconds value */
-    int32_t  maxNoMotionSeconds;         /**< Maximum valid noMotionSeconds value */
-} MotionSensorDeviceInfo_t;
+typedef struct motionsensorHFP {
+    /* ==============================
+     * Sensor id (Immutable)
+     * ============================== */
+    int id;
+
+    /* ==============================
+     * Capabilities (Immutable)
+     * ============================== */
+    struct Capabilities {
+        std::string sensorName;              ///< Capabilities.sensorName
+        int minSensitivity;                  ///< Capabilities.minSensitivity
+        int maxSensitivity;                  ///< Capabilities.maxSensitivity
+        bool supportsDeepSleepAutonomy;      ///< Capabilities.supportsDeepSleepAutonomy
+    } capabilities;
+
+    /* ==============================
+     * Supported operational modes
+     * ============================== */
+    std::vector<OperationalMode> operationalModes;
+
+    /* ==============================
+     * Factory default StartConfig
+     * ============================== */
+    struct StartConfig {
+        OperationalMode operationalMode;
+        int noMotionSeconds;
+        int activeStartSeconds;
+        int activeStopSeconds;
+    } defaultStartConfig;
+
+    /* ==============================
+     * Active windows (factory defaults)
+     * ============================== */
+    struct ActiveWindow {
+        int startTimeOfDaySeconds;
+        int endTimeOfDaySeconds;
+    };
+    std::vector<ActiveWindow> activeWindows;
+    int minReactionTimeMs;
+    std::vector<std::string> notes;
+} motionsensorHFP_t;
 
 /**
- * @brief Parsed device info global (populated by vts_motionsensor_parse_hfp)
+ * @brief Top-level HFP structure holding all parsed sensors.
  */
-extern MotionSensorDeviceInfo_t gMotionSensorDeviceInfo;
+typedef struct motionsensorHFPFile {
+    std::vector<motionsensorHFP_t> sensors;
+} motionsensorHFPFile_t;
 
 /**
- * @brief Parse the hardware feature profile YAML for motion sensor capabilities
+ * @brief Parsed HFP global (populated by vts_motionsensor_parse_hfp).
+ */
+extern motionsensorHFPFile_t gMotionSensorHFP;
+
+/**
+ * @brief Parse the hardware feature profile YAML for all motion sensors.
+ *
+ * Populates gMotionSensorHFP.sensors with one entry per sensor found
+ * under the "sensor.motion" list in the HFP profile.
  */
 void vts_motionsensor_parse_hfp(void);
 

@@ -62,6 +62,9 @@ extern ut_control_keyStringMapping_t statusMotionSensorException_mapTable[];
 /* Boolean string map table */
 extern ut_control_keyStringMapping_t bool_mapTable_motionsensor[];
 
+/* OperationalMode string map table */
+extern const ut_control_keyStringMapping_t operationalMode_mapTable[];
+
 /**
  * @brief Wait for a motion event with timeout
  * @param eventListener   Pointer to the event listener

@@ -23,8 +23,16 @@
 
 #include "vts_motionsensor_helper_functions.h"
 #include <binder/Status.h>
+#include "com/rdk/hal/sensor/motion/OperationalMode.h"
 
 using android::binder::Status;
+
+/* OperationalMode map table */
+const ut_control_keyStringMapping_t operationalMode_mapTable[] = {
+    { "MOTION",    (int32_t)com::rdk::hal::sensor::motion::OperationalMode::MOTION },
+    { "NO_MOTION", (int32_t)com::rdk::hal::sensor::motion::OperationalMode::NO_MOTION },
+    { nullptr, -1 }
+};
 
 /* Exception code map table */
 ut_control_keyStringMapping_t statusMotionSensorException_mapTable[] = {

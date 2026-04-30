@@ -22,59 +22,89 @@
  */
 
 #include "vts_motionsensor_parse_hfp.h"
+#include "vts_motionsensor_helper_functions.h"
 #include <ut_kvp_profile.h>
 #include <ut_log.h>
 #include <string>
 
-using namespace std;
-
-/* Global device info structure */
-MotionSensorDeviceInfo_t gMotionSensorDeviceInfo = {};
+/* Global HFP structure */
+motionsensorHFPFile_t gMotionSensorHFP;
 
 void vts_motionsensor_parse_hfp(void)
 {
-    UT_LOG_INFO("vts_motionsensor_parse_hfp: Parsing HFP profile");
+    char subValue[UT_KVP_MAX_ELEMENT_SIZE];
 
-    /* Number of sensors */
-    gMotionSensorDeviceInfo.numSensors =
-        UT_KVP_PROFILE_GET_UINT32("IMotionSensorManager/numSensors");
+    const std::string sensorsKey = "sensor.motion";
 
-    /* Sensitivity range */
-    gMotionSensorDeviceInfo.minSensitivity =
-        UT_KVP_PROFILE_GET_UINT32("IMotionSensor/capabilities/minSensitivity");
-    gMotionSensorDeviceInfo.maxSensitivity =
-        UT_KVP_PROFILE_GET_UINT32("IMotionSensor/capabilities/maxSensitivity");
+    int numSensors = UT_KVP_PROFILE_GET_LIST_COUNT(sensorsKey.c_str());
+    gMotionSensorHFP.sensors.clear();
 
-    /* Operational mode support */
-    gMotionSensorDeviceInfo.supportsMotionMode =
-        UT_KVP_PROFILE_GET_BOOL("IMotionSensor/capabilities/supportsMotionMode");
-    gMotionSensorDeviceInfo.supportsNoMotionMode =
-        UT_KVP_PROFILE_GET_BOOL("IMotionSensor/capabilities/supportsNoMotionMode");
+    UT_LOG_INFO("vts_motionsensor_parse_hfp: Parsing %d sensor(s) from HFP profile", numSensors);
 
-    /* Deep sleep autonomous support */
-    gMotionSensorDeviceInfo.supportsAutonomousDeepSleep =
-        UT_KVP_PROFILE_GET_BOOL("IMotionSensor/capabilities/supportsAutonomousDeepSleep");
+    for (int i = 0; i < numSensors; ++i)
+    {
+        motionsensorHFP_t sensor;
+        const std::string baseKey = sensorsKey + "." + std::to_string(i);
 
-    /* Active windows support */
-    gMotionSensorDeviceInfo.supportsActiveWindows =
-        UT_KVP_PROFILE_GET_BOOL("IMotionSensor/capabilities/supportsActiveWindows");
-    gMotionSensorDeviceInfo.maxActiveWindows =
-        UT_KVP_PROFILE_GET_UINT32("IMotionSensor/capabilities/maxActiveWindows");
+        // id
+        sensor.id = UT_KVP_PROFILE_GET_UINT32((baseKey + ".id").c_str());
 
-    /* noMotionSeconds valid range */
-    gMotionSensorDeviceInfo.minNoMotionSeconds = 1;
-    gMotionSensorDeviceInfo.maxNoMotionSeconds = 86400;
+        // Capabilities
+        UT_KVP_PROFILE_GET_STRING((baseKey + ".sensorName").c_str(), subValue);
+        sensor.capabilities.sensorName = subValue;
+        sensor.capabilities.minSensitivity           = UT_KVP_PROFILE_GET_UINT32((baseKey + ".sensitivity_range.minSensitivity").c_str());
+        sensor.capabilities.maxSensitivity           = UT_KVP_PROFILE_GET_UINT32((baseKey + ".sensitivity_range.maxSensitivity").c_str());
+        sensor.capabilities.supportsDeepSleepAutonomy = UT_KVP_PROFILE_GET_BOOL((baseKey + ".supportsDeepSleepAutonomy").c_str());
 
-    UT_LOG_INFO("vts_motionsensor_parse_hfp: numSensors[%d] minSensitivity[%d] maxSensitivity[%d]",
-        gMotionSensorDeviceInfo.numSensors,
-        gMotionSensorDeviceInfo.minSensitivity,
-        gMotionSensorDeviceInfo.maxSensitivity);
+        // Operational modes
+        const std::string modesKey = baseKey + ".operational_modes";
+        int numModes = UT_KVP_PROFILE_GET_LIST_COUNT(modesKey.c_str());
+        sensor.operationalModes.clear();
+        for (int j = 0; j < numModes; ++j)
+        {
+            UT_KVP_PROFILE_GET_STRING((modesKey + "." + std::to_string(j)).c_str(), subValue);
+            OperationalMode mode = (OperationalMode)UT_Control_GetMapValue(operationalMode_mapTable, subValue, (int32_t)OperationalMode::MOTION);
+            sensor.operationalModes.push_back(mode);
+        }
 
-    UT_LOG_INFO("vts_motionsensor_parse_hfp: supportsMotionMode[%s] supportsNoMotionMode[%s] "
-        "supportsAutonomousDeepSleep[%s] supportsActiveWindows[%s] maxActiveWindows[%d]",
-        gMotionSensorDeviceInfo.supportsMotionMode ? "true" : "false",
-        gMotionSensorDeviceInfo.supportsNoMotionMode ? "true" : "false",
-        gMotionSensorDeviceInfo.supportsAutonomousDeepSleep ? "true" : "false",
-        gMotionSensorDeviceInfo.supportsActiveWindows ? "true" : "false",
-        gMotionSensorDeviceInfo.maxActiveWindows);
+        // Default StartConfig
+        const std::string startConfigKey = baseKey + ".defaultStartConfig";
+        UT_KVP_PROFILE_GET_STRING((startConfigKey + ".operationalMode").c_str(), subValue);
+        sensor.defaultStartConfig.operationalMode    = (OperationalMode)UT_Control_GetMapValue(operationalMode_mapTable, subValue, (int32_t)OperationalMode::MOTION);
+        sensor.defaultStartConfig.noMotionSeconds    = UT_KVP_PROFILE_GET_UINT32((startConfigKey + ".noMotionSeconds").c_str());
+        sensor.defaultStartConfig.activeStartSeconds = UT_KVP_PROFILE_GET_UINT32((startConfigKey + ".activeStartSeconds").c_str());
+        sensor.defaultStartConfig.activeStopSeconds  = UT_KVP_PROFILE_GET_UINT32((startConfigKey + ".activeStopSeconds").c_str());
+
+        // Active windows
+        const std::string windowsKey = baseKey + ".active_windows";
+        int numWindows = UT_KVP_PROFILE_GET_LIST_COUNT(windowsKey.c_str());
+        sensor.activeWindows.clear();
+        for (int j = 0; j < numWindows; ++j)
+        {
+            const std::string windowBaseKey = windowsKey + "." + std::to_string(j);
+            motionsensorHFP_t::ActiveWindow window;
+            window.startTimeOfDaySeconds = UT_KVP_PROFILE_GET_UINT32((windowBaseKey + ".startTimeOfDaySeconds").c_str());
+            window.endTimeOfDaySeconds   = UT_KVP_PROFILE_GET_UINT32((windowBaseKey + ".endTimeOfDaySeconds").c_str());
+            sensor.activeWindows.push_back(window);
+        }
+
+        // Requirements
+        sensor.minReactionTimeMs = UT_KVP_PROFILE_GET_UINT32((baseKey + ".requirements.min_reaction_time_ms").c_str());
+
+        // Notes
+        const std::string notesKey = baseKey + ".notes";
+        int numNotes = UT_KVP_PROFILE_GET_LIST_COUNT(notesKey.c_str());
+        sensor.notes.clear();
+        for (int j = 0; j < numNotes; ++j)
+        {
+            UT_KVP_PROFILE_GET_STRING((notesKey + "." + std::to_string(j)).c_str(), subValue);
+            sensor.notes.push_back(subValue);
+        }
+
+        UT_LOG_INFO("vts_motionsensor_parse_hfp: sensor[%d] id=%d name=%s minSensitivity=%d maxSensitivity=%d",
+            i, sensor.id, sensor.capabilities.sensorName.c_str(),
+            sensor.capabilities.minSensitivity, sensor.capabilities.maxSensitivity);
+
+        gMotionSensorHFP.sensors.push_back(sensor);
+    }
 }
