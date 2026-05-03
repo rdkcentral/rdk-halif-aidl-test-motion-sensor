@@ -67,6 +67,7 @@ android::binder::Status MotionSensorControllerListener::onStateChanged(
         lock_guard<mutex> lock(mStateMutex);
         mStateChanges.push({oldState, newState});
     }
+    mStateCv.notify_all();
     return android::binder::Status::ok();
 }
 
@@ -92,28 +93,60 @@ android::binder::Status MotionSensorControllerListener::onActiveWindowExited()
 
 bool MotionSensorControllerListener::getNextStateChange(pair<State, State>& stateChange)
 {
+    UT_LOG_INFO("MotionSensorControllerListener::getNextStateChange (no-wait) called");
     lock_guard<mutex> lock(mStateMutex);
     if (mStateChanges.empty())
+    {
+        UT_LOG_INFO("MotionSensorControllerListener::getNextStateChange - queue empty, returning false");
         return false;
+    }
     stateChange = mStateChanges.front();
     mStateChanges.pop();
+    UT_LOG_INFO("MotionSensorControllerListener::getNextStateChange - returned oldState:[%s] newState:[%s]",
+                ::com::rdk::hal::sensor::motion::toString(stateChange.first).c_str(),
+                ::com::rdk::hal::sensor::motion::toString(stateChange.second).c_str());
+    return true;
+}
+
+bool MotionSensorControllerListener::getNextStateChange(pair<State, State>& stateChange, chrono::milliseconds timeout)
+{
+    UT_LOG_INFO("MotionSensorControllerListener::getNextStateChange (timeout=%lldms) called",
+                static_cast<long long>(timeout.count()));
+    unique_lock<mutex> lock(mStateMutex);
+    bool got = mStateCv.wait_for(lock, timeout, [this]{ return !mStateChanges.empty(); });
+    if (!got)
+    {
+        UT_LOG_INFO("MotionSensorControllerListener::getNextStateChange - timed out after %lldms",
+                    static_cast<long long>(timeout.count()));
+        return false;
+    }
+    stateChange = mStateChanges.front();
+    mStateChanges.pop();
+    UT_LOG_INFO("MotionSensorControllerListener::getNextStateChange - returned oldState:[%s] newState:[%s]",
+                ::com::rdk::hal::sensor::motion::toString(stateChange.first).c_str(),
+                ::com::rdk::hal::sensor::motion::toString(stateChange.second).c_str());
     return true;
 }
 
 bool MotionSensorControllerListener::hasActiveWindowEntered()
 {
     lock_guard<mutex> lock(mWindowMutex);
+    UT_LOG_INFO("MotionSensorControllerListener::hasActiveWindowEntered returning [%s]",
+                mActiveWindowEntered ? "true" : "false");
     return mActiveWindowEntered;
 }
 
 bool MotionSensorControllerListener::hasActiveWindowExited()
 {
     lock_guard<mutex> lock(mWindowMutex);
+    UT_LOG_INFO("MotionSensorControllerListener::hasActiveWindowExited returning [%s]",
+                mActiveWindowExited ? "true" : "false");
     return mActiveWindowExited;
 }
 
 void MotionSensorControllerListener::resetStateQueue()
 {
+    UT_LOG_INFO("MotionSensorControllerListener::resetStateQueue called");
     lock_guard<mutex> lock(mStateMutex);
     queue<pair<State, State>> empty;
     swap(mStateChanges, empty);
@@ -121,6 +154,7 @@ void MotionSensorControllerListener::resetStateQueue()
 
 void MotionSensorControllerListener::resetActiveWindowFlags()
 {
+    UT_LOG_INFO("MotionSensorControllerListener::resetActiveWindowFlags called");
     lock_guard<mutex> lock(mWindowMutex);
     mActiveWindowEntered = false;
     mActiveWindowExited  = false;
@@ -139,27 +173,56 @@ android::binder::Status MotionSensorEventListener::onEvent(
         lock_guard<mutex> lock(mEventMutex);
         mEventQueue.push(mode);
     }
+    mEventCv.notify_all();
     return android::binder::Status::ok();
 }
 
 bool MotionSensorEventListener::getNextEvent(OperationalMode& outMode)
 {
+    UT_LOG_INFO("MotionSensorEventListener::getNextEvent (no-wait) called");
     lock_guard<mutex> lock(mEventMutex);
     if (mEventQueue.empty())
+    {
+        UT_LOG_INFO("MotionSensorEventListener::getNextEvent - queue empty, returning false");
         return false;
+    }
     outMode = mEventQueue.front();
     mEventQueue.pop();
+    UT_LOG_INFO("MotionSensorEventListener::getNextEvent - returned mode:[%s]",
+                ::com::rdk::hal::sensor::motion::toString(outMode).c_str());
+    return true;
+}
+
+bool MotionSensorEventListener::getNextEvent(OperationalMode& outMode, chrono::milliseconds timeout)
+{
+    UT_LOG_INFO("MotionSensorEventListener::getNextEvent (timeout=%lldms) called",
+                static_cast<long long>(timeout.count()));
+    unique_lock<mutex> lock(mEventMutex);
+    bool got = mEventCv.wait_for(lock, timeout, [this]{ return !mEventQueue.empty(); });
+    if (!got)
+    {
+        UT_LOG_INFO("MotionSensorEventListener::getNextEvent - timed out after %lldms",
+                    static_cast<long long>(timeout.count()));
+        return false;
+    }
+    outMode = mEventQueue.front();
+    mEventQueue.pop();
+    UT_LOG_INFO("MotionSensorEventListener::getNextEvent - returned mode:[%s]",
+                ::com::rdk::hal::sensor::motion::toString(outMode).c_str());
     return true;
 }
 
 bool MotionSensorEventListener::hasEvent()
 {
     lock_guard<mutex> lock(mEventMutex);
+    UT_LOG_INFO("MotionSensorEventListener::hasEvent returning [%s]",
+                mEventQueue.empty() ? "false" : "true");
     return !mEventQueue.empty();
 }
 
 void MotionSensorEventListener::resetEventQueue()
 {
+    UT_LOG_INFO("MotionSensorEventListener::resetEventQueue called");
     lock_guard<mutex> lock(mEventMutex);
     queue<OperationalMode> empty;
     swap(mEventQueue, empty);

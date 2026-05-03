@@ -26,28 +26,73 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <string>
+#include <ut.h>
+
+#define VTS_MOTIONSENSOR_TEST_CONFIG_PATH "./test_configuration/vts_l3_MotionSensor.yaml"
 
 /**
- * @brief L3 test configuration for motion event tests
+ * @brief L3 config for motion/no-motion event detection tests
  */
-typedef struct
+typedef struct motionSensorL3EventTestConfig
 {
-    int32_t  operationalMode;           /**< 0=MOTION, 1=NO_MOTION */
-    int32_t  noMotionSeconds;           /**< Seconds of no-motion before NO_MOTION event */
-    int32_t  eventWaitTimeoutMs;        /**< Timeout to wait for event in ms */
-    int32_t  activeWindowStartSeconds;  /**< Active window start (seconds of day) */
-    int32_t  activeWindowEndSeconds;    /**< Active window end (seconds of day) */
-    bool     useActiveWindow;           /**< Whether to configure an active window */
-} MotionSensorL3TestConfig_t;
+    int32_t  sensorIndex;           /**< Index into sensor list (0-based) */
+    int32_t  operationalMode;       /**< 0=MOTION, 1=NO_MOTION */
+    int32_t  noMotionSeconds;       /**< Seconds of no-motion threshold */
+    int32_t  activeStartSeconds;    /**< Delay before monitoring activates */
+    int32_t  activeStopSeconds;     /**< Duration of monitoring (0=indefinite) */
+    int32_t  eventTimeoutMs;        /**< Timeout waiting for event from host */
+} motionSensorL3EventTestConfig_t;
 
 /**
- * @brief Global L3 test configuration (populated by vts_motionsensor_parse_testconfig)
+ * @brief L3 config for active window behavior test
  */
-extern MotionSensorL3TestConfig_t gMotionSensorL3Config;
+typedef struct motionSensorL3ActiveWindowTestConfig
+{
+    int32_t  sensorIndex;
+    int32_t  windowStartSeconds;    /**< Active window start (seconds of day) */
+    int32_t  windowEndSeconds;      /**< Active window end (seconds of day) */
+    int32_t  eventTimeoutMs;
+} motionSensorL3ActiveWindowTestConfig_t;
 
 /**
- * @brief Parse the L3 YAML test configuration file
+ * @brief L3 config for deep sleep autonomy test
  */
-void vts_motionsensor_parse_testconfig(void);
+typedef struct motionSensorL3DeepSleepTestConfig
+{
+    int32_t  sensorIndex;
+    int32_t  deepSleepDurationSeconds;
+    int32_t  eventTimeoutMs;
+} motionSensorL3DeepSleepTestConfig_t;
+
+/**
+ * @brief Parse event detection test config (MotionEventDetection / NoMotionEventDetection)
+ */
+UT_status_t vts_motionsensor_parse_eventtest_config(
+    const char *configFile,
+    const char *module,
+    const char *testGroup,
+    const char *testName,
+    motionSensorL3EventTestConfig_t& config);
+
+/**
+ * @brief Parse active window test config
+ */
+UT_status_t vts_motionsensor_parse_activewindow_config(
+    const char *configFile,
+    const char *module,
+    const char *testGroup,
+    const char *testName,
+    motionSensorL3ActiveWindowTestConfig_t& config);
+
+/**
+ * @brief Parse deep sleep autonomy test config
+ */
+UT_status_t vts_motionsensor_parse_deepsleep_config(
+    const char *configFile,
+    const char *module,
+    const char *testGroup,
+    const char *testName,
+    motionSensorL3DeepSleepTestConfig_t& config);
 
 #endif // __VTS_MOTIONSENSOR_PARSE_TESTCONFIG_H__

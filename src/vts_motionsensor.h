@@ -58,6 +58,7 @@
 #include <sstream>
 #include <queue>
 #include <mutex>
+#include <condition_variable>
 #include <chrono>
 #include <thread>
 
@@ -557,6 +558,7 @@ public:
     android::binder::Status onActiveWindowExited() override;
 
     bool getNextStateChange(pair<State, State>& stateChange);
+    bool getNextStateChange(pair<State, State>& stateChange, chrono::milliseconds timeout);
     bool hasActiveWindowEntered();
     bool hasActiveWindowExited();
     void resetStateQueue();
@@ -564,6 +566,7 @@ public:
 
 private:
     mutex mStateMutex;
+    condition_variable mStateCv;
     mutex mWindowMutex;
     queue<pair<State, State>> mStateChanges;
     bool mActiveWindowEntered{false};
@@ -580,11 +583,13 @@ public:
         ::com::rdk::hal::sensor::motion::OperationalMode mode) override;
 
     bool getNextEvent(OperationalMode& outMode);
+    bool getNextEvent(OperationalMode& outMode, chrono::milliseconds timeout);
     bool hasEvent();
     void resetEventQueue();
 
 private:
     mutex mEventMutex;
+    condition_variable mEventCv;
     queue<OperationalMode> mEventQueue;
 };
 
