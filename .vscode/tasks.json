@@ -7,7 +7,7 @@
       "command": "bash",
       "args": [
         "-c",
-        "if [[ $(uname -s) == MINGW* ]]; then sed -i \"s/^[[:space:]]*import pty/#import pty/\" \"${workspaceFolder}/host/tests/raft/framework/plugins/ut_raft/interactiveShell.py\" && sed -i \"s/^[[:space:]]*import fcntl/#import fcntl/\" \"${workspaceFolder}/host/tests/raft/framework/plugins/ut_raft/interactiveShell.py\"; fi"
+        "if [[ $(uname -s) == MINGW* ]]; then sed -i \"s/^[[:space:]]*import pty/#import pty/\" \"${workspaceFolder}/host/raft/framework/plugins/ut_raft/interactiveShell.py\" && sed -i \"s/^[[:space:]]*import fcntl/#import fcntl/\" \"${workspaceFolder}/host/raft/framework/plugins/ut_raft/interactiveShell.py\"; fi"
       ],
       "options": {
         "cwd": "${workspaceFolder}"
