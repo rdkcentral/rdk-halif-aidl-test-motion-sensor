@@ -13,11 +13,13 @@
 
 import os
 import sys
+import time
+import yaml
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(os.path.join(dir_path, "../"))
 sys.path.append(dir_path)
-sys.path.append(os.path.join(dir_path, "raft"))
+sys.path.append(os.path.join(dir_path, "..", "raft"))
 
 from raft.framework.core.logModule import logModule
 from vts_motionsensor_helper import motionSensorHelperClass
@@ -25,10 +27,16 @@ from vts_motionsensor_helper import motionSensorHelperClass
 
 class VTS_MOTIONSENSOR_L3_MotionEventDetection(motionSensorHelperClass):
     """
-    L3 test: Verify that the motion sensor correctly reports a MOTION event
-    when it is started in MOTION operational mode and a motion stimulus arrives.
-    Also verifies that unregistering the event listener stops event delivery.
+    L3 test: Verify MOTION events are delivered end-to-end.
+
+    Iterates over *all* sensors in the HFP profile (N sensors).  For each
+    sensor it updates ``sensor_index`` in the L3 YAML, uploads it to the
+    target, runs the C++ MotionEventDetection test case, and injects exactly
+    ``num_motion_events`` MOTION stimuli via the control-plane one per C++
+    loop iteration, spaced ``INTER_EVENT_DELAY_S`` seconds apart.
     """
+
+    INTER_EVENT_DELAY_S = 2.0   # seconds between successive event injections
 
     def __init__(self, log: logModule = None):
         self.testName = "MotionSensor_L3_MotionEventDetection"
@@ -40,23 +48,66 @@ class VTS_MOTIONSENSOR_L3_MotionEventDetection(motionSensorHelperClass):
         Main test function.
 
         Flow:
-          1. Upload L3 YAML config to target.
-          2. Schedule a MOTION event trigger 3 s after test start.
-          3. Run the MotionEventDetection test case on the DUT.
-          4. Return pass/fail.
+          1. Read ``num_motion_events`` and ``event_timeout_ms`` from L3 YAML.
+          2. Read sensor IDs from the HFP profile.
+          3. For each sensor (sensor_index 0..N-1):
+             a. Update ``sensor_index`` in L3 YAML and save.
+             b. Run ``runL3Test("MotionEventDetection", triggerCallable=...)``
+                which uploads the config, starts the binary, then fires
+                ``num_motion_events`` MOTION events at the correct sensor ID.
+          4. Return True only if every sensor passed.
 
         Returns:
-            bool: True if the test case passed, False otherwise.
+            bool: True if all sensors passed, False otherwise.
         """
+        # Read test parameters from the local L3 config YAML.
+        with open(self.l3TestConfigFile, 'r') as fh:
+            l3cfg = yaml.safe_load(fh)
+        test_node    = l3cfg['motionsensor']['L3']['MotionEventDetection']
+        num_events   = int(test_node.get('num_events', 1))
+        timeout_ms   = int(test_node.get('timeout_ms', 30000))
+        # Fire the trigger at half the C++ event-wait timeout so it always
+        # arrives before the test times out, regardless of config changes.
+        trigger_delay = (timeout_ms / 1000.0) / 2.0
+
+        # Read all sensor IDs from the HFP profile.
+        sensor_ids = self._readSensorIdsFromProfile()
+        if not sensor_ids:
+            self.log.error("[MotionEventDetection] No sensor IDs found in profile � aborting")
+            return False
+
         self.utilities.change_directory(self.hal_session, self.targetWorkspace)
 
-        # Pre-schedule a MOTION trigger; the C++ test will block waiting for it.
-        triggerThread = self.triggerEventAfterDelay(
-            self.motionSensorDevice.triggerMotionEvent,
-            delay=3.0,
-            sensorId=0)
+        all_passed = True
+        for sensor_index, sensor_id in enumerate(sensor_ids):
+            self.log.info(
+                f"[MotionEventDetection] sensor_index={sensor_index} "
+                f"sensor_id={sensor_id}  num_events={num_events}")
 
-        return self.runL3Test("MotionEventDetection", triggerThread)
+            # Update sensor_index so the C++ test exercises this sensor.
+            l3cfg['motionsensor']['L3']['MotionEventDetection']['sensor_index'] = sensor_index
+            with open(self.l3TestConfigFile, 'w') as fh:
+                yaml.dump(l3cfg, fh, default_flow_style=False, sort_keys=False)
+
+            # Build a no-arg callable that fires num_events stimuli spaced
+            # INTER_EVENT_DELAY_S apart, targeting this sensor's CP id.
+            def _make_trigger(sid: int, n: int):
+                def _trigger():
+                    for i in range(n):
+                        if i > 0:
+                            time.sleep(VTS_MOTIONSENSOR_L3_MotionEventDetection.INTER_EVENT_DELAY_S)
+                        self.motionSensorDevice.triggerMotionEvent(sensorId=sid)
+                return _trigger
+
+            result = self.runL3Test(
+                "MotionEventDetection",
+                triggerCallable=_make_trigger(sensor_id, num_events),
+                triggerDelay=trigger_delay)
+
+            if not result:
+                all_passed = False
+
+        return all_passed
 
 
 if __name__ == "__main__":

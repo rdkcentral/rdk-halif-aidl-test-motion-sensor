@@ -13,6 +13,7 @@
 
 import os
 import sys
+import yaml
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(dir_path)
@@ -24,8 +25,8 @@ from motionController.MotionSensorControllerInterface import MotionSensorControl
 
 class virtualMotionSensor(MotionSensorControllerInterface):
     """
-    Virtual MotionSensor controller that sends curl commands to the vcomponent
-    control-plane endpoint to simulate motion sensor events.
+    Virtual MotionSensor controller that sends YAML commands to the vcomponent
+    control-plane endpoint via utPlaneController to simulate motion sensor events.
     """
 
     def __init__(self, session, prompt: str = "~#", port: int = 8080):
@@ -40,21 +41,28 @@ class virtualMotionSensor(MotionSensorControllerInterface):
         super().__init__(session, prompt, port)
         self.utilities = utBaseUtils()
 
-    def _sendCommand(self, yaml_content: str):
+    def _sendCommand(self, payload: dict):
         """
-        Sends a YAML command string to the vcomponent control-plane endpoint.
+        Writes *payload* as YAML to a temp file on the device via a bash
 
         Args:
-            yaml_content (str): YAML payload to POST.
+            payload (dict): Command payload to serialise and POST.
         """
-        escaped = yaml_content.replace('"', '\\"')
-        cmd = (
-            f'curl -X POST '
-            f'-H "Content-Type: application/x-yaml" '
-            f'--data-binary "{escaped}" '
-            f'"http://localhost:{self.port}/api/postKVP"'
+        yaml_str = yaml.dump(payload)
+        tmp = "/tmp/ms_cp.yaml"
+
+        # Write YAML to a temp file using a bash heredoc.
+        # sshConsole.write(list) sends each element as a separate line.
+        heredoc_lines = [f"cat > {tmp} << 'YAML_EOF'"]
+        heredoc_lines.extend(yaml_str.rstrip("\n").splitlines())
+        heredoc_lines.append("YAML_EOF")
+        self.session.write(heredoc_lines)
+
+        # POST the file no quoting issues, newlines preserved exactly.
+        self.session.write(
+            f'curl -s -X POST -H "Content-Type: application/x-yaml" '
+            f'--data-binary @{tmp} "http://localhost:{self.port}/api/postKVP"'
         )
-        self.session.write(cmd)
 
     def triggerMotionEvent(self, sensorId: int):
         """
@@ -63,13 +71,13 @@ class virtualMotionSensor(MotionSensorControllerInterface):
         Args:
             sensorId (int): ID of the sensor to trigger.
         """
-        yaml_content = (
-            "IMotionSensor:\n"
-            "  command: MOTION_SENSOR_EVENT\n"
-            f"  sensor_id: {sensorId}\n"
-            "  event: MOTION\n"
-        )
-        self._sendCommand(yaml_content)
+        self._sendCommand({
+            "IMotionSensor": {
+                "command": "MOTION_SENSOR_EVENT",
+                "sensor_id": sensorId,
+                "event": "MOTION",
+            }
+        })
 
     def triggerNoMotionEvent(self, sensorId: int):
         """
@@ -78,13 +86,13 @@ class virtualMotionSensor(MotionSensorControllerInterface):
         Args:
             sensorId (int): ID of the sensor to trigger.
         """
-        yaml_content = (
-            "IMotionSensor:\n"
-            "  command: MOTION_SENSOR_EVENT\n"
-            f"  sensor_id: {sensorId}\n"
-            "  event: NO_MOTION\n"
-        )
-        self._sendCommand(yaml_content)
+        self._sendCommand({
+            "IMotionSensor": {
+                "command": "MOTION_SENSOR_EVENT",
+                "sensor_id": sensorId,
+                "event": "NO_MOTION",
+            }
+        })
 
     def triggerDeepSleepStart(self, sensorId: int):
         """
@@ -93,12 +101,12 @@ class virtualMotionSensor(MotionSensorControllerInterface):
         Args:
             sensorId (int): ID of the sensor affected.
         """
-        yaml_content = (
-            "IMotionSensor:\n"
-            "  command: MOTION_SENSOR_DEEP_SLEEP_START\n"
-            f"  sensor_id: {sensorId}\n"
-        )
-        self._sendCommand(yaml_content)
+        self._sendCommand({
+            "IMotionSensor": {
+                "command": "MOTION_SENSOR_DEEP_SLEEP_START",
+                "sensor_id": sensorId,
+            }
+        })
 
     def triggerDeepSleepEnd(self, sensorId: int):
         """
@@ -107,9 +115,9 @@ class virtualMotionSensor(MotionSensorControllerInterface):
         Args:
             sensorId (int): ID of the sensor affected.
         """
-        yaml_content = (
-            "IMotionSensor:\n"
-            "  command: MOTION_SENSOR_DEEP_SLEEP_END\n"
-            f"  sensor_id: {sensorId}\n"
-        )
-        self._sendCommand(yaml_content)
+        self._sendCommand({
+            "IMotionSensor": {
+                "command": "MOTION_SENSOR_DEEP_SLEEP_END",
+                "sensor_id": sensorId,
+            }
+        })

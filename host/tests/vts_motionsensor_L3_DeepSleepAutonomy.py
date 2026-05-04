@@ -19,7 +19,8 @@ import threading
 dir_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(os.path.join(dir_path, "../"))
 sys.path.append(dir_path)
-sys.path.append(os.path.join(dir_path, "raft"))
+sys.path.append(os.path.join(dir_path, "..", "raft"))
+
 
 from raft.framework.core.logModule import logModule
 from vts_motionsensor_helper import motionSensorHelperClass

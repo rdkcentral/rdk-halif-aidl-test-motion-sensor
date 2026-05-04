@@ -36,6 +36,7 @@ motionsensor:
       active_start_seconds: 0
       active_stop_seconds: 0
       event_timeout_ms: 30000
+      num_events: 3
     ActiveWindowBehavior:
       sensor_index: 0
       window_start_seconds: 0

@@ -16,11 +16,12 @@ import sys
 import tarfile
 import time
 import threading
+import yaml
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(os.path.join(dir_path, "../"))
 sys.path.append(dir_path)
-sys.path.append(os.path.join(dir_path, "raft"))
+sys.path.append(os.path.join(dir_path, "..", "raft"))
 
 from raft.framework.plugins.ut_raft.configRead import ConfigRead
 from raft.framework.plugins.ut_raft import utHelperClass
@@ -98,11 +99,16 @@ class motionSensorHelperClass(utHelperClass):
                     self.hal_session, target_tarfile, self.targetWorkspace)
 
         #TODO: remove once the vendor layer start handled by vDevice service
+        self.vcomponentLogFile = "/tmp/vcomponent_motionsensor.log"
         self.utilities.change_directory(
             self.hal_session_1, self.targetWorkspace)
         self.hal_session_1.write(f"pkill -f {self.cpe.get('motionsensor_process_name')} 2>/dev/null; sleep 1")
         time.sleep(1)
-        self.hal_session_1.write(f"./{self.cpe.get('motionsensor_process_name')} --port {controllerPort} &")
+        # Redirect stdout+stderr to a log file; read back via hal_session_1 after
+        # each test case so vcomponent logs appear in the VTS report.
+        self.hal_session_1.write(
+            f"./{self.cpe.get('motionsensor_process_name')} --port {controllerPort} "
+            f"> {self.vcomponentLogFile} 2>&1 &")
         time.sleep(2)
 
         self.motionSensorDevice = MotionSensorController(
@@ -111,35 +117,44 @@ class motionSensorHelperClass(utHelperClass):
             self.cpe.get("prompt"),
             controllerPort)
 
-    def triggerEventAfterDelay(self, triggerFunc, delay: float = 2.0, **kwargs):
+    def _readSensorIdsFromProfile(self) -> list:
         """
-        Runs triggerFunc(**kwargs) in a background thread after `delay` seconds.
-        Returns the Thread object so the caller can .join() it.
-
-        Args:
-            triggerFunc: Callable to invoke (e.g. self.motionSensorDevice.triggerMotionEvent).
-            delay (float): Seconds to wait before invoking triggerFunc.
-            **kwargs: Arguments forwarded to triggerFunc.
-
-        Returns:
-            threading.Thread: The started thread.
+        Reads sensor IDs from the local HFP profile YAML (``self.moduleHFPFile``).
+        Returns a list of integer IDs in the same order as the profile
+        (index 0 = sensor_index 0 passed to ``getSensorAtIndex`` in C++).
+        Falls back to ``[0]`` if the profile cannot be read.
         """
-        def _run():
-            time.sleep(delay)
-            triggerFunc(**kwargs)
+        try:
+            with open(self.moduleHFPFile, 'r') as fh:
+                profile = yaml.safe_load(fh)
+            sensors = profile.get('sensor', {}).get('motion', [])
+            ids = [int(s['id']) for s in sensors if 'id' in s]
+            if not ids:
+                self.log.warn("[_readSensorIdsFromProfile] No sensors found in profile, defaulting to id=0")
+                return [0]
+            self.log.info(f"[_readSensorIdsFromProfile] Found {len(ids)} sensor(s): {ids}")
+            return ids
+        except Exception as exc:
+            self.log.warn(f"[_readSensorIdsFromProfile] Could not read '{self.moduleHFPFile}': {exc}")
+            return [0]
 
-        t = threading.Thread(target=_run, daemon=True)
-        t.start()
-        return t
-
-    def runL3Test(self, testcase: str, triggerThread=None) -> bool:
+    def runL3Test(self, testcase: str, triggerCallable=None, triggerDelay: float = 25.0) -> bool:
         """
-        Uploads the L3 config YAML to the target, selects the test case in the
-        UT menu, collects results, and returns the pass/fail bool.
+        Uploads the L3 config YAML to the target, starts the test binary, fires
+        the optional trigger callback in a background thread (after the binary is
+        running), selects the test case in the UT menu, collects results, and
+        returns the pass/fail bool.
+
+        The trigger thread is started *after* utMenu.start() so the test binary
+        is already running before any stimulus is sent matching the CEC
+        reference pattern.
 
         Args:
             testcase (str): Test case name within VTS_L3_MOTIONSENSOR.
-            triggerThread (threading.Thread, optional): Thread to join after test.
+            triggerCallable (callable, optional): No-arg callable to run in a
+                background thread ``triggerDelay`` seconds after utMenu.start().
+            triggerDelay (float): Seconds to wait after utMenu.start() before
+                invoking triggerCallable. Defaults to 3.0.
 
         Returns:
             bool: True if the test passed, False otherwise.
@@ -147,6 +162,16 @@ class motionSensorHelperClass(utHelperClass):
         self.utilities.sftpCopy(
             self.hal_session, self.l3TestConfigFile, self.l3TestConfigFolder)
         self.utMenu.start()
+
+        # Start trigger AFTER the test binary is running (CEC pattern).
+        triggerThread = None
+        if triggerCallable is not None:
+            def _run():
+                time.sleep(triggerDelay)
+                triggerCallable()
+            triggerThread = threading.Thread(target=_run, daemon=True)
+            triggerThread.start()
+
         self.log.stepStart(
             f"Test Suite: {MOTIONSENSOR_L3_TEST_SUITE_NAME}  Test Case: {testcase}")
         output = self.utMenu.select(
@@ -156,7 +181,38 @@ class motionSensorHelperClass(utHelperClass):
         results = self.utMenu.collect_results(output, True)
         if results is None:
             results = False
+
+        self._emitVcomponentLogs(testcase)
+
         self.log.stepResult(
             results,
             f"Test Suite: {MOTIONSENSOR_L3_TEST_SUITE_NAME}  Test Case: {testcase}")
         return results
+
+    def _emitVcomponentLogs(self, testcase: str):
+        """
+        Reads the vcomponent log file from the target via hal_session_1 and emits
+        each line into the VTS log, then truncates the file so the next test case
+        sees only its own output.
+
+        hal_session_1 is used (not hal_session) because hal_session has the UT
+        menu running on it; hal_session_1 is the dedicated vcomponent session and
+        is free to run shell commands between control-plane interactions.
+
+        Args:
+            testcase (str): Test case name, used only for the log header.
+        """
+        try:
+            prompt = self.cpe.get("prompt", "~#")
+            self.hal_session_1.write(f"cat {self.vcomponentLogFile}")
+            logContent = self.hal_session_1.read_until_prompt(prompt, timeout=5)
+            self.log.info(f"--- vcomponent logs for {testcase} ---")
+            for line in logContent.splitlines():
+                stripped = line.strip()
+                if stripped:
+                    self.log.info(f"[vcomponent] {stripped}")
+            self.log.info(f"--- end vcomponent logs for {testcase} ---")
+            # Truncate so the next test case starts with a clean log.
+            self.hal_session_1.write(f"> {self.vcomponentLogFile}")
+        except Exception as exc:
+            self.log.warn(f"[vcomponent log capture] Could not read log file: {exc}")
