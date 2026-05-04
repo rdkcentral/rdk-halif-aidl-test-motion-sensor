@@ -41,7 +41,8 @@ typedef struct motionSensorL3EventTestConfig
     int32_t  noMotionSeconds;       /**< Seconds of no-motion threshold */
     int32_t  activeStartSeconds;    /**< Delay before monitoring activates */
     int32_t  activeStopSeconds;     /**< Duration of monitoring (0=indefinite) */
-    int32_t  eventTimeoutMs;        /**< Timeout waiting for event from host */
+    int32_t  eventTimeoutMs;        /**< Timeout waiting for each event from host */
+    int32_t  numEvents;             /**< Number of events to expect (N), set by Python */
 } motionSensorL3EventTestConfig_t;
 
 /**

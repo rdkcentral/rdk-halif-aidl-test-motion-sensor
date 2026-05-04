@@ -66,13 +66,16 @@ UT_status_t vts_motionsensor_parse_eventtest_config(
     config.activeStartSeconds = (int32_t)ut_kvp_getUInt32Field(kvp, (node + ".active_start_seconds").c_str());
     config.activeStopSeconds  = (int32_t)ut_kvp_getUInt32Field(kvp, (node + ".active_stop_seconds").c_str());
     config.eventTimeoutMs     = (int32_t)ut_kvp_getUInt32Field(kvp, (node + ".event_timeout_ms").c_str());
+    config.numEvents = (int32_t)ut_kvp_getUInt32Field(kvp, (node + ".num_events").c_str());
+    if (config.numEvents <= 0) config.numEvents = 1;
 
     char modeStr[64] = {};
     ut_kvp_getStringField(kvp, (node + ".operational_mode").c_str(), modeStr, sizeof(modeStr));
     config.operationalMode = (std::string(modeStr) == "NO_MOTION") ? 1 : 0;
 
-    UT_LOG_INFO("[MOTIONSENSOR_TESTCONFIG] %s: sensorIndex=%d mode=%s noMotionSecs=%d timeoutMs=%d",
-        testName, config.sensorIndex, modeStr, config.noMotionSeconds, config.eventTimeoutMs);
+    UT_LOG_INFO("[MOTIONSENSOR_TESTCONFIG] %s: sensorIndex=%d mode=%s noMotionSecs=%d timeoutMs=%d numEvents=%d",
+        testName, config.sensorIndex, modeStr, config.noMotionSeconds, config.eventTimeoutMs,
+        config.numEvents);
 
     kvp_destroy_instance(kvp);
     return UT_STATUS_OK;

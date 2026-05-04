@@ -152,17 +152,24 @@ public:
 /* ========================================================================== */
 
 /**
- * @brief Validate motion event delivery in MOTION mode.
+ * @brief Validate MOTION mode event delivery for a sensor in MOTION mode.
+ *
+ * The sensor index (sensor_index) and number of motion events to receive
+ * (num_events) are driven by the Python host test, which writes them
+ * into the YAML config before uploading it to the target.  Python is also
+ * responsible for triggering exactly num_events MOTION events via the
+ * UT control plane — one per iteration of the receive loop below.
  *
  * Steps:
- * 1. Parse test config (sensor index, timeout, start config).
- * 2. Start sensor in MOTION mode.
- * 3. Wait for STARTED state.
- * 4. Host injects a MOTION_SENSOR_EVENT via UT control plane.
- * 5. Verify event arrives with correct type (MOTION).
- * 6. Unregister event listener; inject another event from host.
- * 7. Verify no event is delivered after unregistration.
- * 8. Stop sensor.
+ * 1. Parse test config: sensor_index, num_events (N), timeouts.
+ * 2. Verify no spurious/stale events exist before the test begins.
+ * 3. Confirm no events arrive before listener registration (listener-gate).
+ * 4. Re-register listener; start sensor in MOTION mode; wait for STARTED.
+ * 5. Loop N times — for each iteration:
+ *    a. Block until the next MOTION event arrives (within eventTimeoutMs).
+ *    b. Verify event type == OperationalMode::MOTION.
+ * 6. Stop sensor; verify no spurious events after stop.
+ * 7. Unregister listener; verify no events after unregistration.
  *
  * **Test Group ID:** Basic: 03@n
  * **Test Case ID:** 001@n
@@ -184,51 +191,81 @@ UT_ADD_TEST(VTS_L3_MOTIONSENSOR, MotionEventDetection)
     SensorTuple *tup = nullptr;
     UT_ASSERT_TRUE_FATAL(getSensorAtIndex(cfg.sensorIndex, tup));
 
-    auto& sensor      = std::get<1>(*tup);
-    auto& ctrlLsn     = std::get<2>(*tup);
-    auto& evtLsn      = std::get<3>(*tup);
-    auto& controller  = std::get<4>(*tup);
+    auto& sensor     = std::get<1>(*tup);
+    auto& ctrlLsn    = std::get<2>(*tup);
+    auto& evtLsn     = std::get<3>(*tup);
+    auto& controller = std::get<4>(*tup);
+
+    UT_LOG_INFO("[L3 MotionEventDetection] sensorIndex=%d numEvents=%d timeoutMs=%d",
+        cfg.sensorIndex, cfg.numEvents, cfg.eventTimeoutMs);
 
     ctrlLsn->resetStateQueue();
     evtLsn->resetEventQueue();
 
-    /* Build start config */
+    /* Step 2: No spurious/stale events before test begins */
+    {
+        OperationalMode staleMode;
+        bool gotStale = evtLsn->getNextEvent(staleMode, chrono::milliseconds(200));
+        UT_ASSERT_FALSE(gotStale);
+    }
+
+    /* Step 3: Listener-gate — unregister, confirm silence, then re-register */
+    MOTIONSENSOR_UNREGISTER_EVENT_SUCCESS(sensor, evtLsn);
+    {
+        OperationalMode preRegMode;
+        bool gotPreReg = evtLsn->getNextEvent(preRegMode, chrono::milliseconds(500));
+        UT_ASSERT_FALSE(gotPreReg);
+    }
+    MOTIONSENSOR_REGISTER_EVENT_SUCCESS(sensor, evtLsn);
+    evtLsn->resetEventQueue();
+
+    /* Step 4: Start sensor in MOTION mode */
     StartConfig startCfg;
-    startCfg.operationalMode   = OperationalMode::MOTION;
-    startCfg.noMotionSeconds   = cfg.noMotionSeconds;
-    startCfg.activeStartSeconds= cfg.activeStartSeconds;
-    startCfg.activeStopSeconds = cfg.activeStopSeconds;
+    startCfg.operationalMode    = OperationalMode::MOTION;
+    startCfg.noMotionSeconds    = cfg.noMotionSeconds;
+    startCfg.activeStartSeconds = cfg.activeStartSeconds;
+    startCfg.activeStopSeconds  = cfg.activeStopSeconds;
 
     MOTIONSENSOR_START_SUCCESS(controller, startCfg);
 
-    /* Wait for STARTED state */
     State lastState;
     MOTIONSENSOR_WAIT_FOR_STATE(sensor, State::STARTED, lastState);
     UT_ASSERT_EQUAL(lastState, State::STARTED);
 
-    /* Host will inject MOTION_SENSOR_EVENT via control plane.
-     * Block until event arrives or timeout. */
-    OperationalMode receivedMode;
-    bool gotEvent = evtLsn->getNextEvent(receivedMode, chrono::milliseconds(cfg.eventTimeoutMs));
-    UT_ASSERT_TRUE(gotEvent);
-    UT_ASSERT_EQUAL(receivedMode, OperationalMode::MOTION);
+    /* Step 5: Receive N MOTION events — Python injects one per iteration */
+    for (int32_t evtNum = 0; evtNum < cfg.numEvents; ++evtNum)
+    {
+        OperationalMode receivedMode;
+        bool gotEvent = evtLsn->getNextEvent(receivedMode, chrono::milliseconds(cfg.eventTimeoutMs));
+        UT_ASSERT_TRUE(gotEvent);
+        UT_ASSERT_EQUAL(receivedMode, OperationalMode::MOTION);
+        UT_LOG_INFO("[L3 MotionEventDetection] Event %d/%d received: mode=MOTION",
+            evtNum + 1, cfg.numEvents);
+    }
 
-    /* Unregister listener — subsequent events must NOT be delivered */
-    MOTIONSENSOR_UNREGISTER_EVENT_SUCCESS(sensor, evtLsn);
-    evtLsn->resetEventQueue();
-
-    /* Host injects another MOTION_SENSOR_EVENT — should not arrive */
-    OperationalMode staleMode;
-    bool gotStale = evtLsn->getNextEvent(staleMode, chrono::milliseconds(2000));
-    UT_ASSERT_FALSE(gotStale);
-
-    /* Re-register for TearDown */
-    MOTIONSENSOR_REGISTER_EVENT_SUCCESS(sensor, evtLsn);
-
-    /* Stop */
+    /* Step 6: Stop sensor; verify no spurious events after stop */
     MOTIONSENSOR_STOP_SUCCESS(controller);
     MOTIONSENSOR_WAIT_FOR_STATE(sensor, State::STOPPED, lastState);
     UT_ASSERT_EQUAL(lastState, State::STOPPED);
+
+    evtLsn->resetEventQueue();
+    {
+        OperationalMode postStopMode;
+        bool gotPostStop = evtLsn->getNextEvent(postStopMode, chrono::milliseconds(500));
+        UT_ASSERT_FALSE(gotPostStop);
+    }
+
+    /* Step 7: Unregister listener; host injects event — must NOT be delivered */
+    MOTIONSENSOR_UNREGISTER_EVENT_SUCCESS(sensor, evtLsn);
+    evtLsn->resetEventQueue();
+    {
+        OperationalMode unregMode;
+        bool gotUnreg = evtLsn->getNextEvent(unregMode, chrono::milliseconds(2000));
+        UT_ASSERT_FALSE(gotUnreg);
+    }
+
+    /* Re-register for TearDown */
+    MOTIONSENSOR_REGISTER_EVENT_SUCCESS(sensor, evtLsn);
 }
 
 /* ========================================================================== */
