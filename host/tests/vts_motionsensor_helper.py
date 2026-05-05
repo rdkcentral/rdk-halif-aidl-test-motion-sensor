@@ -1,13 +1,23 @@
 #!/usr/bin/env python3
 #** *****************************************************************************
 # *
+# * If not stated otherwise in this file or this component's LICENSE file the
+# * following copyright and licenses apply:
+# *
 # * Copyright 2026 RDK Management
 # *
 # * Licensed under the Apache License, Version 2.0 (the "License");
 # * you may not use this file except in compliance with the License.
 # * You may obtain a copy of the License at
 # *
-# * http://www.apache.org/licenses/LICENSE-2.0
+# *
+# http://www.apache.org/licenses/LICENSE-2.0
+# *
+# * Unless required by applicable law or agreed to in writing, software
+# * distributed under the License is distributed on an "AS IS" BASIS,
+# * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# * See the License for the specific language governing permissions and
+# * limitations under the License.
 # *
 #* ******************************************************************************
 
@@ -130,12 +140,12 @@ class motionSensorHelperClass(utHelperClass):
             sensors = profile.get('sensor', {}).get('motion', [])
             ids = [int(s['id']) for s in sensors if 'id' in s]
             if not ids:
-                self.log.warn("[_readSensorIdsFromProfile] No sensors found in profile, defaulting to id=0")
+                self.log.warning("[_readSensorIdsFromProfile] No sensors found in profile, defaulting to id=0")
                 return [0]
             self.log.info(f"[_readSensorIdsFromProfile] Found {len(ids)} sensor(s): {ids}")
             return ids
         except Exception as exc:
-            self.log.warn(f"[_readSensorIdsFromProfile] Could not read '{self.moduleHFPFile}': {exc}")
+            self.log.warning(f"[_readSensorIdsFromProfile] Could not read '{self.moduleHFPFile}': {exc}")
             return [0]
 
     def runL3Test(self, testcase: str, triggerCallable=None, triggerDelay: float = 25.0) -> bool:
@@ -205,7 +215,7 @@ class motionSensorHelperClass(utHelperClass):
         try:
             prompt = self.cpe.get("prompt", "~#")
             self.hal_session_1.write(f"cat {self.vcomponentLogFile}")
-            logContent = self.hal_session_1.read_until_prompt(prompt, timeout=5)
+            logContent = self.hal_session_1.read_until(prompt, timeout=5)
             self.log.info(f"--- vcomponent logs for {testcase} ---")
             for line in logContent.splitlines():
                 stripped = line.strip()

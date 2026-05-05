@@ -94,13 +94,14 @@ UT_status_t vts_motionsensor_parse_activewindow_config(
 
     const std::string node = std::string(module) + "." + testGroup + "." + testName;
 
-    config.sensorIndex        = (int32_t)ut_kvp_getUInt32Field(kvp, (node + ".sensor_index").c_str());
-    config.windowStartSeconds = (int32_t)ut_kvp_getUInt32Field(kvp, (node + ".window_start_seconds").c_str());
-    config.windowEndSeconds   = (int32_t)ut_kvp_getUInt32Field(kvp, (node + ".window_end_seconds").c_str());
-    config.eventTimeoutMs     = (int32_t)ut_kvp_getUInt32Field(kvp, (node + ".event_timeout_ms").c_str());
+    config.sensorIndex          = (int32_t)ut_kvp_getUInt32Field(kvp, (node + ".sensor_index").c_str());
+    config.windowStartSeconds   = (int32_t)ut_kvp_getUInt32Field(kvp, (node + ".window_start_seconds").c_str());
+    config.windowEndSeconds     = (int32_t)ut_kvp_getUInt32Field(kvp, (node + ".window_end_seconds").c_str());
+    config.expectEventReceived  = (int32_t)ut_kvp_getUInt32Field(kvp, (node + ".expect_event_received").c_str());
+    config.eventTimeoutMs       = (int32_t)ut_kvp_getUInt32Field(kvp, (node + ".event_timeout_ms").c_str());
 
-    UT_LOG_INFO("[MOTIONSENSOR_TESTCONFIG] %s: sensorIndex=%d window=[%d,%d] timeoutMs=%d",
-        testName, config.sensorIndex, config.windowStartSeconds, config.windowEndSeconds, config.eventTimeoutMs);
+    UT_LOG_INFO("[MOTIONSENSOR_TESTCONFIG] %s: sensorIndex=%d window=[%d,%d] expectEvent=%d timeoutMs=%d",
+        testName, config.sensorIndex, config.windowStartSeconds, config.windowEndSeconds, config.expectEventReceived, config.eventTimeoutMs);
 
     kvp_destroy_instance(kvp);
     return UT_STATUS_OK;

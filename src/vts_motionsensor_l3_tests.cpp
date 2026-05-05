@@ -406,11 +406,25 @@ UT_ADD_TEST(VTS_L3_MOTIONSENSOR, ActiveWindowBehavior)
     MOTIONSENSOR_WAIT_FOR_STATE(sensor, State::STARTED, lastState);
     UT_ASSERT_EQUAL(lastState, State::STARTED);
 
-    /* Host injects motion event while window is open */
+    /* Phase 1: host injects event; check against expected outcome.
+     * expectEventReceived=1 → window open → event must arrive (PASS if true).
+     * expectEventReceived=0 → window closed → event suppressed → getNextEvent
+     *   times out (PASS if false). */
     OperationalMode receivedMode;
     bool gotEvent = evtLsn->getNextEvent(receivedMode, chrono::milliseconds(cfg.eventTimeoutMs));
-    UT_ASSERT_TRUE(gotEvent);
-    UT_ASSERT_EQUAL(receivedMode, OperationalMode::MOTION);
+    if (cfg.expectEventReceived)
+    {
+        UT_LOG_INFO("[L3 ActiveWindowBehavior] Phase-1: expecting event — gotEvent=%s",
+            gotEvent ? "true" : "false");
+        UT_ASSERT_TRUE(gotEvent);
+        UT_ASSERT_EQUAL(receivedMode, OperationalMode::MOTION);
+    }
+    else
+    {
+        UT_LOG_INFO("[L3 ActiveWindowBehavior] Phase-1: expecting suppression — gotEvent=%s",
+            gotEvent ? "true (UNEXPECTED)" : "false (suppressed OK)");
+        UT_ASSERT_FALSE(gotEvent);
+    }
 
     /* Stop to reconfigure */
     MOTIONSENSOR_STOP_SUCCESS(controller);

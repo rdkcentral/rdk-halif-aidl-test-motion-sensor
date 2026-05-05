@@ -53,6 +53,7 @@ typedef struct motionSensorL3ActiveWindowTestConfig
     int32_t  sensorIndex;
     int32_t  windowStartSeconds;    /**< Active window start (seconds of day) */
     int32_t  windowEndSeconds;      /**< Active window end (seconds of day) */
+    int32_t  expectEventReceived;   /**< 1 = event expected in Phase 1; 0 = event suppressed */
     int32_t  eventTimeoutMs;
 } motionSensorL3ActiveWindowTestConfig_t;
 
