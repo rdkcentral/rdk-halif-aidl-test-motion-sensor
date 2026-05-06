@@ -308,24 +308,11 @@ UT_ADD_TEST(VTS_L2_MOTIONSENSOR, ConfigurationMethodsRequireStopped)
 
         // isAutonomousDuringDeepSleepEnabled must reflect the value set above
         bool autonomousEnabled = false;
-        ::android::binder::Status autoQueryStatus =
-            controllerHandle->isAutonomousDuringDeepSleepEnabled(&autonomousEnabled);
-        UT_ASSERT_TRUE(autoQueryStatus.isOk());
-        if (caps.supportsDeepSleepAutonomy)
-        {
-            UT_ASSERT_TRUE(autonomousEnabled);
-        }
-        else
-        {
-            // Platform does not support autonomy — value must remain false
-            UT_ASSERT_FALSE(autonomousEnabled);
-        }
+        MOTIONSENSOR_GET_AUTONOMOUS_SUCCESS(controllerHandle, autonomousEnabled, caps.supportsDeepSleepAutonomy);
 
         // Disable and re-verify
         MOTIONSENSOR_SET_AUTONOMOUS_SUCCESS(controllerHandle, false);
-        autoQueryStatus = controllerHandle->isAutonomousDuringDeepSleepEnabled(&autonomousEnabled);
-        UT_ASSERT_TRUE(autoQueryStatus.isOk());
-        UT_ASSERT_FALSE(autonomousEnabled);
+        MOTIONSENSOR_GET_AUTONOMOUS_SUCCESS(controllerHandle, autonomousEnabled, false);
 
         // Cleanup
         MOTIONSENSOR_CLOSE_SUCCESS(sensorHandle, controllerHandle);
