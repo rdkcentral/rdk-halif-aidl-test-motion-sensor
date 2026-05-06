@@ -130,7 +130,7 @@ UT_ADD_TEST(VTS_L2_MOTIONSENSOR, StateTransitions)
         MOTIONSENSOR_GET_SENSOR_SUCCESS(gMOTIONSENSORMGRHandle, sensorIdObj, sensorHandle);
 
         // Check initial state is STOPPED
-        MOTIONSENSOR_GET_STATE(sensorHandle, state);
+        MOTIONSENSOR_GET_STATE_SUCCESS(sensorHandle, state);
         UT_ASSERT_EQUAL(state, State::STOPPED);
 
         // Open the sensor

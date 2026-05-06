@@ -123,7 +123,7 @@ public:
 
             /* Ensure sensor is stopped before close */
             State state;
-            MOTIONSENSOR_GET_STATE(sensor, state);
+            MOTIONSENSOR_GET_STATE_SUCCESS(sensor, state);
             if (state == State::STARTED)
             {
                 MOTIONSENSOR_STOP_SUCCESS(controller);

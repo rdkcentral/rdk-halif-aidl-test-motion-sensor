@@ -167,7 +167,7 @@ typedef com::rdk::hal::sensor::motion::IMotionSensor::Id MotionSensorId;
 /*  IMotionSensor Macros                                                       */
 /* ========================================================================== */
 
-#define MOTIONSENSOR_GET_STATE(sensorHandle, state) \
+#define MOTIONSENSOR_GET_STATE_SUCCESS(sensorHandle, state) \
     do { \
         ::android::binder::Status status; \
         UT_LOG_DEBUG("Calling getState(OUT:state[])"); \
@@ -180,6 +180,22 @@ typedef com::rdk::hal::sensor::motion::IMotionSensor::Id MotionSensorId;
         UT_ASSERT_EQUAL(status.exceptionCode(), Status::EX_NONE); \
     } while (0)
 
+#define MOTIONSENSOR_GET_STATE_FAILURE(sensorHandle, statePtr, expectedException) \
+    do { \
+        ::android::binder::Status status; \
+        UT_LOG_DEBUG("Calling getState(OUT:state[%p])", statePtr); \
+        status = (sensorHandle)->getState(statePtr); \
+        UT_LOG_DEBUG("Result getState(OUT:state[%p]), status:[isOK:%s, exception:%s]", \
+            statePtr, \
+            UT_Control_GetMapString(bool_mapTable_motionsensor, status.isOk()), \
+            UT_Control_GetMapString(statusMotionSensorException_mapTable, status.exceptionCode())); \
+        if (expectedException == Status::EX_NONE) \
+            UT_ASSERT_TRUE(status.isOk()); \
+        else \
+            UT_ASSERT_FALSE(status.isOk()); \
+        UT_ASSERT_EQUAL(status.exceptionCode(), expectedException); \
+    } while (0)
+
 #define MOTIONSENSOR_WAIT_FOR_STATE(sensorHandle, desiredState, lastState) \
     do { \
         int32_t sleep_time = 0; \
@@ -187,7 +203,7 @@ typedef com::rdk::hal::sensor::motion::IMotionSensor::Id MotionSensorId;
         { \
             this_thread::sleep_for(chrono::milliseconds(MAX_TRANSITORY_STATE_WAIT_MS)); \
             sleep_time += MAX_TRANSITORY_STATE_WAIT_MS; \
-            MOTIONSENSOR_GET_STATE((sensorHandle), lastState); \
+            MOTIONSENSOR_GET_STATE_SUCCESS((sensorHandle), lastState); \
         } while (sleep_time < MAX_FINAL_STATE_WAIT_MS && lastState != desiredState); \
     } while (0)
 
@@ -202,6 +218,22 @@ typedef com::rdk::hal::sensor::motion::IMotionSensor::Id MotionSensorId;
             UT_Control_GetMapString(statusMotionSensorException_mapTable, status.exceptionCode())); \
         UT_ASSERT_TRUE(status.isOk()); \
         UT_ASSERT_EQUAL(status.exceptionCode(), Status::EX_NONE); \
+    } while (0)
+
+#define MOTIONSENSOR_GET_CAPABILITIES_FAILURE(sensorHandle, capabilitiesPtr, expectedException) \
+    do { \
+        ::android::binder::Status status; \
+        UT_LOG_DEBUG("Calling getCapabilities(OUT:capabilities[%p])", capabilitiesPtr); \
+        status = (sensorHandle)->getCapabilities(capabilitiesPtr); \
+        UT_LOG_DEBUG("Result getCapabilities(OUT:capabilities[%p]), status:[isOK:%s, exception:%s]", \
+            capabilitiesPtr, \
+            UT_Control_GetMapString(bool_mapTable_motionsensor, status.isOk()), \
+            UT_Control_GetMapString(statusMotionSensorException_mapTable, status.exceptionCode())); \
+        if (expectedException == Status::EX_NONE) \
+            UT_ASSERT_TRUE(status.isOk()); \
+        else \
+            UT_ASSERT_FALSE(status.isOk()); \
+        UT_ASSERT_EQUAL(status.exceptionCode(), expectedException); \
     } while (0)
 
 #define MOTIONSENSOR_OPEN_SUCCESS(sensorHandle, controllerListener, controllerHandle) \
@@ -413,6 +445,21 @@ typedef com::rdk::hal::sensor::motion::IMotionSensor::Id MotionSensorId;
         UT_ASSERT_EQUAL(status.exceptionCode(), Status::EX_NONE); \
     } while (0)
 
+#define MOTIONSENSOR_GET_START_CONFIG_FAILURE(controllerHandle, config, expectedException) \
+    do { \
+        ::android::binder::Status status; \
+        UT_LOG_DEBUG("Calling getStartConfig(OUT:config[]) expecting failure"); \
+        status = (controllerHandle)->getStartConfig(&config); \
+        UT_LOG_DEBUG("Result getStartConfig(), status:[isOK:%s, exception:%s]", \
+            UT_Control_GetMapString(bool_mapTable_motionsensor, status.isOk()), \
+            UT_Control_GetMapString(statusMotionSensorException_mapTable, status.exceptionCode())); \
+        if (expectedException == Status::EX_NONE) \
+            UT_ASSERT_TRUE(status.isOk()); \
+        else \
+            UT_ASSERT_FALSE(status.isOk()); \
+        UT_ASSERT_EQUAL(status.exceptionCode(), expectedException); \
+    } while (0)
+
 #define MOTIONSENSOR_GET_SENSITIVITY_SUCCESS(controllerHandle, sensitivity) \
     do { \
         ::android::binder::Status status; \
@@ -477,6 +524,42 @@ typedef com::rdk::hal::sensor::motion::IMotionSensor::Id MotionSensorId;
         UT_ASSERT_EQUAL(status.exceptionCode(), Status::EX_NONE); \
     } while (0)
 
+#define MOTIONSENSOR_SET_AUTONOMOUS_FAILURE(controllerHandle, enabled, expectedException) \
+    do { \
+        ::android::binder::Status status; \
+        bool _aidl_return; \
+        UT_LOG_DEBUG("Calling setAutonomousDuringDeepSleep(IN:enabled[%s], OUT:_aidl_return[])", \
+            UT_Control_GetMapString(bool_mapTable_motionsensor, enabled)); \
+        status = (controllerHandle)->setAutonomousDuringDeepSleep(enabled, &_aidl_return); \
+        UT_LOG_DEBUG("Result setAutonomousDuringDeepSleep(IN:enabled[%s], OUT:_aidl_return[%s]), status:[isOK:%s, exception:%s]", \
+            UT_Control_GetMapString(bool_mapTable_motionsensor, enabled), \
+            UT_Control_GetMapString(bool_mapTable_motionsensor, _aidl_return), \
+            UT_Control_GetMapString(bool_mapTable_motionsensor, status.isOk()), \
+            UT_Control_GetMapString(statusMotionSensorException_mapTable, status.exceptionCode())); \
+        if (expectedException == Status::EX_NONE) \
+            UT_ASSERT_TRUE(status.isOk()); \
+        else \
+            UT_ASSERT_FALSE(status.isOk()); \
+        UT_ASSERT_EQUAL(status.exceptionCode(), expectedException); \
+    } while (0)
+
+#define MOTIONSENSOR_GET_AUTONOMOUS_SUCCESS(controllerHandle, enabled, supportsAutonomy) \
+    do { \
+        ::android::binder::Status status; \
+        UT_LOG_DEBUG("Calling isAutonomousDuringDeepSleepEnabled(OUT:enabled[])"); \
+        status = (controllerHandle)->isAutonomousDuringDeepSleepEnabled(&(enabled)); \
+        UT_LOG_DEBUG("Result isAutonomousDuringDeepSleepEnabled(OUT:enabled[%s]), status:[isOK:%s, exception:%s]", \
+            UT_Control_GetMapString(bool_mapTable_motionsensor, enabled), \
+            UT_Control_GetMapString(bool_mapTable_motionsensor, status.isOk()), \
+            UT_Control_GetMapString(statusMotionSensorException_mapTable, status.exceptionCode())); \
+        UT_ASSERT_TRUE(status.isOk()); \
+        UT_ASSERT_EQUAL(status.exceptionCode(), Status::EX_NONE); \
+        if (supportsAutonomy) \
+            UT_ASSERT_TRUE(enabled); \
+        else \
+            UT_ASSERT_FALSE(enabled); \
+    } while (0)
+
 #define MOTIONSENSOR_SET_ACTIVE_WINDOWS_SUCCESS(controllerHandle, windows) \
     do { \
         ::android::binder::Status status; \
@@ -538,6 +621,23 @@ typedef com::rdk::hal::sensor::motion::IMotionSensor::Id MotionSensorId;
         UT_ASSERT_TRUE(status.isOk()); \
         UT_ASSERT_TRUE(_aidl_return); \
         UT_ASSERT_EQUAL(status.exceptionCode(), Status::EX_NONE); \
+    } while (0)
+
+#define MOTIONSENSOR_CLEAR_ACTIVE_WINDOWS_FAILURE(controllerHandle, expectedException) \
+    do { \
+        ::android::binder::Status status; \
+        bool _aidl_return; \
+        UT_LOG_DEBUG("Calling clearActiveWindows(OUT:_aidl_return[])"); \
+        status = (controllerHandle)->clearActiveWindows(&_aidl_return); \
+        UT_LOG_DEBUG("Result clearActiveWindows(OUT:_aidl_return[%s]), status:[isOK:%s, exception:%s]", \
+            UT_Control_GetMapString(bool_mapTable_motionsensor, _aidl_return), \
+            UT_Control_GetMapString(bool_mapTable_motionsensor, status.isOk()), \
+            UT_Control_GetMapString(statusMotionSensorException_mapTable, status.exceptionCode())); \
+        if (expectedException == Status::EX_NONE) \
+            UT_ASSERT_TRUE(status.isOk()); \
+        else \
+            UT_ASSERT_FALSE(status.isOk()); \
+        UT_ASSERT_EQUAL(status.exceptionCode(), expectedException); \
     } while (0)
 
 /* ========================================================================== */
