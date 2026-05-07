@@ -308,13 +308,13 @@ class VTS_MOTIONSENSOR_L3_ActiveWindowBehavior(motionSensorHelperClass):
                                 + int(match.group(2)) * 60
                                 + int(match.group(3)))
         except Exception as exc:
-            self.log.warning(f"[ActiveWindowBehavior] Could not query DUT time: {exc}")
+            self.log.warn(f"[ActiveWindowBehavior] Could not query DUT time: {exc}")
 
         host_now  = datetime.datetime.now()
         host_secs = host_now.hour * 3600 + host_now.minute * 60 + host_now.second
 
         if dut_now_secs is None:
-            self.log.warning(
+            self.log.warn(
                 "[ActiveWindowBehavior] DUT time unavailable — falling back to host time")
             dut_now_secs = host_secs
 
@@ -349,7 +349,7 @@ class VTS_MOTIONSENSOR_L3_ActiveWindowBehavior(motionSensorHelperClass):
                                     + int(m.group(2)) * 60
                                     + int(m.group(3)))
                 except Exception as exc:
-                    self.log.warning(
+                    self.log.warn(
                         f"[ActiveWindowBehavior] scenario={scenario_name}: "
                         f"Could not re-query DUT time — using previous value: {exc}")
 
@@ -363,7 +363,7 @@ class VTS_MOTIONSENSOR_L3_ActiveWindowBehavior(motionSensorHelperClass):
                     # Positive scenario: current time is outside the window.
                     # This can happen for 'midnight_wrap_window' when the test
                     # runs outside the [22:00, 02:00] slot.  Skip gracefully.
-                    self.log.warning(
+                    self.log.warn(
                         f"[ActiveWindowBehavior] SKIP sensor={sensor_index} "
                         f"scenario={scenario_name} — expect_event=True but current "
                         f"time ({now_secs}s) is outside computed window "
@@ -374,7 +374,7 @@ class VTS_MOTIONSENSOR_L3_ActiveWindowBehavior(motionSensorHelperClass):
                     # Suppression scenario: offset calculation should guarantee
                     # the window is closed, but log a warning and skip to avoid
                     # a misleading C++ PASS that masks a real problem.
-                    self.log.warning(
+                    self.log.warn(
                         f"[ActiveWindowBehavior] SKIP sensor={sensor_index} "
                         f"scenario={scenario_name} — expect_event=False but current "
                         f"time ({now_secs}s) accidentally falls inside computed "
