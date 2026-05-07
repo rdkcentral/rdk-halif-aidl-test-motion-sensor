@@ -85,11 +85,12 @@ static UT_status_t vts_motionsensor_getService()
 
 void VTS_MOTIONSENSOR_init(void)
 {
-    UT_LOG_INFO("VTS_MOTIONSENSOR_init: Starting binder thread pool");
+    UT_LOG_INFO("VTS_MOTIONSENSOR_init: Connecting to IMotionSensorManager service");
 
     if(vts_motionsensor_getService() != UT_STATUS_OK)
     {
         UT_LOG_ERROR("Failed to get MOTIONSENSOR Service");
+        UT_ASSERT_TRUE_FATAL(false);
         return;
     }
 

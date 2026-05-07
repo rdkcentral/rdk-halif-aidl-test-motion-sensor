@@ -55,15 +55,16 @@
 /**
  * @brief Initialize the Motion Sensor VTS test suite.
  *
- * Binds to the IMotionSensorManager binder service, starts the binder
- * thread pool, and parses the HFP profile.
+ * Binds to the IMotionSensorManager binder service and parses the HFP
+ * profile. The binder thread pool is started per-suite in each fixture's
+ * SetUp().
  */
 void VTS_MOTIONSENSOR_init(void);
 
 /**
  * @brief Destroy/cleanup the Motion Sensor VTS test suite.
  *
- * Releases the IMotionSensorManager handle and joins the binder thread pool.
+ * Releases the IMotionSensorManager handle.
  */
 void VTS_MOTIONSENSOR_destroy(void);
 

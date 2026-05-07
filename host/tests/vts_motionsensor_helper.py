@@ -164,7 +164,7 @@ class motionSensorHelperClass(utHelperClass):
             triggerCallable (callable, optional): No-arg callable to run in a
                 background thread ``triggerDelay`` seconds after utMenu.start().
             triggerDelay (float): Seconds to wait after utMenu.start() before
-                invoking triggerCallable. Defaults to 3.0.
+                invoking triggerCallable. Defaults to 25.0.
 
         Returns:
             bool: True if the test passed, False otherwise.

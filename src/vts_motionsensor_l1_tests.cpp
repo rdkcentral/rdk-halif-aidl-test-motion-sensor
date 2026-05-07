@@ -52,6 +52,11 @@
  * @file vts_motionsensor_l1_tests.cpp
  */
 
+#include <algorithm>
+#include <optional>
+#include <string>
+#include <vector>
+
 #include "vts_motionsensor_parse_hfp.h"
 #include "vts_motionsensor.h"
 

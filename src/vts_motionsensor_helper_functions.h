@@ -65,24 +65,6 @@ extern ut_control_keyStringMapping_t bool_mapTable_motionsensor[];
 /* OperationalMode string map table */
 extern const ut_control_keyStringMapping_t operationalMode_mapTable[];
 
-/**
- * @brief Wait for a motion event with timeout
- * @param eventListener   Pointer to the event listener
- * @param expectedMode    Expected OperationalMode (MOTION or NO_MOTION)
- * @param timeoutMs       Timeout in milliseconds
- * @return true if event received, false on timeout
- */
-bool waitForMotionEvent(void* eventListener, int expectedMode, int timeoutMs);
-
-/**
- * @brief Poll state with retries until desired state is reached or timeout
- * @param sensorHandle  IMotionSensor handle
- * @param desiredState  Desired state enum value
- * @param timeoutMs     Timeout in milliseconds
- * @return true if desired state reached
- */
-bool pollForState(void* sensorHandle, int desiredState, int timeoutMs);
-
 #endif // __VTS_MOTIONSENSOR_HELPER_FUNCTIONS_H__
 
 /** @} */ // End of MOTION_SENSOR_HALTEST_HELPER

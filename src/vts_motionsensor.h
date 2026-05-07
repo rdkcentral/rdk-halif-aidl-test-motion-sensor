@@ -61,6 +61,9 @@
 #include <condition_variable>
 #include <chrono>
 #include <thread>
+#include <algorithm>
+#include <optional>
+#include <tuple>
 
 #include <ut.h>
 #include <ut_log.h>

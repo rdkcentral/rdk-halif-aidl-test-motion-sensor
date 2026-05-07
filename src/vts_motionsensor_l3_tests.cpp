@@ -55,6 +55,9 @@
  * @file vts_motionsensor_l3_tests.cpp
  */
 
+#include <optional>
+#include <tuple>
+
 #include "vts_motionsensor.h"
 #include "vts_motionsensor_parse_hfp.h"
 #include "vts_motionsensor_parse_testconfig.h"
