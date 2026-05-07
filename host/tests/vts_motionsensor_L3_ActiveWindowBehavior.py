@@ -116,7 +116,7 @@ class VTS_MOTIONSENSOR_L3_ActiveWindowBehavior(motionSensorHelperClass):
         self.log.info(
             f"[WindowStatus] scenario={name} "
             f"window=[{start_h:02d}:{start_m:02d}:{start_s:02d}"
-            f"→{end_h:02d}:{end_m:02d}:{end_s:02d}]{wrap_str} "
+            f"->{end_h:02d}:{end_m:02d}:{end_s:02d}]{wrap_str} "
             f"currentTime={now_h:02d}:{now_m:02d}:{now_s:02d} "
             f"status={'INSIDE (window ENTERED)' if in_window else 'OUTSIDE (window NOT entered)'} "
             f"expect={'event_received' if expect_event else 'event_suppressed'}")
@@ -209,7 +209,7 @@ class VTS_MOTIONSENSOR_L3_ActiveWindowBehavior(motionSensorHelperClass):
         Phase-1 duration (``timeout_s`` seconds).  All events are suppressed by the
         vcomponent's active-window filter; the C++ ``getNextEvent`` eventually times
         out.  After the Phase-1 timeout the callable waits ``_INTER_PHASE_DELAY_S``
-        for Phase-2 setup, then fires a single Phase-2 trigger (no window → passes).
+        for Phase-2 setup, then fires a single Phase-2 trigger (no window -> passes).
 
         Args:
             sensor_id         (int):   Target sensor ID.
