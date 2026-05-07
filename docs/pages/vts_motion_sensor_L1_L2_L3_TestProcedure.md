@@ -5,7 +5,7 @@
 * [Acronyms, Terms and Abbreviations](#acronyms-terms-and-abbreviations)
 * [Build the VTS](#build-the-vts)
   * [Build Linux Binder](#build-linux-binder)
-  * [Build Motion Sensor VTS](#build-motion-sensor-vts)
+  * [Build Motion Sensor VTS](#build-motion-sensor-vts-binaries)
   * [Environment Variables](#environment-variables)
   * [Build](#build)
 * [Run L1 L2 Tests Without Python](#run-l1-l2-tests-without-python)
