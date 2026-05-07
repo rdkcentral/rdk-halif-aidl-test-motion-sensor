@@ -266,6 +266,7 @@ For vDevice, no external hardware needs to be connected to the setup.
 ###### Real Device
 
 For real hardware, Place the device on a stable surface with the motion sensors enabled and accessible for stimulation. As the `RAFT` doesn't support automation of triggering motion simulator, Control the device manually
+
 ---
 
 ## L3 Test Cases
