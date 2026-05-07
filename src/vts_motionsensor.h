@@ -61,9 +61,6 @@
 #include <condition_variable>
 #include <chrono>
 #include <thread>
-#include <algorithm>
-#include <optional>
-#include <tuple>
 
 #include <ut.h>
 #include <ut_log.h>
@@ -105,16 +102,6 @@ using namespace com::rdk::hal::sensor::motion;
 #define MAX_EVENT_WAIT_MS              5000
 #define MAX_NO_MOTION_WAIT_BUFFER_MS   2000
 
-#ifndef ENABLE_UT_INFO_LOGGING
-#ifdef UT_LOG_DEBUG
-#undef UT_LOG_DEBUG
-#define UT_LOG_DEBUG(...)
-#endif
-#ifdef UT_LOG_INFO
-#undef UT_LOG_INFO
-#define UT_LOG_INFO(...)
-#endif
-#endif
 typedef com::rdk::hal::sensor::motion::IMotionSensor::Id MotionSensorId;
 
 /* ========================================================================== */

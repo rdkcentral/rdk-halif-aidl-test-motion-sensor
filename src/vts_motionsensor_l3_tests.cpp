@@ -96,10 +96,12 @@ public:
 
         std::optional<std::vector<std::optional<MotionSensorId>>> sensorIds;
         MOTIONSENSOR_GET_SENSOR_IDS_SUCCESS(gMOTIONSENSORMGRHandle, sensorIds);
+        UT_ASSERT_TRUE_FATAL(sensorIds.has_value() && !sensorIds->empty());
 
         for (const auto& idOpt : *sensorIds)
         {
-            if (!idOpt) continue;
+            if (!idOpt)
+                continue;
             const MotionSensorId& id = *idOpt;
 
             sp<IMotionSensor> sensor;
@@ -149,10 +151,6 @@ public:
         return true;
     }
 };
-
-/* ========================================================================== */
-/*  Test 1 — Motion Event, Timing, Accuracy & Listener Validation             */
-/* ========================================================================== */
 
 /**
  * @brief Validate MOTION mode event delivery for a sensor in MOTION mode.
@@ -271,10 +269,6 @@ UT_ADD_TEST(VTS_L3_MOTIONSENSOR, MotionEventDetection)
     MOTIONSENSOR_REGISTER_EVENT_SUCCESS(sensor, evtLsn);
 }
 
-/* ========================================================================== */
-/*  Test 2 — No-Motion Event, Timing, Accuracy & Listener Validation          */
-/* ========================================================================== */
-
 /**
  * @brief Validate no-motion event delivery in NO_MOTION mode.
  *
@@ -345,10 +339,6 @@ UT_ADD_TEST(VTS_L3_MOTIONSENSOR, NoMotionEventDetection)
     MOTIONSENSOR_WAIT_FOR_STATE(sensor, State::STOPPED, lastState);
     UT_ASSERT_EQUAL(lastState, State::STOPPED);
 }
-
-/* ========================================================================== */
-/*  Test 3 — Active Window Behavior                                           */
-/* ========================================================================== */
 
 /**
  * @brief Validate that active windows gate event emission correctly.

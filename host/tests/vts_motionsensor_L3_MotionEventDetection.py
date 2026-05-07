@@ -75,7 +75,8 @@ class VTS_MOTIONSENSOR_L3_MotionEventDetection(motionSensorHelperClass):
             l3cfg = yaml.safe_load(fh)
         test_node    = l3cfg['motionsensor']['L3']['MotionEventDetection']
         num_events   = int(test_node.get('num_events', 1))
-        timeout_ms   = int(test_node.get('timeout_ms', 30000))
+        timeout_ms   = int(test_node.get('event_timeout_ms',
+                                         test_node.get('timeout_ms', 30000)))
         # Fire the trigger at half the C++ event-wait timeout so it always
         # arrives before the test times out, regardless of config changes.
         trigger_delay = (timeout_ms / 1000.0) / 2.0

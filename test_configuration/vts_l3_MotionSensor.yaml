@@ -51,8 +51,8 @@ motionsensor:
       # 10 window scenarios iterated by the Python test.
       # dynamic: false  -> use window_start_seconds / window_end_seconds as-is.
       # dynamic: true   -> compute actual times as (now_secs + offset) % 86400.
-      # expect_event    -> true  = event must arrive (C++ PASS expected).
-      #                    false = event must be suppressed (C++ FAIL = Python PASS).
+      # expect_event    -> true  = event must arrive   (C++ asserts event received).
+      #                    false = event must be suppressed (C++ asserts no event received).
       active_windows:
         # Positive scenarios (window contains current time)
         # 1. Full-day window [00:00:00, 23:59:59] — always contains any time.
