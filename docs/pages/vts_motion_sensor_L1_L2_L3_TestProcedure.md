@@ -245,7 +245,7 @@ source activate_venv.sh
 ```bash
 python host/tests/vts_motionsensor_L1_L2_tests.py \
   --config </PATH>/host/configs/vts_rack_configuration.yaml \
-  --deviceConfig </PATH>host/configs/vts_device_configuration.yaml
+  --deviceConfig </PATH>/host/configs/vts_device_configuration.yaml
 ```
 
 ---
