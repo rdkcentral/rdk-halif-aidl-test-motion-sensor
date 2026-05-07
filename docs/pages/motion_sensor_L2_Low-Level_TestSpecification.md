@@ -33,7 +33,7 @@ This document describes the Level 2 (L2) Low-Level Test Specification for the Mo
 
 ## References
 
-- High Level Test Specification — [motion_sensor_High_Level_TestSpecification.md.md](motion_sensor_High_Level_TestSpecification.md.md)
+- High Level Test Specification — [motion_sensor_High_Level_TestSpecification.md](motion_sensor_High_Level_TestSpecification.md)
 - Motion Sensor AIDL Interfaces:
   - [IMotionSensorManager](https://github.com/rdkcentral/rdk-halif-aidl/blob/0.15.0/sensor/current/com/rdk/hal/sensor/motion/IMotionSensorManager.aidl)
   - [IMotionSensor](https://github.com/rdkcentral/rdk-halif-aidl/blob/0.15.0/sensor/current/com/rdk/hal/sensor/motion/IMotionSensor.aidl)

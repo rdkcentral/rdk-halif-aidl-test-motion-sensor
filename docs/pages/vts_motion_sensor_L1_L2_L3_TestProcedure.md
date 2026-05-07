@@ -199,8 +199,7 @@ rackConfig:
               workspaceDirectory: "./logs/workspace"
 ```
 
-> **motionSensorController:** 
-Configure this field according to your test platform. For physical hardware testing, use `manual-motionsensor-controller` as `RAFT` doesn't support `motionsensor` controller device. For virtual device testing, use `virtual-motionsensor-controller`. For virtual device provide the connection details of the device running vComponent.
+> **motionSensorController:** Configure this field according to your test platform. For physical hardware testing, use `manual-motionsensor-client` as `RAFT` doesn't support a motion sensor controller device. For virtual device testing, use `virtual-motionsensor-client`. For virtual device testing, provide the connection details of the device running vComponent.
 - `control_port` - The port number where vComponent accepts command requests.
 
 ---
@@ -266,7 +265,7 @@ For vDevice, no external hardware needs to be connected to the setup.
 
 ###### Real Device
 
-For real hardware, use `HDMI` analyser to send the infoframes, checking `HDCP` and `EDID`. As the `RAFT` doesn't support automation of `HDMI` analyser device, Control the device manually
+For real hardware, Place the device on a stable surface with the motion sensors enabled and accessible for stimulation. As the `RAFT` doesn't support automation of triggering motion simulator, Control the device manually
 ---
 
 ## L3 Test Cases
