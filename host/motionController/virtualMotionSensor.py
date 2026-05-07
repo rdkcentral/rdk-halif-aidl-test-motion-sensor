@@ -13,6 +13,7 @@
 
 import os
 import sys
+import time
 import yaml
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -121,3 +122,33 @@ class virtualMotionSensor(MotionSensorControllerInterface):
                 "sensor_id": sensorId,
             }
         })
+
+    def simulateIdleDeepSleep(self, sensorId: int, idle_seconds: float):
+        """
+        Simulate the platform idle-timer that triggers deep sleep.
+
+        Because there is no dedicated deep-sleep component, the Python host
+        acts as the system sleep manager.  This method idles for
+        *idle_seconds* (no events = inactivity) and then sends
+        MOTION_SENSOR_DEEP_SLEEP_START to the vcomponent.
+
+        Typical test sequence::
+
+            # Device has been idle — system decides to enter deep sleep
+            controller.simulateIdleDeepSleep(sensor_id, idle_seconds=5)
+
+            # Physical motion detected during sleep
+            controller.triggerMotionEvent(sensor_id)
+
+            # Wake-up complete
+            controller.triggerDeepSleepEnd(sensor_id)
+
+        Args:
+            sensorId (int):       ID of the sensor affected.
+            idle_seconds (float): Seconds to wait before entering deep sleep
+                                  (simulates the platform inactivity timeout;
+                                  use a small value in tests, e.g. 5 s instead
+                                  of the real 10 minutes).
+        """
+        time.sleep(idle_seconds)
+        self.triggerDeepSleepStart(sensorId)

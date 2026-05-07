@@ -41,6 +41,37 @@ _INTER_PHASE_DELAY_S = 5.0
 # start the sensor, and enter getNextEvent.
 _TRIGGER_START_DELAY_S = 3.0
 
+# 10 window scenarios for the ActiveWindowBehavior test.
+# dynamic: false  -> use window_start_seconds / window_end_seconds as-is.
+# dynamic: true   -> compute actual times as (now_secs + offset) % 86400.
+# expect_event    -> True  = event must arrive   (C++ asserts event received).
+#                   False = event must be suppressed (C++ asserts no event received).
+_WINDOW_SCENARIOS = [
+    # Positive scenarios (window contains current time)
+    # 1. Full-day window [00:00:00, 23:59:59] — always contains any time.
+    {'name': 'full_day_window',          'dynamic': False, 'window_start_seconds': 0,     'window_end_seconds': 86399, 'expect_event': True},
+    # 2. 2-hour window centred on current time [now-1h, now+1h].
+    {'name': 'two_hour_centred_window',  'dynamic': True,  'offset_start_seconds': -3600,  'offset_end_seconds': 3600,  'expect_event': True},
+    # 3. 10-minute window centred on current time [now-5m, now+5m].
+    {'name': 'ten_minute_centred_window','dynamic': True,  'offset_start_seconds': -300,   'offset_end_seconds': 300,   'expect_event': True},
+    # 4. 8-hour window centred on current time [now-4h, now+4h].
+    {'name': 'eight_hour_centred_window','dynamic': True,  'offset_start_seconds': -14400, 'offset_end_seconds': 14400, 'expect_event': True},
+    # 5. Fixed midnight-spanning window [22:00, 02:00].
+    #    Skipped at runtime when the current time is outside [22:00, 02:00].
+    {'name': 'midnight_wrap_window',     'dynamic': False, 'window_start_seconds': 79200,  'window_end_seconds': 7200,  'expect_event': True},
+    # Suppression scenarios (window excludes current time)
+    # 6. Window that has not yet opened (opens 30 s from now — after the 15 s Phase-1 timeout).
+    {'name': 'window_not_yet_open',      'dynamic': True,  'offset_start_seconds': 30,     'offset_end_seconds': 3630,  'expect_event': False},
+    # 7. Window that closed 1-2 hours ago.
+    {'name': 'window_already_closed',    'dynamic': True,  'offset_start_seconds': -7200,  'offset_end_seconds': -3600, 'expect_event': False},
+    # 8. Narrow window that closed 1-2 minutes ago.
+    {'name': 'narrow_past_window',       'dynamic': True,  'offset_start_seconds': -120,   'offset_end_seconds': -60,   'expect_event': False},
+    # 9. Narrow window that opens in 1-2 minutes.
+    {'name': 'narrow_future_window',     'dynamic': True,  'offset_start_seconds': 60,     'offset_end_seconds': 120,   'expect_event': False},
+    # 10. Far-future window that opens 2-3 hours from now.
+    {'name': 'far_future_window',        'dynamic': True,  'offset_start_seconds': 7200,   'offset_end_seconds': 10800, 'expect_event': False},
+]
+
 
 class VTS_MOTIONSENSOR_L3_ActiveWindowBehavior(motionSensorHelperClass):
 
@@ -275,14 +306,14 @@ class VTS_MOTIONSENSOR_L3_ActiveWindowBehavior(motionSensorHelperClass):
         with open(self.l3TestConfigFile, 'r') as fh:
             l3cfg = yaml.safe_load(fh)
 
-        aw_node           = l3cfg['motionsensor']['L3']['ActiveWindowBehavior']
+        aw_node           = l3cfg['motionsensor']['L3']['EventDetection']
         timeout_ms        = int(aw_node.get('event_timeout_ms', 15000))
         trigger_interval_s = float(aw_node.get('trigger_interval_seconds', 3))
         timeout_s         = timeout_ms / 1000.0
-        window_scenarios  = aw_node.get('active_windows', [])
+        window_scenarios  = _WINDOW_SCENARIOS
 
         if not window_scenarios:
-            self.log.error("[ActiveWindowBehavior] No active_windows entries in YAML — aborting")
+            self.log.error("[ActiveWindowBehavior] No window scenarios defined — aborting")
             return False
 
         sensor_ids = self._readSensorIdsFromProfile()
@@ -392,10 +423,10 @@ class VTS_MOTIONSENSOR_L3_ActiveWindowBehavior(motionSensorHelperClass):
                     f"expect={'event' if expect_event else 'suppression'}")
 
                 # Write scenario-specific window to YAML
-                l3cfg['motionsensor']['L3']['ActiveWindowBehavior']['sensor_index']          = sensor_index
-                l3cfg['motionsensor']['L3']['ActiveWindowBehavior']['window_start_seconds']  = start
-                l3cfg['motionsensor']['L3']['ActiveWindowBehavior']['window_end_seconds']    = end
-                l3cfg['motionsensor']['L3']['ActiveWindowBehavior']['expect_event_received'] = 1 if expect_event else 0
+                l3cfg['motionsensor']['L3']['EventDetection']['sensor_index']          = sensor_index
+                l3cfg['motionsensor']['L3']['EventDetection']['window_start_seconds']  = start
+                l3cfg['motionsensor']['L3']['EventDetection']['window_end_seconds']    = end
+                l3cfg['motionsensor']['L3']['EventDetection']['max_expected_events']   = 1 if expect_event else 0
                 with open(self.l3TestConfigFile, 'w') as fh:
                     yaml.dump(l3cfg, fh, default_flow_style=False, sort_keys=False)
 
@@ -408,7 +439,7 @@ class VTS_MOTIONSENSOR_L3_ActiveWindowBehavior(motionSensorHelperClass):
                         sensor_id, trigger_interval_s, timeout_s)
 
                 # Run C++ test
-                # C++ now reads expect_event_received from YAML and asserts
+                # C++ reads num_events from YAML: >0 = assert event arrived,
                 # accordingly — it passes for both positive and suppression
                 # scenarios, so no result inversion is needed here.
                 cpp_result = self.runL3Test(

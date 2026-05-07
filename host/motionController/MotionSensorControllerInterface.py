@@ -64,3 +64,27 @@ class MotionSensorControllerInterface(metaclass=ABCMeta):
             sensorId (int): ID of the sensor affected.
         """
         pass
+
+    @abstractmethod
+    def simulateIdleDeepSleep(self, sensorId: int, idle_seconds: float):
+        """
+        Simulate the platform idle-timer that triggers deep sleep.
+
+        On a real device the SoC enters deep sleep automatically after a
+        configurable inactivity period (typically 10 minutes).  Because
+        there is no dedicated deep-sleep component in the current stack,
+        the Python test host acts as the system sleep manager:
+
+          1. Wait *idle_seconds* (no events injected = simulated inactivity).
+          2. Send MOTION_SENSOR_DEEP_SLEEP_START to the vcomponent so its
+             internal ``inDeepSleep`` flag is set.
+
+        The caller is then responsible for injecting a MOTION event and
+        calling triggerDeepSleepEnd() when the wake sequence is complete.
+
+        Args:
+            sensorId (int): ID of the sensor affected.
+            idle_seconds (float): Seconds to wait before entering deep sleep
+                                  (simulates the platform idle timeout).
+        """
+        pass

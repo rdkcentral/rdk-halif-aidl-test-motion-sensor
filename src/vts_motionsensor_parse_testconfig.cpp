@@ -66,16 +66,16 @@ UT_status_t vts_motionsensor_parse_eventtest_config(
     config.activeStartSeconds = (int32_t)ut_kvp_getUInt32Field(kvp, (node + ".active_start_seconds").c_str());
     config.activeStopSeconds  = (int32_t)ut_kvp_getUInt32Field(kvp, (node + ".active_stop_seconds").c_str());
     config.eventTimeoutMs     = (int32_t)ut_kvp_getUInt32Field(kvp, (node + ".event_timeout_ms").c_str());
-    config.numEvents = (int32_t)ut_kvp_getUInt32Field(kvp, (node + ".num_events").c_str());
-    if (config.numEvents <= 0) config.numEvents = 1;
+    config.maxExpectedEvents = (int32_t)ut_kvp_getUInt32Field(kvp, (node + ".max_expected_events").c_str());
+    if (config.maxExpectedEvents <= 0) config.maxExpectedEvents = 1;
 
     char modeStr[64] = {};
     ut_kvp_getStringField(kvp, (node + ".operational_mode").c_str(), modeStr, sizeof(modeStr));
     config.operationalMode = (std::string(modeStr) == "NO_MOTION") ? 1 : 0;
 
-    UT_LOG_INFO("[MOTIONSENSOR_TESTCONFIG] %s: sensorIndex=%d mode=%s noMotionSecs=%d timeoutMs=%d numEvents=%d",
+    UT_LOG_INFO("[MOTIONSENSOR_TESTCONFIG] %s: sensorIndex=%d mode=%s noMotionSecs=%d timeoutMs=%d maxExpectedEvents=%d",
         testName, config.sensorIndex, modeStr, config.noMotionSeconds, config.eventTimeoutMs,
-        config.numEvents);
+        config.maxExpectedEvents);
 
     kvp_destroy_instance(kvp);
     return UT_STATUS_OK;
@@ -97,11 +97,11 @@ UT_status_t vts_motionsensor_parse_activewindow_config(
     config.sensorIndex          = (int32_t)ut_kvp_getUInt32Field(kvp, (node + ".sensor_index").c_str());
     config.windowStartSeconds   = (int32_t)ut_kvp_getUInt32Field(kvp, (node + ".window_start_seconds").c_str());
     config.windowEndSeconds     = (int32_t)ut_kvp_getUInt32Field(kvp, (node + ".window_end_seconds").c_str());
-    config.expectEventReceived  = (int32_t)ut_kvp_getUInt32Field(kvp, (node + ".expect_event_received").c_str());
+    config.numEvents            = (int32_t)ut_kvp_getUInt32Field(kvp, (node + ".max_expected_events").c_str());
     config.eventTimeoutMs       = (int32_t)ut_kvp_getUInt32Field(kvp, (node + ".event_timeout_ms").c_str());
 
-    UT_LOG_INFO("[MOTIONSENSOR_TESTCONFIG] %s: sensorIndex=%d window=[%d,%d] expectEvent=%d timeoutMs=%d",
-        testName, config.sensorIndex, config.windowStartSeconds, config.windowEndSeconds, config.expectEventReceived, config.eventTimeoutMs);
+    UT_LOG_INFO("[MOTIONSENSOR_TESTCONFIG] %s: sensorIndex=%d window=[%d,%d] maxExpectedEvents=%d timeoutMs=%d",
+        testName, config.sensorIndex, config.windowStartSeconds, config.windowEndSeconds, config.numEvents, config.eventTimeoutMs);
 
     kvp_destroy_instance(kvp);
     return UT_STATUS_OK;
@@ -123,9 +123,12 @@ UT_status_t vts_motionsensor_parse_deepsleep_config(
     config.sensorIndex              = (int32_t)ut_kvp_getUInt32Field(kvp, (node + ".sensor_index").c_str());
     config.deepSleepDurationSeconds = (int32_t)ut_kvp_getUInt32Field(kvp, (node + ".deep_sleep_duration_seconds").c_str());
     config.eventTimeoutMs           = (int32_t)ut_kvp_getUInt32Field(kvp, (node + ".event_timeout_ms").c_str());
+    config.autonomyEnabled          = ut_kvp_getBoolField(kvp, (node + ".autonomy_enabled").c_str());
+    config.expectWakeup             = ut_kvp_getBoolField(kvp, (node + ".expect_wakeup").c_str());
 
-    UT_LOG_INFO("[MOTIONSENSOR_TESTCONFIG] %s: sensorIndex=%d sleepDuration=%d timeoutMs=%d",
-        testName, config.sensorIndex, config.deepSleepDurationSeconds, config.eventTimeoutMs);
+    UT_LOG_INFO("[MOTIONSENSOR_TESTCONFIG] %s: sensorIndex=%d sleepDuration=%d timeoutMs=%d autonomy=%d expectWakeup=%d",
+        testName, config.sensorIndex, config.deepSleepDurationSeconds, config.eventTimeoutMs,
+        (int)config.autonomyEnabled, (int)config.expectWakeup);
 
     kvp_destroy_instance(kvp);
     return UT_STATUS_OK;

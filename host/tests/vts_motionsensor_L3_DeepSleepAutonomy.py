@@ -38,14 +38,8 @@ from vts_motionsensor_helper import motionSensorHelperClass
 
 # Seconds after utMenu.start() before the first CP command is sent.
 # Must be long enough for the C++ binary to parse config, open the sensor,
-# enable autonomy, call start(), and enter Phase-A getNextEvent().
+# set autonomy, call start(), and enter getNextEvent().
 _TRIGGER_START_DELAY_S = 3.0
-
-# Seconds to wait after Phase-A completes (event received + DEEP_SLEEP_END)
-# before sending the Phase-B stimulus sequence.  Covers C++ stop() +
-# setAutonomousDuringDeepSleep(false) + resetEventQueue() + start() +
-# getNextEvent() call setup.
-_PHASE_B_SETUP_WAIT_S = 2.0
 
 
 class VTS_MOTIONSENSOR_L3_DeepSleepAutonomy(motionSensorHelperClass):
@@ -53,22 +47,17 @@ class VTS_MOTIONSENSOR_L3_DeepSleepAutonomy(motionSensorHelperClass):
     L3 test: Verify the deep-sleep autonomy feature for every sensor in the
     HFP profile.
 
-    For each sensor the test runs the C++ DeepSleepAutonomy case which has
-    two internal phases:
+    For each sensor the test runs the C++ DeepSleepAutonomy case twice:
 
-    Phase A — autonomy ENABLED:
-        Host sends DEEP_SLEEP_START -> waits sleep_duration -> sends MOTION
-        event -> sends DEEP_SLEEP_END.
-        C++ asserts the event IS received (autonomy on -> events during sleep).
+    Run 1 — autonomy_enabled=True, expect_wakeup=True:
+        simulateIdleDeepSleep → MOTION (delivered, device wakes) → probe arrives.
 
-    Phase B — autonomy DISABLED:
-        Host sends DEEP_SLEEP_START -> waits sleep_duration -> sends MOTION
-        event -> sends DEEP_SLEEP_END.
-        C++ asserts the event is NOT received (autonomy off -> events gated).
+    Run 2 — autonomy_enabled=False, expect_wakeup=False:
+        simulateIdleDeepSleep → MOTION (gated, device stays asleep) → probe gated.
 
-    Both phases are driven by a single trigger callable.  runL3Test() launches
-    it in a background thread _TRIGGER_START_DELAY_S seconds after the C++
-    binary starts.
+    Each run writes autonomy_enabled + expect_wakeup to the L3 YAML before
+    launching the C++ binary, which reads both fields and drives a single
+    self-contained phase.
     """
 
     def __init__(self, log: logModule = None):
@@ -78,48 +67,64 @@ class VTS_MOTIONSENSOR_L3_DeepSleepAutonomy(motionSensorHelperClass):
 
     def _make_trigger(self, sensor_id: int, sleep_duration: float) -> callable:
         """
-        Return a no-argument callable that drives the full deep-sleep stimulus
-        sequence for *sensor_id* across both Phase A and Phase B.
+        Return a no-argument callable that drives one deep-sleep phase.
 
-        Timeline (relative to callable invocation):
-          Phase A:
-            T+0          : DEEP_SLEEP_START
-            T+sleep_dur  : MOTION event  (delivered — autonomy ON)
-            T+sleep_dur+0.5 : DEEP_SLEEP_END
-          Gap (_PHASE_B_SETUP_WAIT_S): wait for C++ Phase-B setup
-          Phase B:
-            T+...        : DEEP_SLEEP_START
-            T+...+sleep_dur : MOTION event (gated — autonomy OFF)
-            T+...+sleep_dur+0.5 : DEEP_SLEEP_END
+        Timeline:
+            T+0          : simulateIdleDeepSleep (idle wait → DEEP_SLEEP_START)
+            T+sleep_dur  : Primary MOTION event
+            T+sleep_dur+0.3 : Probe MOTION event (wake-state check)
 
-        Args:
-            sensor_id     (int):   Target sensor ID.
-            sleep_duration(float): Seconds to hold simulated deep-sleep per phase.
-
-        Returns:
-            callable: No-argument callable for use as triggerCallable.
+        C++ asserts primary and probe according to autonomy_enabled / expect_wakeup
+        read from YAML — no Phase A/B split needed here.
         """
         def _trigger():
-            # Phase A: autonomy ON
-            self.motionSensorDevice.triggerDeepSleepStart(sensor_id)
-            time.sleep(sleep_duration)
-            self.motionSensorDevice.triggerMotionEvent(sensor_id)
-            time.sleep(0.5)
-            self.motionSensorDevice.triggerDeepSleepEnd(sensor_id)
-
-            # Wait for C++ to finish Phase A teardown and enter Phase B
-            # getNextEvent (stop -> setAutonomous(false) -> resetQueue -> start).
-            time.sleep(_PHASE_B_SETUP_WAIT_S)
-
-            # Phase B: autonomy OFF
-            # vcomponent gates the MOTION event (inDeepSleep + autonomy OFF).
-            # C++ asserts FALSE for getNextEvent, so the phase times out.
-            self.motionSensorDevice.triggerDeepSleepStart(sensor_id)
-            time.sleep(sleep_duration)
-            self.motionSensorDevice.triggerMotionEvent(sensor_id)
-            time.sleep(0.5)
-            self.motionSensorDevice.triggerDeepSleepEnd(sensor_id)
+            self.motionSensorDevice.simulateIdleDeepSleep(sensor_id, sleep_duration)
+            self.motionSensorDevice.triggerMotionEvent(sensor_id)   # primary
+            time.sleep(0.3)
+            self.motionSensorDevice.triggerMotionEvent(sensor_id)   # probe
         return _trigger
+
+    def runDeepSleepAutonomyTest(self, sensor_index: int, sensor_id: int,
+                                  sleep_duration: float, autonomy_enabled: bool,
+                                  l3cfg: dict) -> bool:
+        """
+        Run one autonomy phase for the given sensor.
+
+        Writes ``autonomy_enabled`` and ``expect_wakeup`` (= ``autonomy_enabled``)
+        into the L3 YAML, uploads it, then runs the C++ DeepSleepAutonomy test.
+
+        Args:
+            sensor_index    (int):   0-based sensor index in the HFP list.
+            sensor_id       (int):   Sensor ID for CP commands.
+            sleep_duration  (float): Seconds to simulate idle before deep sleep.
+            autonomy_enabled(bool):  True = autonomy ON; False = autonomy OFF.
+            l3cfg           (dict):  Parsed L3 YAML dict (modified in place).
+
+        Returns:
+            bool: True if C++ test passed.
+        """
+        label = "autonomy=ON" if autonomy_enabled else "autonomy=OFF"
+        self.log.info(
+            f"[DeepSleepAutonomy] RUN sensor_index={sensor_index} "
+            f"sensor_id={sensor_id} sleepDuration={sleep_duration}s {label}")
+
+        l3cfg['motionsensor']['L3']['EventDetection']['sensor_index']    = sensor_index
+        l3cfg['motionsensor']['L3']['EventDetection']['autonomy_enabled'] = autonomy_enabled
+        l3cfg['motionsensor']['L3']['EventDetection']['expect_wakeup']    = autonomy_enabled
+        with open(self.l3TestConfigFile, 'w') as fh:
+            yaml.dump(l3cfg, fh, default_flow_style=False, sort_keys=False)
+
+        trigger = self._make_trigger(sensor_id, sleep_duration)
+        result  = self.runL3Test(
+            "DeepSleepAutonomy",
+            triggerCallable=trigger,
+            triggerDelay=_TRIGGER_START_DELAY_S)
+
+        outcome = "PASSED" if result else "FAILED"
+        self.log.info(
+            f"[DeepSleepAutonomy] sensor_index={sensor_index} "
+            f"sensor_id={sensor_id} {label}: {outcome}")
+        return result
 
     def testFunction(self) -> bool:
         """
@@ -132,8 +137,9 @@ class VTS_MOTIONSENSOR_L3_DeepSleepAutonomy(motionSensorHelperClass):
         with open(self.l3TestConfigFile, 'r') as fh:
             l3cfg = yaml.safe_load(fh)
 
-        ds_node        = l3cfg['motionsensor']['L3']['DeepSleepAutonomy']
-        sleep_duration = float(ds_node.get('deep_sleep_duration_seconds', 2))
+        ds_node        = l3cfg['motionsensor']['L3']['EventDetection']
+        sleep_duration = float(
+            self.deviceTestSetup.get('deep_sleep_duration_seconds', 5))
 
         sensor_ids = self._readSensorIdsFromProfile()
         if not sensor_ids:
@@ -145,27 +151,14 @@ class VTS_MOTIONSENSOR_L3_DeepSleepAutonomy(motionSensorHelperClass):
         all_passed = True
 
         for sensor_index, sensor_id in enumerate(sensor_ids):
-            self.log.info(
-                f"[DeepSleepAutonomy] RUN sensor_index={sensor_index} "
-                f"sensor_id={sensor_id} sleepDuration={sleep_duration}s")
+            # Run 1: autonomy ON  → primary event delivered, device wakes, probe arrives
+            result_a = self.runDeepSleepAutonomyTest(
+                sensor_index, sensor_id, sleep_duration, True, l3cfg)
+            # Run 2: autonomy OFF → primary gated, device stays asleep, probe gated
+            result_b = self.runDeepSleepAutonomyTest(
+                sensor_index, sensor_id, sleep_duration, False, l3cfg)
 
-            # Write sensor_index to YAML so the C++ test targets the right sensor.
-            l3cfg['motionsensor']['L3']['DeepSleepAutonomy']['sensor_index'] = sensor_index
-            with open(self.l3TestConfigFile, 'w') as fh:
-                yaml.dump(l3cfg, fh, default_flow_style=False, sort_keys=False)
-
-            trigger = self._make_trigger(sensor_id, sleep_duration)
-            result  = self.runL3Test(
-                "DeepSleepAutonomy",
-                triggerCallable=trigger,
-                triggerDelay=_TRIGGER_START_DELAY_S)
-
-            outcome = "PASSED" if result else "FAILED"
-            self.log.info(
-                f"[DeepSleepAutonomy] sensor_index={sensor_index} "
-                f"sensor_id={sensor_id}: {outcome}")
-
-            if not result:
+            if not result_a or not result_b:
                 all_passed = False
 
         return all_passed

@@ -21,113 +21,25 @@
 #* ******************************************************************************
 motionsensor:
   L3:
-    MotionEventDetection:
+    EventDetection:
       sensor_index: 0
+      # operational_mode is hardcoded in the C++ tests (MOTION / NO_MOTION);
+      # this field is for documentation only.
       operational_mode: "MOTION"
-      no_motion_seconds: 0
-      active_start_seconds: 0
-      active_stop_seconds: 0
-      event_timeout_ms: 15000
-      num_events: 3
-    NoMotionEventDetection:
-      sensor_index: 0
-      operational_mode: "NO_MOTION"
       no_motion_seconds: 5
       active_start_seconds: 0
       active_stop_seconds: 0
-      event_timeout_ms: 30000
-      num_events: 3
-    ActiveWindowBehavior:
-      sensor_index: 0
-      # The following two fields are overwritten by the Python test per iteration.
-      # Their initial values are irrelevant; the Python always writes before uploading.
-      window_start_seconds: 0
-      window_end_seconds: 86399
-      # Overwritten by Python per iteration: 1 = event expected in Phase 1, 0 = suppressed.
-      expect_event_received: 1
       event_timeout_ms: 15000
-      # How often (seconds) the Python host sends a MOTION trigger during Phase 1.
-      trigger_interval_seconds: 3
-      # 10 window scenarios iterated by the Python test.
-      # dynamic: false  -> use window_start_seconds / window_end_seconds as-is.
-      # dynamic: true   -> compute actual times as (now_secs + offset) % 86400.
-      # expect_event    -> true  = event must arrive   (C++ asserts event received).
-      #                    false = event must be suppressed (C++ asserts no event received).
-      active_windows:
-        # Positive scenarios (window contains current time)
-        # 1. Full-day window [00:00:00, 23:59:59] — always contains any time.
-        - name: "full_day_window"
-          dynamic: false
-          window_start_seconds: 0
-          window_end_seconds: 86399
-          expect_event: true
-
-        # 2. 2-hour window centred on current time [now-1h, now+1h].
-        - name: "two_hour_centred_window"
-          dynamic: true
-          offset_start_seconds: -3600
-          offset_end_seconds: 3600
-          expect_event: true
-
-        # 3. 10-minute window centred on current time [now-5m, now+5m].
-        - name: "ten_minute_centred_window"
-          dynamic: true
-          offset_start_seconds: -300
-          offset_end_seconds: 300
-          expect_event: true
-
-        # 4. 8-hour window centred on current time [now-4h, now+4h].
-        - name: "eight_hour_centred_window"
-          dynamic: true
-          offset_start_seconds: -14400
-          offset_end_seconds: 14400
-          expect_event: true
-
-        # 5. Fixed midnight-spanning window [22:00, 02:00].
-        #    Skipped at runtime when the current time is outside [22:00, 02:00].
-        - name: "midnight_wrap_window"
-          dynamic: false
-          window_start_seconds: 79200
-          window_end_seconds: 7200
-          expect_event: true
-
-        # Suppression scenarios (window excludes current time)
-        # 6. Window that has not yet opened.
-        #    Opens 30 s from now — AFTER the 15 s Phase-1 timeout.
-        - name: "window_not_yet_open"
-          dynamic: true
-          offset_start_seconds: 30
-          offset_end_seconds: 3630
-          expect_event: false
-
-        # 7. Window that closed 1–2 hours ago.
-        - name: "window_already_closed"
-          dynamic: true
-          offset_start_seconds: -7200
-          offset_end_seconds: -3600
-          expect_event: false
-
-        # 8. Narrow window that closed 1–2 minutes ago.
-        - name: "narrow_past_window"
-          dynamic: true
-          offset_start_seconds: -120
-          offset_end_seconds: -60
-          expect_event: false
-
-        # 9. Narrow window that opens in 1–2 minutes.
-        - name: "narrow_future_window"
-          dynamic: true
-          offset_start_seconds: 60
-          offset_end_seconds: 120
-          expect_event: false
-
-        # 10. Far-future window that opens 2–3 hours from now.
-        - name: "far_future_window"
-          dynamic: true
-          offset_start_seconds: 7200
-          offset_end_seconds: 10800
-          expect_event: false
-    DeepSleepAutonomy:
-      sensor_index: 0
-      deep_sleep_duration_seconds: 5
-      event_timeout_ms: 15000
+      # maximum number of events to collect (test passes if at least 1 arrives).
+      max_expected_events: 3
+      # Overwritten per run by Python: true = autonomy ON, false = autonomy OFF.
+      autonomy_enabled: true
+      # Overwritten per run by Python (mirrors autonomy_enabled):
+      # true  = probe trigger must arrive  (device woke up after motion).
+      # false = probe trigger must be gated (device stayed asleep).
+      expect_wakeup: true
+      # active_windows is intentionally empty here.
+      # The ActiveWindowBehavior Python test defines the 10 window scenarios
+      # as a hardcoded constant and patches the scalar fields above per-iteration.
+      # MotionEventDetection and NoMotionEventDetection do not use this list.
+      active_windows: []

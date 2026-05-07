@@ -53,6 +53,15 @@ class VTS_MOTIONSENSOR_L3_NoMotionEventDetection(motionSensorHelperClass):
         qcId = "2"
         super().__init__(self.testName, qcId, log)
 
+    def _make_trigger(self, sid: int, n: int):
+        """Return a no-arg callable that fires *n* NO_MOTION stimuli for sensor *sid*."""
+        def _trigger():
+            for i in range(n):
+                if i > 0:
+                    time.sleep(VTS_MOTIONSENSOR_L3_NoMotionEventDetection.INTER_EVENT_DELAY_S)
+                self.motionSensorDevice.triggerNoMotionEvent(sensorId=sid)
+        return _trigger
+
     def testFunction(self) -> bool:
         """
         Main test function.
@@ -73,8 +82,8 @@ class VTS_MOTIONSENSOR_L3_NoMotionEventDetection(motionSensorHelperClass):
         # Read test parameters from the local L3 config YAML.
         with open(self.l3TestConfigFile, 'r') as fh:
             l3cfg = yaml.safe_load(fh)
-        test_node   = l3cfg['motionsensor']['L3']['NoMotionEventDetection']
-        num_events  = int(test_node.get('num_events', 1))
+        test_node   = l3cfg['motionsensor']['L3']['EventDetection']
+        max_events  = int(test_node.get('max_expected_events', 1))
         timeout_ms  = int(test_node.get('event_timeout_ms', 30000))
         # Fire the trigger at half the C++ event-wait timeout so it always
         # arrives before the test times out, regardless of config changes.
@@ -92,26 +101,16 @@ class VTS_MOTIONSENSOR_L3_NoMotionEventDetection(motionSensorHelperClass):
         for sensor_index, sensor_id in enumerate(sensor_ids):
             self.log.info(
                 f"[NoMotionEventDetection] sensor_index={sensor_index} "
-                f"sensor_id={sensor_id}  num_events={num_events}")
+                f"sensor_id={sensor_id}  max_events={max_events}")
 
             # Update sensor_index so the C++ test exercises this sensor.
-            l3cfg['motionsensor']['L3']['NoMotionEventDetection']['sensor_index'] = sensor_index
+            l3cfg['motionsensor']['L3']['EventDetection']['sensor_index'] = sensor_index
             with open(self.l3TestConfigFile, 'w') as fh:
                 yaml.dump(l3cfg, fh, default_flow_style=False, sort_keys=False)
 
-            # Build a no-arg callable that fires num_events stimuli spaced
-            # INTER_EVENT_DELAY_S apart, targeting this sensor's CP id.
-            def _make_trigger(sid: int, n: int):
-                def _trigger():
-                    for i in range(n):
-                        if i > 0:
-                            time.sleep(VTS_MOTIONSENSOR_L3_NoMotionEventDetection.INTER_EVENT_DELAY_S)
-                        self.motionSensorDevice.triggerNoMotionEvent(sensorId=sid)
-                return _trigger
-
             result = self.runL3Test(
                 "NoMotionEventDetection",
-                triggerCallable=_make_trigger(sensor_id, num_events),
+                triggerCallable=self._make_trigger(sensor_id, max_events * 2),  # Fire extra events to verify C++ test only counts expected number
                 triggerDelay=trigger_delay)
 
             if not result:

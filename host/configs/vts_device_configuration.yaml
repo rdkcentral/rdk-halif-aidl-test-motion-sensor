@@ -33,3 +33,4 @@ deviceConfig:
         test:
             profile: "../../profiles/hfp-motionsensor-vcomponent.yaml" # HFP profile used to meet platform requirements
             controller_port: 8080 # Port where the vcomponent control plane is listening
+            deep_sleep_duration_seconds: 60 # Seconds to simulate idle before deep sleep
