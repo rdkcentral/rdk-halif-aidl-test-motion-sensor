@@ -155,30 +155,29 @@ public:
 /**
  * @brief Validate event delivery for a sensor in MOTION or NO_MOTION mode.
  *
- * The sensor index (sensor_index), operational mode (operational_mode), and max
- * number of events to receive (max_expected_events) are driven by the Python host
- * test, which writes them into the YAML config before uploading to the target.
- * Python triggers up to max_expected_events stimuli; the test passes as long as
- * at least one arrives.
+ * The operational mode (operational_mode), sensor index (sensor_index), and max
+ * number of events to receive (max_expected_events) are written into the YAML
+ * config by the Python host test before each run. Python triggers stimuli;
+ * the test passes as long as at least one event arrives.
  *
- * Steps:
- * 1. Parse test config: sensor_index, operational_mode, max_expected_events (N), timeouts.
- * 2. Verify no spurious/stale events exist before the test begins.
- * 3. Confirm no events arrive before listener registration (listener-gate).
- * 4. Re-register listener; start sensor in the configured mode; wait for STARTED.
- * 5. Loop up to N times — collect arriving events; stop early if none arrive:
- *    a. Block until the next event arrives (within eventTimeoutMs).
- *    b. Verify event type == configured operational mode.
- * 6. Assert at least one event was received.
- * 7. Stop sensor; verify no spurious events after stop.
- * 8. Unregister listener; verify no events after unregistration.
- *
- * **Test Group ID:** Basic: 03@n
+ * **Test Group ID:**: 03@n
  * **Test Case ID:** 001@n
  * **Priority:** High@n
  *
+ * **Pre-Conditions:** None@n
+ * **Dependencies:** None@n
+ * **User Interaction:** None@n
+ *
  * **Test Procedure:**@n
- * Refer to [motion_sensor_High_Level_TestSpecification.md](../docs/pages/motion_sensor_High_Level_TestSpecification.md)
+ * | Variation / Step | Description | Test Data | Expected Result | Notes |@n
+ * | :----: | --------- | ---------- |-------------- | ----- |@n
+ * | 01 | Parse test config: sensor_index, operational_mode, max_expected_events, timeouts | Config file | Config parsed successfully | Should be successful |@n
+ * | 02 | Verify no spurious events exist before the test | Output: none | No events received within 200 ms | Should Pass |@n
+ * | 03 | Unregister event listener; confirm no events arrive | Output: none | No events received within 500 ms | Should Pass |@n
+ * | 04 | Re-register listener; start sensor in configured mode; wait for STARTED | Input: operationalMode, startConfig | State == STARTED | Should Pass |@n
+ * | 05 | Loop up to maxExpectedEvents times collecting events; assert at least 1 arrives | Output: receivedMode | eventsReceived >= 1; each receivedMode == opMode | Should Pass |@n
+ * | 06 | Stop sensor; verify no spurious events after stop | Output: none | No events received within 500 ms | Should Pass |@n
+ * | 07 | Unregister listener; verify no events delivered | Output: none | No events received within 2000 ms | Should Pass |
  */
 UT_ADD_TEST(VTS_L3_MOTIONSENSOR, EventDetection)
 {
@@ -280,19 +279,26 @@ UT_ADD_TEST(VTS_L3_MOTIONSENSOR, EventDetection)
 /**
  * @brief Validate that active windows gate event emission correctly.
  *
- * Steps:
- * 1. Parse test config (sensor index, window start/end, timeout).
- * 2. Configure an active window covering the test period.
- * 3. Start sensor in MOTION mode.
- * 4. Host injects a MOTION_SENSOR_EVENT while within the window.
- * 5. Verify event is received (window is open).
- * 6. Clear active windows (unconstrained).
- * 7. Host injects another event — verify it is still received.
- * 8. Stop sensor.
+ * The Python host test configures a time window and injects MOTION events
+ * both inside and outside the window to verify suppression behaviour.
  *
- * **Test Group ID:** Basic: 03@n
+ * **Test Group ID:**: 03@n
  * **Test Case ID:** 003@n
  * **Priority:** High@n
+ *
+ * **Pre-Conditions:** None@n
+ * **Dependencies:** None@n
+ * **User Interaction:** None@n
+ *
+ * **Test Procedure:**@n
+ * | Variation / Step | Description | Test Data | Expected Result | Notes |@n
+ * | :----: | --------- | ---------- |-------------- | ----- |@n
+ * | 01 | Parse test config: sensor index, window start/end, numEvents, timeout | Config file | Config parsed successfully | Should be successful |@n
+ * | 02 | Configure active window and start sensor in MOTION mode | Input: windowStart, windowEnd | Sensor reaches STARTED | Should Pass |@n
+ * | 03 | Host injects event; verify outcome based on numEvents flag | Output: gotEvent | numEvents>0: event received; numEvents=0: event suppressed | Should Pass |@n
+ * | 04 | Stop sensor; clear active windows | Input: controllerHandle | Windows cleared, sensor stopped | Should Pass |@n
+ * | 05 | Restart sensor; host injects event with no window restriction | Output: gotEvent2 | Event received (MOTION) | Should Pass |@n
+ * | 06 | Stop sensor | Input: controllerHandle | Sensor stops successfully | Should Pass |
  */
 UT_ADD_TEST(VTS_L3_MOTIONSENSOR, ActiveWindowBehavior)
 {
@@ -380,32 +386,29 @@ UT_ADD_TEST(VTS_L3_MOTIONSENSOR, ActiveWindowBehavior)
     MOTIONSENSOR_WAIT_FOR_STATE(sensor, State::STOPPED, lastState);
 }
 
-/* ========================================================================== */
-/*  Test 4 — Deep Sleep Autonomy                                              */
-/* ========================================================================== */
-
 /**
- * @brief Validate motion detection during deep sleep when autonomy is enabled.
+ * @brief Validate motion detection during deep sleep when autonomy is enabled or disabled.
  *
- * Steps:
- * 1. Parse test config (sensor index, sleep duration, timeout).
- * 2. Check sensor capabilities for deep sleep autonomy support; skip if not.
- * 3. Enable setAutonomousDuringDeepSleep(true).
- * 4. Start sensor in MOTION mode.
- * 5. Host sends DEEP_SLEEP_START command, waits deepSleepDurationSeconds,
- *    injects a MOTION_SENSOR_EVENT, then sends DEEP_SLEEP_END.
- * 6. Verify the event was delivered (autonomy enabled → events during sleep);
- *    vcomponent auto-clears inDeepSleep on wake.
- *    Host sends a probe trigger; C++ asserts the probe arrives (device is active).
- * 7. Stop, set autonomous=false, start again.
- * 8. Host sends DEEP_SLEEP_START, injects event — vcomponent gates it (autonomy off).
- * 9. Verify NO event was delivered; host sends probe — C++ asserts probe is also gated
- *    (device is still in deep sleep, not woken).
- * 10. Stop sensor.
+ * The Python host test runs twice per sensor: once with autonomy enabled and once disabled,
+ * verifying that events are delivered or gated accordingly during deep sleep.
  *
- * **Test Group ID:** Basic: 03@n
+ * **Test Group ID:**: 03@n
  * **Test Case ID:** 004@n
  * **Priority:** High@n
+ *
+ * **Pre-Conditions:** None@n
+ * **Dependencies:** None@n
+ * **User Interaction:** None@n
+ *
+ * **Test Procedure:**@n
+ * | Variation / Step | Description | Test Data | Expected Result | Notes |@n
+ * | :----: | --------- | ---------- |-------------- | ----- |@n
+ * | 01 | Parse test config: sensor index, sleep duration, timeout, autonomyEnabled, expectWakeup | Config file | Config parsed successfully | Should be successful |@n
+ * | 02 | Check capabilities; skip if supportsDeepSleepAutonomy == false | Output: caps | Test skipped or continues | Should Pass |@n
+ * | 03 | Set setAutonomousDuringDeepSleep(autonomyEnabled); start sensor in MOTION mode | Input: autonomyEnabled | Sensor reaches STARTED | Should Pass |@n
+ * | 04 | Host sends DEEP_SLEEP_START, injects MOTION event, sends DEEP_SLEEP_END | Output: event or none | expectWakeup: event arrives; else: event gated | Should Pass |@n
+ * | 05 | Assert event delivery matches expectWakeup flag | Output: gotEvent | gotEvent == expectWakeup | Should Pass |@n
+ * | 06 | Stop sensor | Input: controllerHandle | Sensor stops successfully | Should Pass |
  */
 UT_ADD_TEST(VTS_L3_MOTIONSENSOR, DeepSleepAutonomy)
 {

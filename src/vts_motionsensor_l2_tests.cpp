@@ -93,22 +93,23 @@ public:
  * the correct onStateChanged notifications for each step. It also verifies that getStartConfig()
  * returns the configured operational mode while in STARTED state.
  *
- * **Test Group ID:** Basic: 02@n
+ * **Test Group ID:**: 02@n
  * **Test Case ID:** 001@n
  * **Priority:** High@n
  *
- * **Pre-Conditions:**@n
- * - Motion Sensor HAL service must be running@n
- * - Sensors must be available in State::STOPPED initially@n
- *
- * **Dependencies:**@n
- * - A valid gMOTIONSENSORMGRHandle must be available@n
- *
+ * **Pre-Conditions:** None@n
+ * **Dependencies:** None@n
  * **User Interaction:** None@n
  *
  * **Test Procedure:**@n
- * Refer to UT specification documentation [motion_sensor_High_Level_TestSpecification.md](../docs/pages/motion_sensor_High_Level_TestSpecification.md)
- *
+ * | Variation / Step | Description | Test Data | Expected Result | Notes |@n
+ * | :----: | --------- | ---------- |-------------- | ----- |@n
+ * | 01 | Call getMotionSensorIds and iterate all sensors | Output: sensorIdsOpt | Sensor IDs list obtained | Should be successful |@n
+ * | 02 | Get sensor handle, open, and start in MOTION mode | Input: sensorId, listener, config | Sensor transitions STOPPED→STARTING→STARTED | Should Pass |@n
+ * | 03 | Verify onStateChanged callbacks: STOPPED→STARTING, STARTING→STARTED | Output: stateChange pairs | Callbacks received in correct order | Should Pass |@n
+ * | 04 | Call getStartConfig and verify returned config matches started config | Output: retrievedConfig | operationalMode and noMotionSeconds match | Should Pass |@n
+ * | 05 | Stop sensor and verify onStateChanged callbacks: STARTED→STOPPING, STOPPING→STOPPED | Output: stateChange pairs | Callbacks received in correct order | Should Pass |@n
+ * | 06 | Close the sensor | Input: controllerHandle | Close succeeds | Should Pass |
  */
 UT_ADD_TEST(VTS_L2_MOTIONSENSOR, StateTransitions)
 {
@@ -191,22 +192,25 @@ UT_ADD_TEST(VTS_L2_MOTIONSENSOR, StateTransitions)
  * and are accepted when the sensor is in STOPPED state. This ensures the HAL enforces
  * the correct state guard on all configuration entry points.
  *
- * **Test Group ID:** Basic: 02@n
+ * **Test Group ID:**: 02@n
  * **Test Case ID:** 002@n
  * **Priority:** High@n
  *
- * **Pre-Conditions:**@n
- * - Motion Sensor HAL service must be running@n
- * - Sensors must be available in State::STOPPED initially@n
- *
- * **Dependencies:**@n
- * - A valid gMOTIONSENSORMGRHandle must be available@n
- *
+ * **Pre-Conditions:** None@n
+ * **Dependencies:** None@n
  * **User Interaction:** None@n
  *
  * **Test Procedure:**@n
- * Refer to UT specification documentation [motion_sensor_High_Level_TestSpecification.md](../docs/pages/motion_sensor_High_Level_TestSpecification.md)
- *
+ * | Variation / Step | Description | Test Data | Expected Result | Notes |@n
+ * | :----: | --------- | ---------- |-------------- | ----- |@n
+ * | 01 | Call getMotionSensorIds and iterate all sensors | Output: sensorIdsOpt | Sensor IDs list obtained | Should be successful |@n
+ * | 02 | Get sensor handle, open, and start in MOTION mode | Input: sensorId, listener, config | Sensor started | Should Pass |@n
+ * | 03 | Call setSensitivity while STARTED | Input: sensitivity value | Returns EX_ILLEGAL_STATE | Should Pass |@n
+ * | 04 | Call setActiveWindows while STARTED | Input: windows vector | Returns EX_ILLEGAL_STATE | Should Pass |@n
+ * | 05 | Call setAutonomousDuringDeepSleep while STARTED | Input: enabled=true | Returns EX_ILLEGAL_STATE | Should Pass |@n
+ * | 06 | Stop sensor | Input: controllerHandle | Sensor stops successfully | Should Pass |@n
+ * | 07 | Call setSensitivity, setActiveWindows, setAutonomousDuringDeepSleep while STOPPED | Input: respective valid values | All calls succeed | Should Pass |@n
+ * | 08 | Close the sensor | Input: controllerHandle | Close succeeds | Should Pass |
  */
 UT_ADD_TEST(VTS_L2_MOTIONSENSOR, ConfigurationMethodsRequireStopped)
 {
