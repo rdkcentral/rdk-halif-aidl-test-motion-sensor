@@ -157,7 +157,7 @@ typedef com::rdk::hal::sensor::motion::IMotionSensor::Id MotionSensorId;
 /*  IMotionSensor Macros                                                       */
 /* ========================================================================== */
 
-#define MOTIONSENSOR_GET_STATE_SUCCESS(sensorHandle, state) \
+#define MOTIONSENSOR_GET_STATE_SUCCESS(sensorHandle, state, expectedState) \
     do { \
         ::android::binder::Status status; \
         UT_LOG_DEBUG("Calling getState(OUT:state[])"); \
@@ -168,6 +168,7 @@ typedef com::rdk::hal::sensor::motion::IMotionSensor::Id MotionSensorId;
             UT_Control_GetMapString(statusMotionSensorException_mapTable, status.exceptionCode())); \
         UT_ASSERT_TRUE(status.isOk()); \
         UT_ASSERT_EQUAL(status.exceptionCode(), Status::EX_NONE); \
+        UT_ASSERT_EQUAL(state, expectedState); \
     } while (0)
 
 #define MOTIONSENSOR_GET_STATE_FAILURE(sensorHandle, statePtr, expectedException) \
@@ -193,7 +194,7 @@ typedef com::rdk::hal::sensor::motion::IMotionSensor::Id MotionSensorId;
         { \
             this_thread::sleep_for(chrono::milliseconds(MAX_TRANSITORY_STATE_WAIT_MS)); \
             sleep_time += MAX_TRANSITORY_STATE_WAIT_MS; \
-            MOTIONSENSOR_GET_STATE_SUCCESS((sensorHandle), lastState); \
+            MOTIONSENSOR_GET_STATE_SUCCESS((sensorHandle), lastState, desiredState); \
         } while (sleep_time < MAX_FINAL_STATE_WAIT_MS && lastState != desiredState); \
     } while (0)
 
@@ -220,7 +221,7 @@ typedef com::rdk::hal::sensor::motion::IMotionSensor::Id MotionSensorId;
             UT_Control_GetMapString(bool_mapTable_motionsensor, status.isOk()), \
             UT_Control_GetMapString(statusMotionSensorException_mapTable, status.exceptionCode())); \
         if (expectedException == Status::EX_NONE) \
-            UT_ASSERT_TRUE(status.isOk()); \
+            UT_ASSERT_TRUE(status.MOTIONSENSOR_REGISTER_EVENT_SUCCESS()); \
         else \
             UT_ASSERT_FALSE(status.isOk()); \
         UT_ASSERT_EQUAL(status.exceptionCode(), expectedException); \
@@ -422,7 +423,7 @@ typedef com::rdk::hal::sensor::motion::IMotionSensor::Id MotionSensorId;
         UT_ASSERT_EQUAL(status.exceptionCode(), expectedException); \
     } while (0)
 
-#define MOTIONSENSOR_GET_START_CONFIG_SUCCESS(controllerHandle, config) \
+#define MOTIONSENSOR_GET_START_CONFIG_SUCCESS(controllerHandle, config, expectedConfig) \
     do { \
         ::android::binder::Status status; \
         UT_LOG_DEBUG("Calling getStartConfig(OUT:config[])"); \
@@ -433,6 +434,8 @@ typedef com::rdk::hal::sensor::motion::IMotionSensor::Id MotionSensorId;
             UT_Control_GetMapString(statusMotionSensorException_mapTable, status.exceptionCode())); \
         UT_ASSERT_TRUE(status.isOk()); \
         UT_ASSERT_EQUAL(status.exceptionCode(), Status::EX_NONE); \
+        UT_ASSERT_EQUAL(config.operationalMode, (expectedConfig).operationalMode); \
+        UT_ASSERT_EQUAL(config.noMotionSeconds, (expectedConfig).noMotionSeconds); \
     } while (0)
 
 #define MOTIONSENSOR_GET_START_CONFIG_FAILURE(controllerHandle, config, expectedException) \

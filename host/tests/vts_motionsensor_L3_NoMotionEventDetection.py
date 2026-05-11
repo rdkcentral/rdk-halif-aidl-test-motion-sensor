@@ -103,14 +103,18 @@ class VTS_MOTIONSENSOR_L3_NoMotionEventDetection(motionSensorHelperClass):
                 f"[NoMotionEventDetection] sensor_index={sensor_index} "
                 f"sensor_id={sensor_id}  max_events={max_events}")
 
-            # Update sensor_index so the C++ test exercises this sensor.
-            l3cfg['motionsensor']['L3']['EventDetection']['sensor_index'] = sensor_index
+            # Write a clean, self-consistent YAML for this sensor run.
+            # NO_MOTION emits exactly one event per run; set max_expected_events=1.
+            l3cfg['motionsensor']['L3']['EventDetection']['sensor_index']       = sensor_index
+            l3cfg['motionsensor']['L3']['EventDetection']['operational_mode']   = 'NO_MOTION'
+            l3cfg['motionsensor']['L3']['EventDetection']['max_expected_events'] = max_events
+            l3cfg['motionsensor']['L3']['EventDetection']['event_timeout_ms']    = timeout_ms
             with open(self.l3TestConfigFile, 'w') as fh:
                 yaml.dump(l3cfg, fh, default_flow_style=False, sort_keys=False)
 
             result = self.runL3Test(
-                "NoMotionEventDetection",
-                triggerCallable=self._make_trigger(sensor_id, max_events * 2),  # Fire extra events to verify C++ test only counts expected number
+                "EventDetection",
+                triggerCallable=self._make_trigger(sensor_id, max_events * 2),
                 triggerDelay=trigger_delay)
 
             if not result:

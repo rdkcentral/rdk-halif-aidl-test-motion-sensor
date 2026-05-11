@@ -132,8 +132,7 @@ UT_ADD_TEST(VTS_L2_MOTIONSENSOR, StateTransitions)
         MOTIONSENSOR_GET_SENSOR_SUCCESS(gMOTIONSENSORMGRHandle, sensorIdObj, sensorHandle);
 
         // Check initial state is STOPPED
-        MOTIONSENSOR_GET_STATE_SUCCESS(sensorHandle, state);
-        UT_ASSERT_EQUAL(state, State::STOPPED);
+        MOTIONSENSOR_GET_STATE_SUCCESS(sensorHandle, state, State::STOPPED);
 
         // Open the sensor
         MOTIONSENSOR_OPEN_SUCCESS(sensorHandle, controllerListener, controllerHandle);
@@ -160,9 +159,7 @@ UT_ADD_TEST(VTS_L2_MOTIONSENSOR, StateTransitions)
 
         // Verify getStartConfig() returns the configured operational mode while STARTED
         StartConfig retrievedConfig;
-        MOTIONSENSOR_GET_START_CONFIG_SUCCESS(controllerHandle, retrievedConfig);
-        UT_ASSERT_EQUAL(retrievedConfig.operationalMode, config.operationalMode);
-        UT_ASSERT_EQUAL(retrievedConfig.noMotionSeconds, config.noMotionSeconds);
+        MOTIONSENSOR_GET_START_CONFIG_SUCCESS(controllerHandle, retrievedConfig, config);
 
         // Stop the sensor
         MOTIONSENSOR_STOP_SUCCESS(controllerHandle);

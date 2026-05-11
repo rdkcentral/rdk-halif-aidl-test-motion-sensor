@@ -127,8 +127,8 @@ public:
             auto& controller = std::get<4>(tup);
 
             /* Ensure sensor is stopped before close */
-            State state;
-            MOTIONSENSOR_GET_STATE_SUCCESS(sensor, state);
+            State state = State::STOPPED;
+            (void)(sensor)->getState(&state);
             if (state == State::STARTED)
             {
                 MOTIONSENSOR_STOP_SUCCESS(controller);
@@ -153,21 +153,22 @@ public:
 };
 
 /**
- * @brief Validate MOTION mode event delivery for a sensor in MOTION mode.
+ * @brief Validate event delivery for a sensor in MOTION or NO_MOTION mode.
  *
- * The sensor index (sensor_index) and max number of motion events to receive
- * (max_expected_events) are driven by the Python host test, which writes them
- * into the YAML config before uploading it to the target.  Python triggers up to
- * max_expected_events stimuli; the test passes as long as at least one arrives.
+ * The sensor index (sensor_index), operational mode (operational_mode), and max
+ * number of events to receive (max_expected_events) are driven by the Python host
+ * test, which writes them into the YAML config before uploading to the target.
+ * Python triggers up to max_expected_events stimuli; the test passes as long as
+ * at least one arrives.
  *
  * Steps:
- * 1. Parse test config: sensor_index, max_expected_events (N), timeouts.
+ * 1. Parse test config: sensor_index, operational_mode, max_expected_events (N), timeouts.
  * 2. Verify no spurious/stale events exist before the test begins.
  * 3. Confirm no events arrive before listener registration (listener-gate).
- * 4. Re-register listener; start sensor in MOTION mode; wait for STARTED.
- * 5. Loop up to N times — collect arriving MOTION events; stop early if none arrive:
- *    a. Block until the next MOTION event arrives (within eventTimeoutMs).
- *    b. Verify event type == OperationalMode::MOTION.
+ * 4. Re-register listener; start sensor in the configured mode; wait for STARTED.
+ * 5. Loop up to N times — collect arriving events; stop early if none arrive:
+ *    a. Block until the next event arrives (within eventTimeoutMs).
+ *    b. Verify event type == configured operational mode.
  * 6. Assert at least one event was received.
  * 7. Stop sensor; verify no spurious events after stop.
  * 8. Unregister listener; verify no events after unregistration.
@@ -179,7 +180,7 @@ public:
  * **Test Procedure:**@n
  * Refer to [motion_sensor_High_Level_TestSpecification.md](../docs/pages/motion_sensor_High_Level_TestSpecification.md)
  */
-UT_ADD_TEST(VTS_L3_MOTIONSENSOR, MotionEventDetection)
+UT_ADD_TEST(VTS_L3_MOTIONSENSOR, EventDetection)
 {
     const char *testName = "EventDetection";
     motionSensorL3EventTestConfig_t cfg;
@@ -197,8 +198,11 @@ UT_ADD_TEST(VTS_L3_MOTIONSENSOR, MotionEventDetection)
     auto& evtLsn     = std::get<3>(*tup);
     auto& controller = std::get<4>(*tup);
 
-    UT_LOG_INFO("[L3 MotionEventDetection] sensorIndex=%d maxExpectedEvents=%d timeoutMs=%d",
-        cfg.sensorIndex, cfg.maxExpectedEvents, cfg.eventTimeoutMs);
+    OperationalMode opMode   = static_cast<OperationalMode>(cfg.operationalMode);
+    const char     *modeName = (cfg.operationalMode == 1) ? "NO_MOTION" : "MOTION";
+
+    UT_LOG_INFO("[L3 EventDetection] sensorIndex=%d mode=%s maxExpectedEvents=%d timeoutMs=%d",
+        cfg.sensorIndex, modeName, cfg.maxExpectedEvents, cfg.eventTimeoutMs);
 
     ctrlLsn->resetStateQueue();
     evtLsn->resetEventQueue();
@@ -220,9 +224,9 @@ UT_ADD_TEST(VTS_L3_MOTIONSENSOR, MotionEventDetection)
     MOTIONSENSOR_REGISTER_EVENT_SUCCESS(sensor, evtLsn);
     evtLsn->resetEventQueue();
 
-    /* Step 4: Start sensor in MOTION mode */
+    /* Step 4: Start sensor in the configured mode */
     StartConfig startCfg;
-    startCfg.operationalMode    = OperationalMode::MOTION;
+    startCfg.operationalMode    = opMode;
     startCfg.noMotionSeconds    = cfg.noMotionSeconds;
     startCfg.activeStartSeconds = cfg.activeStartSeconds;
     startCfg.activeStopSeconds  = cfg.activeStopSeconds;
@@ -233,8 +237,7 @@ UT_ADD_TEST(VTS_L3_MOTIONSENSOR, MotionEventDetection)
     MOTIONSENSOR_WAIT_FOR_STATE(sensor, State::STARTED, lastState);
     UT_ASSERT_EQUAL(lastState, State::STARTED);
 
-    /* Step 5: Collect up to maxExpectedEvents MOTION events.
-     * On real hardware the exact count may vary; assert at least 1 arrives. */
+    /* Step 5: Collect up to maxExpectedEvents events; assert at least 1 arrives. */
     int32_t eventsReceived = 0;
     for (int32_t evtNum = 0; evtNum < cfg.maxExpectedEvents; ++evtNum)
     {
@@ -242,14 +245,14 @@ UT_ADD_TEST(VTS_L3_MOTIONSENSOR, MotionEventDetection)
         bool gotEvent = evtLsn->getNextEvent(receivedMode, chrono::milliseconds(cfg.eventTimeoutMs));
         if (!gotEvent)
             break;   /* no more events arriving within timeout */
-        UT_ASSERT_EQUAL(receivedMode, OperationalMode::MOTION);
+        UT_ASSERT_EQUAL(receivedMode, opMode);
         eventsReceived++;
-        UT_LOG_INFO("[L3 MotionEventDetection] Event %d/%d received: mode=MOTION",
-            eventsReceived, cfg.maxExpectedEvents);
+        UT_LOG_INFO("[L3 EventDetection] Event %d/%d received: mode=%s",
+            eventsReceived, cfg.maxExpectedEvents, modeName);
     }
     UT_ASSERT_TRUE(eventsReceived >= 1);
 
-    /* Step 6: Stop sensor; verify no spurious events after stop */
+    /* Step 7: Stop sensor; verify no spurious events after stop */
     MOTIONSENSOR_STOP_SUCCESS(controller);
     MOTIONSENSOR_WAIT_FOR_STATE(sensor, State::STOPPED, lastState);
     UT_ASSERT_EQUAL(lastState, State::STOPPED);
@@ -261,7 +264,7 @@ UT_ADD_TEST(VTS_L3_MOTIONSENSOR, MotionEventDetection)
         UT_ASSERT_FALSE(gotPostStop);
     }
 
-    /* Step 7: Unregister listener; host injects event — must NOT be delivered */
+    /* Step 8: Unregister listener; host injects event — must NOT be delivered */
     MOTIONSENSOR_UNREGISTER_EVENT_SUCCESS(sensor, evtLsn);
     evtLsn->resetEventQueue();
     {
@@ -272,77 +275,6 @@ UT_ADD_TEST(VTS_L3_MOTIONSENSOR, MotionEventDetection)
 
     /* Re-register for TearDown */
     MOTIONSENSOR_REGISTER_EVENT_SUCCESS(sensor, evtLsn);
-}
-
-/**
- * @brief Validate no-motion event delivery in NO_MOTION mode.
- *
- * Steps:
- * 1. Parse test config (sensor index, noMotionSeconds, timeout).
- * 2. Start sensor in NO_MOTION mode.
- * 3. Wait for STARTED state.
- * 4. Host simulates noMotionSeconds of no activity, then injects NO_MOTION event.
- * 5. Verify event arrives with type NO_MOTION.
- * 6. Unregister listener; verify no subsequent events arrive.
- * 7. Stop sensor.
- *
- * **Test Group ID:** Basic: 03@n
- * **Test Case ID:** 002@n
- * **Priority:** High@n
- */
-UT_ADD_TEST(VTS_L3_MOTIONSENSOR, NoMotionEventDetection)
-{
-    const char *testName = "EventDetection";
-    motionSensorL3EventTestConfig_t cfg;
-
-    UT_ASSERT_EQUAL_FATAL(
-        vts_motionsensor_parse_eventtest_config(
-            VTS_MOTIONSENSOR_TEST_CONFIG_PATH, gModuleName, gTestGroup, testName, cfg),
-        UT_STATUS_OK);
-
-    SensorTuple *tup = nullptr;
-    UT_ASSERT_TRUE_FATAL(getSensorAtIndex(cfg.sensorIndex, tup));
-
-    auto& sensor     = std::get<1>(*tup);
-    auto& ctrlLsn    = std::get<2>(*tup);
-    auto& evtLsn     = std::get<3>(*tup);
-    auto& controller = std::get<4>(*tup);
-
-    ctrlLsn->resetStateQueue();
-    evtLsn->resetEventQueue();
-
-    StartConfig startCfg;
-    startCfg.operationalMode    = OperationalMode::NO_MOTION;
-    startCfg.noMotionSeconds    = cfg.noMotionSeconds;
-    startCfg.activeStartSeconds = cfg.activeStartSeconds;
-    startCfg.activeStopSeconds  = cfg.activeStopSeconds;
-
-    MOTIONSENSOR_START_SUCCESS(controller, startCfg);
-
-    State lastState;
-    MOTIONSENSOR_WAIT_FOR_STATE(sensor, State::STARTED, lastState);
-    UT_ASSERT_EQUAL(lastState, State::STARTED);
-
-    /* Host waits noMotionSeconds then injects NO_MOTION event */
-    OperationalMode receivedMode;
-    bool gotEvent = evtLsn->getNextEvent(receivedMode, chrono::milliseconds(cfg.eventTimeoutMs));
-    UT_ASSERT_TRUE(gotEvent);
-    UT_ASSERT_EQUAL(receivedMode, OperationalMode::NO_MOTION);
-
-    /* Unregister — subsequent events must not be delivered */
-    MOTIONSENSOR_UNREGISTER_EVENT_SUCCESS(sensor, evtLsn);
-    evtLsn->resetEventQueue();
-
-    OperationalMode staleMode;
-    bool gotStale = evtLsn->getNextEvent(staleMode, chrono::milliseconds(2000));
-    UT_ASSERT_FALSE(gotStale);
-
-    /* Re-register for TearDown */
-    MOTIONSENSOR_REGISTER_EVENT_SUCCESS(sensor, evtLsn);
-
-    MOTIONSENSOR_STOP_SUCCESS(controller);
-    MOTIONSENSOR_WAIT_FOR_STATE(sensor, State::STOPPED, lastState);
-    UT_ASSERT_EQUAL(lastState, State::STOPPED);
 }
 
 /**

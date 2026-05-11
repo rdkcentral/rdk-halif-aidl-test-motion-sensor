@@ -100,7 +100,7 @@ static void assertSensorIdInHFP(int32_t id)
  * This test calls getMotionSensorIds on the IMotionSensorManager and asserts that
  * at least one sensor ID is present in the returned list.
  *
- * **Test Group ID:** 01@n
+ * **Test Group ID:**: 01@n
  * **Test Case ID:** 001@n
  * **Priority:** High@n
  *
@@ -109,12 +109,12 @@ static void assertSensorIdInHFP(int32_t id)
  * **User Interaction:** None@n
  *
  * **Test Procedure:**@n
- * | Variation / Step | Description | Test Data | Expected Result | Notes |
- * | :----: | --------- | ---------- |-------------- | ----- |
- * | 01 | Call getMotionSensorIds on the manager | Output: sensorIdsOpt | List of sensor IDs is returned | Should be successful |
+ * | Variation / Step | Description | Test Data | Expected Result | Notes |@n
+ * | :----: | --------- | ---------- |-------------- | ----- |@n
+ * | 01 | Call getMotionSensorIds on the manager | Output: sensorIdsOpt | List of sensor IDs is returned | Should be successful |@n
  * | 02 | Verify at least one sensor ID is present | sensorIds vector | sensorIds.size() > 0 | Should Pass |
  */
-UT_ADD_TEST(VTS_L1_MOTIONSENSOR, GetMotionSensorIds_Success)
+UT_ADD_TEST(VTS_L1_MOTIONSENSOR, getMotionSensorIds_pos)
 {
     std::optional<std::vector<std::optional<IMotionSensor::Id>>> sensorIdsOpt;
     MOTIONSENSOR_GET_SENSOR_IDS_SUCCESS(gMOTIONSENSORMGRHandle, sensorIdsOpt);
@@ -142,7 +142,7 @@ UT_ADD_TEST(VTS_L1_MOTIONSENSOR, GetMotionSensorIds_Success)
  * This test iterates over all sensor IDs returned by getMotionSensorIds and calls
  * getMotionSensor for each, asserting that a non-null sensor handle is returned.
  *
- * **Test Group ID:** 01@n
+ * **Test Group ID:**: 01@n
  * **Test Case ID:** 002@n
  * **Priority:** High@n
  *
@@ -151,14 +151,14 @@ UT_ADD_TEST(VTS_L1_MOTIONSENSOR, GetMotionSensorIds_Success)
  * **User Interaction:** None@n
  *
  * **Test Procedure:**@n
- * | Variation / Step | Description | Test Data | Expected Result | Notes |
- * | :----: | --------- | ---------- |-------------- | ----- |
- * | 01 | Call getMotionSensorIds on the manager | Output: sensorIdsOpt | List of sensor IDs is returned | Should be successful |
- * | 02 | Verify sensor count matches HFP profile | sensorIds.size() vs gMotionSensorHFP.sensors.size() | Counts are equal | Should Pass |
- * | 03 | For each sensor ID, verify it exists in the HFP profile | Input: sensorId vs gMotionSensorHFP.sensors | Each ID found in HFP profile | Should Pass |
+ * | Variation / Step | Description | Test Data | Expected Result | Notes |@n
+ * | :----: | --------- | ---------- |-------------- | ----- |@n
+ * | 01 | Call getMotionSensorIds on the manager | Output: sensorIdsOpt | List of sensor IDs is returned | Should be successful |@n
+ * | 02 | Verify sensor count matches HFP profile | sensorIds.size() vs gMotionSensorHFP.sensors.size() | Counts are equal | Should Pass |@n
+ * | 03 | For each sensor ID, verify it exists in the HFP profile | Input: sensorId vs gMotionSensorHFP.sensors | Each ID found in HFP profile | Should Pass |@n
  * | 04 | For each sensor ID, call getMotionSensor | Input: sensorId | Valid non-null sensor handle returned | Should Pass |
  */
-UT_ADD_TEST(VTS_L1_MOTIONSENSOR, GetMotionSensor_Positive)
+UT_ADD_TEST(VTS_L1_MOTIONSENSOR, getMotionSensor_pos)
 {
     std::optional<std::vector<std::optional<IMotionSensor::Id>>> sensorIdsOpt;
     MOTIONSENSOR_GET_SENSOR_IDS_SUCCESS(gMOTIONSENSORMGRHandle, sensorIdsOpt);
@@ -192,7 +192,7 @@ UT_ADD_TEST(VTS_L1_MOTIONSENSOR, GetMotionSensor_Positive)
  * This test calls getMotionSensor with IDs below the minimum, above the maximum, and with
  * the undefined value (-1), asserting EX_ILLEGAL_ARGUMENT is returned in each case.
  *
- * **Test Group ID:** 01@n
+ * **Test Group ID:**: 01@n
  * **Test Case ID:** 003@n
  * **Priority:** High@n
  *
@@ -201,14 +201,14 @@ UT_ADD_TEST(VTS_L1_MOTIONSENSOR, GetMotionSensor_Positive)
  * **User Interaction:** None@n
  *
  * **Test Procedure:**@n
- * | Variation / Step | Description | Test Data | Expected Result | Notes |
- * | :----: | --------- | ---------- |-------------- | ----- |
- * | 01 | Call getMotionSensorIds to determine valid ID range | Output: sensorIdsOpt | Valid ID range obtained | Should be successful |
- * | 02 | Call getMotionSensor with minId-1 | Input: sensorId = minId-1 | Returns EX_ILLEGAL_ARGUMENT | Should Pass |
- * | 03 | Call getMotionSensor with maxId+1 | Input: sensorId = maxId+1 | Returns EX_ILLEGAL_ARGUMENT | Should Pass |
+ * | Variation / Step | Description | Test Data | Expected Result | Notes |@n
+ * | :----: | --------- | ---------- |-------------- | ----- |@n
+ * | 01 | Call getMotionSensorIds to determine valid ID range | Output: sensorIdsOpt | Valid ID range obtained | Should be successful |@n
+ * | 02 | Call getMotionSensor with minId-1 | Input: sensorId = minId-1 | Returns EX_ILLEGAL_ARGUMENT | Should Pass |@n
+ * | 03 | Call getMotionSensor with maxId+1 | Input: sensorId = maxId+1 | Returns EX_ILLEGAL_ARGUMENT | Should Pass |@n
  * | 04 | Call getMotionSensor with undefined ID (-1) | Input: sensorId = -1 | Returns EX_ILLEGAL_ARGUMENT | Should Pass |
  */
-UT_ADD_TEST(VTS_L1_MOTIONSENSOR, GetMotionSensor_Negative)
+UT_ADD_TEST(VTS_L1_MOTIONSENSOR, getMotionSensor_neg)
 {
     std::optional<std::vector<std::optional<IMotionSensor::Id>>> sensorIdsOpt;
     MOTIONSENSOR_GET_SENSOR_IDS_SUCCESS(gMOTIONSENSORMGRHandle, sensorIdsOpt);
@@ -251,7 +251,7 @@ UT_ADD_TEST(VTS_L1_MOTIONSENSOR, GetMotionSensor_Negative)
  * This test iterates over all available sensor IDs, retrieves each sensor handle,
  * and calls getCapabilities, asserting a successful result.
  *
- * **Test Group ID:** 01@n
+ * **Test Group ID:**: 01@n
  * **Test Case ID:** 004@n
  * **Priority:** High@n
  *
@@ -260,13 +260,13 @@ UT_ADD_TEST(VTS_L1_MOTIONSENSOR, GetMotionSensor_Negative)
  * **User Interaction:** None@n
  *
  * **Test Procedure:**@n
- * | Variation / Step | Description | Test Data | Expected Result | Notes |
- * | :----: | --------- | ---------- |-------------- | ----- |
- * | 01 | Call getMotionSensorIds on the manager | Output: sensorIdsOpt | List of sensor IDs returned | Should be successful |
- * | 02 | For each sensor ID, call getMotionSensor | Input: sensorId | Valid sensor handle returned | Should Pass |
+ * | Variation / Step | Description | Test Data | Expected Result | Notes |@n
+ * | :----: | --------- | ---------- |-------------- | ----- |@n
+ * | 01 | Call getMotionSensorIds on the manager | Output: sensorIdsOpt | List of sensor IDs returned | Should be successful |@n
+ * | 02 | For each sensor ID, call getMotionSensor | Input: sensorId | Valid sensor handle returned | Should Pass |@n
  * | 03 | Call getCapabilities on each sensor handle | Output: capabilities | Capabilities struct returned successfully | Should Pass |
  */
-UT_ADD_TEST(VTS_L1_MOTIONSENSOR, GetCapabilities_Positive)
+UT_ADD_TEST(VTS_L1_MOTIONSENSOR, getCapabilities_pos)
 {
     std::optional<std::vector<std::optional<IMotionSensor::Id>>> sensorIdsOpt;
     MOTIONSENSOR_GET_SENSOR_IDS_SUCCESS(gMOTIONSENSORMGRHandle, sensorIdsOpt);
@@ -317,7 +317,7 @@ UT_ADD_TEST(VTS_L1_MOTIONSENSOR, GetCapabilities_Positive)
  * This test iterates over all available sensor IDs, retrieves each sensor handle,
  * and calls getState, asserting the call succeeds.
  *
- * **Test Group ID:** 01@n
+ * **Test Group ID:**: 01@n
  * **Test Case ID:** 005@n
  * **Priority:** High@n
  *
@@ -326,13 +326,13 @@ UT_ADD_TEST(VTS_L1_MOTIONSENSOR, GetCapabilities_Positive)
  * **User Interaction:** None@n
  *
  * **Test Procedure:**@n
- * | Variation / Step | Description | Test Data | Expected Result | Notes |
- * | :----: | --------- | ---------- |-------------- | ----- |
- * | 01 | Call getMotionSensorIds on the manager | Output: sensorIdsOpt | List of sensor IDs returned | Should be successful |
- * | 02 | For each sensor ID, call getMotionSensor | Input: sensorId | Valid sensor handle returned | Should Pass |
+ * | Variation / Step | Description | Test Data | Expected Result | Notes |@n
+ * | :----: | --------- | ---------- |-------------- | ----- |@n
+ * | 01 | Call getMotionSensorIds on the manager | Output: sensorIdsOpt | List of sensor IDs returned | Should be successful |@n
+ * | 02 | For each sensor ID, call getMotionSensor | Input: sensorId | Valid sensor handle returned | Should Pass |@n
  * | 03 | Call getState on each sensor handle | Output: state | State returned successfully | Should Pass |
  */
-UT_ADD_TEST(VTS_L1_MOTIONSENSOR, GetState_Positive)
+UT_ADD_TEST(VTS_L1_MOTIONSENSOR, getState_pos)
 {
     std::optional<std::vector<std::optional<IMotionSensor::Id>>> sensorIdsOpt;
     MOTIONSENSOR_GET_SENSOR_IDS_SUCCESS(gMOTIONSENSORMGRHandle, sensorIdsOpt);
@@ -357,8 +357,7 @@ UT_ADD_TEST(VTS_L1_MOTIONSENSOR, GetState_Positive)
         sensorIdObj.value = id;
         MOTIONSENSOR_GET_SENSOR_SUCCESS(gMOTIONSENSORMGRHandle, sensorIdObj, sensorHandle);
         State state;
-        MOTIONSENSOR_GET_STATE_SUCCESS(sensorHandle, state);
-        // Optionally assert state is a valid enum value
+        MOTIONSENSOR_GET_STATE_SUCCESS(sensorHandle, state, State::STOPPED);
     }
 }
 
@@ -369,7 +368,7 @@ UT_ADD_TEST(VTS_L1_MOTIONSENSOR, GetState_Positive)
  * This test iterates over all available sensors, calls open with a valid controller
  * listener, asserts a non-null controller is returned, and then calls close.
  *
- * **Test Group ID:** 01@n
+ * **Test Group ID:**: 01@n
  * **Test Case ID:** 006@n
  * **Priority:** High@n
  *
@@ -378,14 +377,14 @@ UT_ADD_TEST(VTS_L1_MOTIONSENSOR, GetState_Positive)
  * **User Interaction:** None@n
  *
  * **Test Procedure:**@n
- * | Variation / Step | Description | Test Data | Expected Result | Notes |
- * | :----: | --------- | ---------- |-------------- | ----- |
- * | 01 | Call getMotionSensorIds and iterate all sensors | Output: sensorIdsOpt | Sensor IDs list obtained | Should be successful |
- * | 02 | Call getMotionSensor for each sensor ID | Input: sensorId | Valid sensor handle returned | Should Pass |
- * | 03 | Call open with a valid controller listener | Input: listener | Non-null controller handle returned | Should Pass |
+ * | Variation / Step | Description | Test Data | Expected Result | Notes |@n
+ * | :----: | --------- | ---------- |-------------- | ----- |@n
+ * | 01 | Call getMotionSensorIds and iterate all sensors | Output: sensorIdsOpt | Sensor IDs list obtained | Should be successful |@n
+ * | 02 | Call getMotionSensor for each sensor ID | Input: sensorId | Valid sensor handle returned | Should Pass |@n
+ * | 03 | Call open with a valid controller listener | Input: listener | Non-null controller handle returned | Should Pass |@n
  * | 04 | Call close with the returned controller | Input: controllerHandle | Close returns true, status ok | Should Pass |
  */
-UT_ADD_TEST(VTS_L1_MOTIONSENSOR, Open_Close_Positive)
+UT_ADD_TEST(VTS_L1_MOTIONSENSOR, open_pos)
 {
     std::optional<std::vector<std::optional<IMotionSensor::Id>>> sensorIdsOpt;
     MOTIONSENSOR_GET_SENSOR_IDS_SUCCESS(gMOTIONSENSORMGRHandle, sensorIdsOpt);
@@ -411,12 +410,13 @@ UT_ADD_TEST(VTS_L1_MOTIONSENSOR, Open_Close_Positive)
 }
 
 /**
- * @brief Validate that open returns EX_NULL_POINTER when called with a null listener.
+ * @brief Validate open failure cases: null listener and already-open sensor.
  *
- * This test iterates over all sensors and calls open with a null controller listener,
- * asserting that EX_NULL_POINTER is returned and no controller is created.
+ * This test iterates over all sensors and exercises two negative open paths:
+ * 1. Calling open with a null listener — must return EX_NULL_POINTER.
+ * 2. Calling open a second time on a sensor that is already open — must return EX_ILLEGAL_STATE.
  *
- * **Test Group ID:** 01@n
+ * **Test Group ID:**: 01@n
  * **Test Case ID:** 007@n
  * **Priority:** High@n
  *
@@ -425,13 +425,16 @@ UT_ADD_TEST(VTS_L1_MOTIONSENSOR, Open_Close_Positive)
  * **User Interaction:** None@n
  *
  * **Test Procedure:**@n
- * | Variation / Step | Description | Test Data | Expected Result | Notes |
- * | :----: | --------- | ---------- |-------------- | ----- |
- * | 01 | Call getMotionSensorIds and iterate all sensors | Output: sensorIdsOpt | Sensor IDs list obtained | Should be successful |
- * | 02 | Call getMotionSensor for each sensor ID | Input: sensorId | Valid sensor handle returned | Should Pass |
- * | 03 | Call open with a null listener | Input: nullListener = nullptr | Returns EX_NULL_POINTER, controller is null | Should Pass |
+ * | Variation / Step | Description | Test Data | Expected Result | Notes |@n
+ * | :----: | --------- | ---------- |-------------- | ----- |@n
+ * | 01 | Call getMotionSensorIds and iterate all sensors | Output: sensorIdsOpt | Sensor IDs list obtained | Should be successful |@n
+ * | 02 | Call getMotionSensor for each sensor ID | Input: sensorId | Valid sensor handle returned | Should Pass |@n
+ * | 03 | Call open with nullListener = nullptr | Input: nullListener | Returns EX_NULL_POINTER, controller is null | Should Pass |@n
+ * | 04 | Call open with a valid listener | Input: listener | Controller returned successfully | Should Pass |@n
+ * | 05 | Call open again on the already-open sensor | Input: listener2 | Returns EX_ILLEGAL_STATE | Should Pass |@n
+ * | 06 | Close the sensor using the first controller | Input: controllerHandle | Close succeeds | Should Pass |
  */
-UT_ADD_TEST(VTS_L1_MOTIONSENSOR, Open_Negative_NullListener)
+UT_ADD_TEST(VTS_L1_MOTIONSENSOR, open_neg)
 {
     std::optional<std::vector<std::optional<IMotionSensor::Id>>> sensorIdsOpt;
     MOTIONSENSOR_GET_SENSOR_IDS_SUCCESS(gMOTIONSENSORMGRHandle, sensorIdsOpt);
@@ -452,16 +455,24 @@ UT_ADD_TEST(VTS_L1_MOTIONSENSOR, Open_Negative_NullListener)
         android::sp<IMotionSensorControllerListener> nullListener = nullptr;
         android::sp<IMotionSensorController> controllerHandle;
         MOTIONSENSOR_OPEN_FAILURE(sensorHandle, nullListener, controllerHandle, Status::EX_NULL_POINTER);
+        android::sp<IMotionSensorControllerListener> listener = android::sp<MotionSensorControllerListener>::make();
+        MOTIONSENSOR_OPEN_SUCCESS(sensorHandle, listener, controllerHandle);
+        android::sp<IMotionSensorControllerListener> listener2 = android::sp<MotionSensorControllerListener>::make();
+        android::sp<IMotionSensorController> controllerHandle2;
+        MOTIONSENSOR_OPEN_FAILURE(sensorHandle, listener2, controllerHandle2, Status::EX_ILLEGAL_STATE);
+        MOTIONSENSOR_CLOSE_SUCCESS(sensorHandle, controllerHandle);
     }
 }
 
 /**
- * @brief Validate that a second open call on an already-open sensor returns EX_ILLEGAL_STATE.
+ * @brief Validate close failure cases: null controller and wrong-sensor controller.
  *
- * This test opens each sensor successfully, then attempts a second open on the same sensor,
- * asserting that EX_ILLEGAL_STATE is returned. The sensor is then closed.
+ * Opens all available sensors, then exercises two negative close paths:
+ * 1. Calling close with a null controller — must return EX_NULL_POINTER.
+ * 2. Calling close on sensor[i] with sensor[j]'s controller — must return
+ *    false with status EX_NONE (tested for every i≠j pair when ≥2 sensors).
  *
- * **Test Group ID:** 01@n
+ * **Test Group ID:**: 01@n
  * **Test Case ID:** 008@n
  * **Priority:** High@n
  *
@@ -470,142 +481,85 @@ UT_ADD_TEST(VTS_L1_MOTIONSENSOR, Open_Negative_NullListener)
  * **User Interaction:** None@n
  *
  * **Test Procedure:**@n
- * | Variation / Step | Description | Test Data | Expected Result | Notes |
- * | :----: | --------- | ---------- |-------------- | ----- |
- * | 01 | Call getMotionSensorIds and iterate all sensors | Output: sensorIdsOpt | Sensor IDs list obtained | Should be successful |
- * | 02 | Call getMotionSensor for each sensor ID | Input: sensorId | Valid sensor handle returned | Should Pass |
- * | 03 | Call open with a valid listener | Input: listener | Controller returned successfully | Should Pass |
- * | 04 | Call open again on the same sensor | Input: listener2 | Returns EX_ILLEGAL_STATE | Should Pass |
- * | 05 | Close the sensor using the first controller | Input: controllerHandle | Close succeeds | Should Pass |
+ * | Variation / Step | Description | Test Data | Expected Result | Notes |@n
+ * | :----: | --------- | ---------- |-------------- | ----- |@n
+ * | 01 | Call getMotionSensorIds, open all sensors | Output: sensorHandles, controllers | All sensors opened | Should be successful |@n
+ * | 02 | For each sensor call close with nullController = nullptr | Input: nullptr | Returns EX_NULL_POINTER | Should Pass |@n
+ * | 03 | For every i≠j sensor pair, call close on sensor[i] with controller[j] | Input: sensorHandles[i], controllers[j] | Returns false, status EX_NONE | Should Pass (skipped if <2 sensors) |@n
+ * | 04 | Close each sensor with its correct controller | Input: controllers[i] | Close succeeds | Should Pass |
  */
-UT_ADD_TEST(VTS_L1_MOTIONSENSOR, Open_Negative_AlreadyOpen)
+UT_ADD_TEST(VTS_L1_MOTIONSENSOR, close_neg)
 {
     std::optional<std::vector<std::optional<IMotionSensor::Id>>> sensorIdsOpt;
     MOTIONSENSOR_GET_SENSOR_IDS_SUCCESS(gMOTIONSENSORMGRHandle, sensorIdsOpt);
+
     if (!sensorIdsOpt || sensorIdsOpt->empty())
     {
-        UT_LOG_WARNING("No sensors available");
+        UT_LOG_WARNING("No motion sensors available");
         return;
     }
+
+    std::vector<android::sp<IMotionSensor>> sensorHandles;
+    std::vector<android::sp<IMotionSensorController>> controllers;
+
+    /* Setup: get sensor handles and open each sensor */
     for (const auto& idOpt : *sensorIdsOpt)
     {
         if (!idOpt)
             continue;
+
         assertSensorIdInHFP(idOpt->value);
-        MotionSensorId sensorIdObj;
-        sensorIdObj.value = idOpt->value;
+
+        MotionSensorId sensorId;
+        sensorId.value = idOpt->value;
+
         android::sp<IMotionSensor> sensorHandle;
-        MOTIONSENSOR_GET_SENSOR_SUCCESS(gMOTIONSENSORMGRHandle, sensorIdObj, sensorHandle);
-        android::sp<IMotionSensorControllerListener> listener = android::sp<MotionSensorControllerListener>::make();
-        android::sp<IMotionSensorController> controllerHandle;
-        MOTIONSENSOR_OPEN_SUCCESS(sensorHandle, listener, controllerHandle);
-        // Second open on the same sensor must fail with EX_ILLEGAL_STATE
-        android::sp<IMotionSensorControllerListener> listener2 = android::sp<MotionSensorControllerListener>::make();
-        android::sp<IMotionSensorController> controllerHandle2;
-        MOTIONSENSOR_OPEN_FAILURE(sensorHandle, listener2, controllerHandle2, Status::EX_ILLEGAL_STATE);
-        MOTIONSENSOR_CLOSE_SUCCESS(sensorHandle, controllerHandle);
+        MOTIONSENSOR_GET_SENSOR_SUCCESS(gMOTIONSENSORMGRHandle, sensorId, sensorHandle);
+
+        auto listener = android::sp<MotionSensorControllerListener>::make();
+        android::sp<IMotionSensorController> controller;
+        MOTIONSENSOR_OPEN_SUCCESS(sensorHandle, listener, controller);
+
+        sensorHandles.push_back(sensorHandle);
+        controllers.push_back(controller);
     }
-}
 
-
-/**
- * @brief Validate that close returns EX_NULL_POINTER when called with a null controller.
- *
- * This test iterates over all sensors, obtains a sensor handle, then calls close
- * with a null controller, asserting EX_NULL_POINTER is returned.
- *
- * **Test Group ID:** 01@n
- * **Test Case ID:** 009@n
- * **Priority:** High@n
- *
- * **Pre-Conditions:** None@n
- * **Dependencies:** None@n
- * **User Interaction:** None@n
- *
- * **Test Procedure:**@n
- * | Variation / Step | Description | Test Data | Expected Result | Notes |
- * | :----: | --------- | ---------- |-------------- | ----- |
- * | 01 | Call getMotionSensorIds and iterate all sensors | Output: sensorIdsOpt | Sensor IDs list obtained | Should be successful |
- * | 02 | Call getMotionSensor for each sensor ID | Input: sensorId | Valid sensor handle returned | Should Pass |
- * | 03 | Call close with nullController = nullptr | Input: nullptr | Returns EX_NULL_POINTER | Should Pass |
- */
-UT_ADD_TEST(VTS_L1_MOTIONSENSOR, Close_Negative_NullController)
-{
-    std::optional<std::vector<std::optional<IMotionSensor::Id>>> sensorIdsOpt;
-    MOTIONSENSOR_GET_SENSOR_IDS_SUCCESS(gMOTIONSENSORMGRHandle, sensorIdsOpt);
-    if (!sensorIdsOpt || sensorIdsOpt->empty())
+    if (sensorHandles.empty())
     {
-        UT_LOG_WARNING("No sensors available");
+        UT_LOG_WARNING("No valid motion sensor handles available");
         return;
     }
-    for (const auto& idOpt : *sensorIdsOpt)
+
+    /* Case 1: Close with null controller → EX_NULL_POINTER */
+    android::sp<IMotionSensorController> nullController = nullptr;
+    for (size_t i = 0; i < sensorHandles.size(); ++i)
     {
-        if (!idOpt)
-            continue;
-        assertSensorIdInHFP(idOpt->value);
-        MotionSensorId sensorIdObj;
-        sensorIdObj.value = idOpt->value;
-        android::sp<IMotionSensor> sensorHandle;
-        MOTIONSENSOR_GET_SENSOR_SUCCESS(gMOTIONSENSORMGRHandle, sensorIdObj, sensorHandle);
-        android::sp<IMotionSensorController> nullController = nullptr;
-        MOTIONSENSOR_CLOSE_FAILURE(sensorHandle, nullController, Status::EX_NULL_POINTER);
+        MOTIONSENSOR_CLOSE_FAILURE(sensorHandles[i], nullController, Status::EX_NULL_POINTER);
     }
-}
 
-/**
- * @brief Validate that close returns false when called with a controller belonging to a different sensor.
- *
- * This test requires at least 2 sensors. Both sensors are opened, then close is called on
- * sensor[0] passing sensor[1]'s controller. The result must be false with status ok (EX_NONE).
- *
- * **Test Group ID:** 01@n
- * **Test Case ID:** 010@n
- * **Priority:** High@n
- *
- * **Pre-Conditions:** At least 2 motion sensors must be available@n
- * **Dependencies:** None@n
- * **User Interaction:** None@n
- *
- * **Test Procedure:**@n
- * | Variation / Step | Description | Test Data | Expected Result | Notes |
- * | :----: | --------- | ---------- |-------------- | ----- |
- * | 01 | Call getMotionSensorIds, verify at least 2 sensors | Output: sensorIdsOpt | At least 2 sensor IDs present | Should be successful |
- * | 02 | Get sensor handles for sensor[0] and sensor[1] | Input: id0, id1 | Both sensor handles returned | Should Pass |
- * | 03 | Open both sensors with separate valid listeners | Input: listener0, listener1 | Both controller handles returned | Should Pass |
- * | 04 | Call close on sensor[0] passing sensor[1]'s controller | Input: sensorHandle0, controller1 | Returns false, status EX_NONE | Should Pass |
- * | 05 | Close both sensors with their correct controllers | Input: controller0, controller1 | Both close calls succeed | Should Pass |
- */
-UT_ADD_TEST(VTS_L1_MOTIONSENSOR, Close_Negative_WrongController)
-{
-    std::optional<std::vector<std::optional<IMotionSensor::Id>>> sensorIdsOpt;
-    MOTIONSENSOR_GET_SENSOR_IDS_SUCCESS(gMOTIONSENSORMGRHandle, sensorIdsOpt);
-    if (!sensorIdsOpt || sensorIdsOpt->size() < 2)
+    /* Case 2: Close with controller from a different sensor → false, EX_NONE */
+    if (sensorHandles.size() >= 2)
     {
-        UT_LOG_WARNING("Not enough sensors available");
-        return;
+        for (size_t i = 0; i < sensorHandles.size(); ++i)
+        {
+            for (size_t j = 0; j < controllers.size(); ++j)
+            {
+                if (i == j)
+                    continue;
+                MOTIONSENSOR_CLOSE_FAILURE(sensorHandles[i], controllers[j], Status::EX_NONE);
+            }
+        }
     }
-    MotionSensorId id0, id1;
-    id0.value = (*sensorIdsOpt)[0]->value;
-    id1.value = (*sensorIdsOpt)[1]->value;
-    assertSensorIdInHFP(id0.value);
-    assertSensorIdInHFP(id1.value);
+    else
+    {
+        UT_LOG_WARNING("Not enough sensors to validate wrong-controller close case");
+    }
 
-    android::sp<IMotionSensor> sensorHandle0, sensorHandle1;
-    MOTIONSENSOR_GET_SENSOR_SUCCESS(gMOTIONSENSORMGRHandle, id0, sensorHandle0);
-    MOTIONSENSOR_GET_SENSOR_SUCCESS(gMOTIONSENSORMGRHandle, id1, sensorHandle1);
-
-    android::sp<IMotionSensorControllerListener> listener0 = android::sp<MotionSensorControllerListener>::make();
-    android::sp<IMotionSensorControllerListener> listener1 = android::sp<MotionSensorControllerListener>::make();
-    android::sp<IMotionSensorController> controller0, controller1;
-    MOTIONSENSOR_OPEN_SUCCESS(sensorHandle0, listener0, controller0);
-    MOTIONSENSOR_OPEN_SUCCESS(sensorHandle1, listener1, controller1);
-
-    // Closing sensor0 with sensor1's controller must return false, status ok
-    MOTIONSENSOR_CLOSE_FAILURE(sensorHandle0, controller1, Status::EX_NONE);
-
-    // Cleanup
-    MOTIONSENSOR_CLOSE_SUCCESS(sensorHandle0, controller0);
-    MOTIONSENSOR_CLOSE_SUCCESS(sensorHandle1, controller1);
+    /* Cleanup: close each sensor with its correct controller */
+    for (size_t i = 0; i < sensorHandles.size(); ++i)
+    {
+        MOTIONSENSOR_CLOSE_SUCCESS(sensorHandles[i], controllers[i]);
+    }
 }
 
 
@@ -615,8 +569,8 @@ UT_ADD_TEST(VTS_L1_MOTIONSENSOR, Close_Negative_WrongController)
  * This test iterates over all sensors, registers a valid event listener, asserts
  * the call returns true, then unregisters it and asserts success.
  *
- * **Test Group ID:** 01@n
- * **Test Case ID:** 011@n
+ * **Test Group ID:**: 01@n
+ * **Test Case ID:** 009@n
  * **Priority:** High@n
  *
  * **Pre-Conditions:** None@n
@@ -624,14 +578,14 @@ UT_ADD_TEST(VTS_L1_MOTIONSENSOR, Close_Negative_WrongController)
  * **User Interaction:** None@n
  *
  * **Test Procedure:**@n
- * | Variation / Step | Description | Test Data | Expected Result | Notes |
- * | :----: | --------- | ---------- |-------------- | ----- |
- * | 01 | Call getMotionSensorIds and iterate all sensors | Output: sensorIdsOpt | Sensor IDs list obtained | Should be successful |
- * | 02 | Call getMotionSensor for each sensor ID | Input: sensorId | Valid sensor handle returned | Should Pass |
- * | 03 | Call registerEventListener with a valid listener | Input: eventListener | Returns true | Should Pass |
+ * | Variation / Step | Description | Test Data | Expected Result | Notes |@n
+ * | :----: | --------- | ---------- |-------------- | ----- |@n
+ * | 01 | Call getMotionSensorIds and iterate all sensors | Output: sensorIdsOpt | Sensor IDs list obtained | Should be successful |@n
+ * | 02 | Call getMotionSensor for each sensor ID | Input: sensorId | Valid sensor handle returned | Should Pass |@n
+ * | 03 | Call registerEventListener with a valid listener | Input: eventListener | Returns true | Should Pass |@n
  * | 04 | Call unregisterEventListener with the same listener | Input: eventListener | Returns true | Should Pass |
  */
-UT_ADD_TEST(VTS_L1_MOTIONSENSOR, Register_UnRegisterEventListener_Positive)
+UT_ADD_TEST(VTS_L1_MOTIONSENSOR, registerEventListener_pos)
 {
     std::optional<std::vector<std::optional<IMotionSensor::Id>>> sensorIdsOpt;
     MOTIONSENSOR_GET_SENSOR_IDS_SUCCESS(gMOTIONSENSORMGRHandle, sensorIdsOpt);
@@ -661,8 +615,8 @@ UT_ADD_TEST(VTS_L1_MOTIONSENSOR, Register_UnRegisterEventListener_Positive)
  * This test registers a valid event listener, then attempts to register the same listener
  * again, asserting the second call returns false with status ok (EX_NONE).
  *
- * **Test Group ID:** 01@n
- * **Test Case ID:** 012@n
+ * **Test Group ID:**: 01@n
+ * **Test Case ID:** 010@n
  * **Priority:** High@n
  *
  * **Pre-Conditions:** None@n
@@ -670,15 +624,15 @@ UT_ADD_TEST(VTS_L1_MOTIONSENSOR, Register_UnRegisterEventListener_Positive)
  * **User Interaction:** None@n
  *
  * **Test Procedure:**@n
- * | Variation / Step | Description | Test Data | Expected Result | Notes |
- * | :----: | --------- | ---------- |-------------- | ----- |
- * | 01 | Call getMotionSensorIds and iterate all sensors | Output: sensorIdsOpt | Sensor IDs list obtained | Should be successful |
- * | 02 | Call getMotionSensor for each sensor ID | Input: sensorId | Valid sensor handle returned | Should Pass |
- * | 03 | Register the event listener | Input: eventListener | Returns true | Should Pass |
- * | 04 | Register the same listener again | Input: eventListener | Returns false, status EX_NONE | Should Pass |
+ * | Variation / Step | Description | Test Data | Expected Result | Notes |@n
+ * | :----: | --------- | ---------- |-------------- | ----- |@n
+ * | 01 | Call getMotionSensorIds and iterate all sensors | Output: sensorIdsOpt | Sensor IDs list obtained | Should be successful |@n
+ * | 02 | Call getMotionSensor for each sensor ID | Input: sensorId | Valid sensor handle returned | Should Pass |@n
+ * | 03 | Register the event listener | Input: eventListener | Returns true | Should Pass |@n
+ * | 04 | Register the same listener again | Input: eventListener | Returns false, status EX_NONE | Should Pass |@n
  * | 05 | Unregister the event listener | Input: eventListener | Returns true | Should Pass |
  */
-UT_ADD_TEST(VTS_L1_MOTIONSENSOR, RegisterEventListener_Negative_AlreadyRegistered)
+UT_ADD_TEST(VTS_L1_MOTIONSENSOR, registerEventListener_neg)
 {
     std::optional<std::vector<std::optional<IMotionSensor::Id>>> sensorIdsOpt;
     MOTIONSENSOR_GET_SENSOR_IDS_SUCCESS(gMOTIONSENSORMGRHandle, sensorIdsOpt);
@@ -711,8 +665,8 @@ UT_ADD_TEST(VTS_L1_MOTIONSENSOR, RegisterEventListener_Negative_AlreadyRegistere
  * This test creates a fresh event listener (never registered) and calls unregisterEventListener,
  * asserting it returns false with status ok (EX_NONE).
  *
- * **Test Group ID:** 01@n
- * **Test Case ID:** 013@n
+ * **Test Group ID:**: 01@n
+ * **Test Case ID:** 011@n
  * **Priority:** High@n
  *
  * **Pre-Conditions:** None@n
@@ -720,13 +674,13 @@ UT_ADD_TEST(VTS_L1_MOTIONSENSOR, RegisterEventListener_Negative_AlreadyRegistere
  * **User Interaction:** None@n
  *
  * **Test Procedure:**@n
- * | Variation / Step | Description | Test Data | Expected Result | Notes |
- * | :----: | --------- | ---------- |-------------- | ----- |
- * | 01 | Call getMotionSensorIds and iterate all sensors | Output: sensorIdsOpt | Sensor IDs list obtained | Should be successful |
- * | 02 | Call getMotionSensor for each sensor ID | Input: sensorId | Valid sensor handle returned | Should Pass |
+ * | Variation / Step | Description | Test Data | Expected Result | Notes |@n
+ * | :----: | --------- | ---------- |-------------- | ----- |@n
+ * | 01 | Call getMotionSensorIds and iterate all sensors | Output: sensorIdsOpt | Sensor IDs list obtained | Should be successful |@n
+ * | 02 | Call getMotionSensor for each sensor ID | Input: sensorId | Valid sensor handle returned | Should Pass |@n
  * | 03 | Call unregisterEventListener with a listener never registered | Input: eventListener | Returns false, status EX_NONE | Should Pass |
  */
-UT_ADD_TEST(VTS_L1_MOTIONSENSOR, UnregisterEventListener_Negative_NotRegistered)
+UT_ADD_TEST(VTS_L1_MOTIONSENSOR, unregisterEventListener_neg)
 {
     std::optional<std::vector<std::optional<IMotionSensor::Id>>> sensorIdsOpt;
     MOTIONSENSOR_GET_SENSOR_IDS_SUCCESS(gMOTIONSENSORMGRHandle, sensorIdsOpt);
@@ -756,8 +710,8 @@ UT_ADD_TEST(VTS_L1_MOTIONSENSOR, UnregisterEventListener_Negative_NotRegistered)
  * This test opens each sensor, calls start with a valid MOTION configuration,
  * asserts success, then calls stop and close.
  *
- * **Test Group ID:** 01@n
- * **Test Case ID:** 014@n
+ * **Test Group ID:**: 01@n
+ * **Test Case ID:** 012@n
  * **Priority:** High@n
  *
  * **Pre-Conditions:** None@n
@@ -765,15 +719,15 @@ UT_ADD_TEST(VTS_L1_MOTIONSENSOR, UnregisterEventListener_Negative_NotRegistered)
  * **User Interaction:** None@n
  *
  * **Test Procedure:**@n
- * | Variation / Step | Description | Test Data | Expected Result | Notes |
- * | :----: | --------- | ---------- |-------------- | ----- |
- * | 01 | Call getMotionSensorIds and iterate all sensors | Output: sensorIdsOpt | Sensor IDs list obtained | Should be successful |
- * | 02 | Get sensor handle and open with valid listener | Input: sensorId, listener | Controller returned | Should Pass |
- * | 03 | Call start with mode=MOTION, noMotionSeconds=30 | Input: config | Start succeeds | Should Pass |
- * | 04 | Call stop | Input: none | Stop succeeds | Should Pass |
+ * | Variation / Step | Description | Test Data | Expected Result | Notes |@n
+ * | :----: | --------- | ---------- |-------------- | ----- |@n
+ * | 01 | Call getMotionSensorIds and iterate all sensors | Output: sensorIdsOpt | Sensor IDs list obtained | Should be successful |@n
+ * | 02 | Get sensor handle and open with valid listener | Input: sensorId, listener | Controller returned | Should Pass |@n
+ * | 03 | Call start with mode=MOTION, noMotionSeconds=30 | Input: config | Start succeeds | Should Pass |@n
+ * | 04 | Call stop | Input: none | Stop succeeds | Should Pass |@n
  * | 05 | Call close | Input: controllerHandle | Close succeeds | Should Pass |
  */
-UT_ADD_TEST(VTS_L1_MOTIONSENSOR, Start_Stop_Positive)
+UT_ADD_TEST(VTS_L1_MOTIONSENSOR, start_pos)
 {
     std::optional<std::vector<std::optional<IMotionSensor::Id>>> sensorIdsOpt;
     MOTIONSENSOR_GET_SENSOR_IDS_SUCCESS(gMOTIONSENSORMGRHandle, sensorIdsOpt);
@@ -804,13 +758,14 @@ UT_ADD_TEST(VTS_L1_MOTIONSENSOR, Start_Stop_Positive)
 }
 
 /**
- * @brief Validate that calling start while already started returns EX_ILLEGAL_STATE.
+ * @brief Validate start failure cases: invalid configuration and already-started sensor.
  *
- * This test starts a sensor successfully, then attempts a second start call on the
- * same controller, asserting EX_ILLEGAL_STATE is returned.
+ * This test exercises two negative start paths for each sensor:
+ * 1. Calling start with noMotionSeconds=99999 (out of valid range) — must return EX_ILLEGAL_ARGUMENT.
+ * 2. Calling start a second time while the sensor is already started — must return EX_ILLEGAL_STATE.
  *
- * **Test Group ID:** 01@n
- * **Test Case ID:** 015@n
+ * **Test Group ID:**: 01@n
+ * **Test Case ID:** 013@n
  * **Priority:** High@n
  *
  * **Pre-Conditions:** None@n
@@ -818,15 +773,16 @@ UT_ADD_TEST(VTS_L1_MOTIONSENSOR, Start_Stop_Positive)
  * **User Interaction:** None@n
  *
  * **Test Procedure:**@n
- * | Variation / Step | Description | Test Data | Expected Result | Notes |
- * | :----: | --------- | ---------- |-------------- | ----- |
- * | 01 | Call getMotionSensorIds and iterate all sensors | Output: sensorIdsOpt | Sensor IDs list obtained | Should be successful |
- * | 02 | Get sensor handle and open with valid listener | Input: sensorId, listener | Controller returned | Should Pass |
- * | 03 | Call start with valid config | Input: mode=MOTION, noMotionSeconds=30 | Start succeeds | Should Pass |
- * | 04 | Call start again while already started | Input: same config | Returns EX_ILLEGAL_STATE | Should Pass |
- * | 05 | Stop and close | Input: controllerHandle | Stop and close succeed | Should Pass |
+ * | Variation / Step | Description | Test Data | Expected Result | Notes |@n
+ * | :----: | --------- | ---------- |-------------- | ----- |@n
+ * | 01 | Call getMotionSensorIds and iterate all sensors | Output: sensorIdsOpt | Sensor IDs list obtained | Should be successful |@n
+ * | 02 | Get sensor handle and open with valid listener | Input: sensorId, listener | Controller returned | Should Pass |@n
+ * | 03 | Call start with noMotionSeconds=99999 | Input: mode=MOTION, noMotionSeconds=99999 | Returns EX_ILLEGAL_ARGUMENT | Should Pass |@n
+ * | 04 | Call start with valid config | Input: mode=MOTION, noMotionSeconds=30 | Start succeeds | Should Pass |@n
+ * | 05 | Call start again while already started | Input: same config | Returns EX_ILLEGAL_STATE | Should Pass |@n
+ * | 06 | Stop and close | Input: controllerHandle | Stop and close succeed | Should Pass |
  */
-UT_ADD_TEST(VTS_L1_MOTIONSENSOR, Start_Negative_AlreadyStarted)
+UT_ADD_TEST(VTS_L1_MOTIONSENSOR, start_neg)
 {
     std::optional<std::vector<std::optional<IMotionSensor::Id>>> sensorIdsOpt;
     MOTIONSENSOR_GET_SENSOR_IDS_SUCCESS(gMOTIONSENSORMGRHandle, sensorIdsOpt);
@@ -848,63 +804,18 @@ UT_ADD_TEST(VTS_L1_MOTIONSENSOR, Start_Negative_AlreadyStarted)
         android::sp<IMotionSensorController> controllerHandle;
         MOTIONSENSOR_OPEN_SUCCESS(sensorHandle, listener, controllerHandle);
         StartConfig config;
-        config.operationalMode = OperationalMode::MOTION;
-        config.noMotionSeconds = 30;
-        MOTIONSENSOR_START_SUCCESS(controllerHandle, config);
-        // Second start while STARTED must fail with EX_ILLEGAL_STATE
-        MOTIONSENSOR_START_FAILURE(controllerHandle, config, Status::EX_ILLEGAL_STATE);
-        MOTIONSENSOR_STOP_SUCCESS(controllerHandle);
-        MOTIONSENSOR_CLOSE_SUCCESS(sensorHandle, controllerHandle);
-    }
-}
 
-/**
- * @brief Validate that start returns EX_ILLEGAL_ARGUMENT when given an invalid noMotionSeconds value.
- *
- * This test calls start with noMotionSeconds=99999 (out of valid range), asserting
- * that EX_ILLEGAL_ARGUMENT is returned and the sensor remains in STOPPED state.
- *
- * **Test Group ID:** 01@n
- * **Test Case ID:** 016@n
- * **Priority:** High@n
- *
- * **Pre-Conditions:** None@n
- * **Dependencies:** None@n
- * **User Interaction:** None@n
- *
- * **Test Procedure:**@n
- * | Variation / Step | Description | Test Data | Expected Result | Notes |
- * | :----: | --------- | ---------- |-------------- | ----- |
- * | 01 | Call getMotionSensorIds and iterate all sensors | Output: sensorIdsOpt | Sensor IDs list obtained | Should be successful |
- * | 02 | Get sensor handle and open with valid listener | Input: sensorId, listener | Controller returned | Should Pass |
- * | 03 | Call start with noMotionSeconds=99999 | Input: mode=MOTION, noMotionSeconds=99999 | Returns EX_ILLEGAL_ARGUMENT | Should Pass |
- * | 04 | Close the sensor | Input: controllerHandle | Close succeeds | Should Pass |
- */
-UT_ADD_TEST(VTS_L1_MOTIONSENSOR, Start_Negative_InvalidConfig)
-{
-    std::optional<std::vector<std::optional<IMotionSensor::Id>>> sensorIdsOpt;
-    MOTIONSENSOR_GET_SENSOR_IDS_SUCCESS(gMOTIONSENSORMGRHandle, sensorIdsOpt);
-    if (!sensorIdsOpt || sensorIdsOpt->empty())
-    {
-        UT_LOG_WARNING("No sensors available");
-        return;
-    }
-    for (const auto& idOpt : *sensorIdsOpt)
-    {
-        if (!idOpt)
-            continue;
-        assertSensorIdInHFP(idOpt->value);
-        MotionSensorId sensorIdObj;
-        sensorIdObj.value = idOpt->value;
-        android::sp<IMotionSensor> sensorHandle;
-        MOTIONSENSOR_GET_SENSOR_SUCCESS(gMOTIONSENSORMGRHandle, sensorIdObj, sensorHandle);
-        android::sp<IMotionSensorControllerListener> listener = android::sp<MotionSensorControllerListener>::make();
-        android::sp<IMotionSensorController> controllerHandle;
-        MOTIONSENSOR_OPEN_SUCCESS(sensorHandle, listener, controllerHandle);
-        StartConfig config;
         config.operationalMode = OperationalMode::MOTION;
         config.noMotionSeconds = 99999; // out of range
         MOTIONSENSOR_START_FAILURE(controllerHandle, config, Status::EX_ILLEGAL_ARGUMENT);
+
+        config.operationalMode = OperationalMode::MOTION;
+        config.noMotionSeconds = 30;
+        MOTIONSENSOR_START_SUCCESS(controllerHandle, config);
+
+        // Second start while STARTED must fail with EX_ILLEGAL_STATE
+        MOTIONSENSOR_START_FAILURE(controllerHandle, config, Status::EX_ILLEGAL_STATE);
+        MOTIONSENSOR_STOP_SUCCESS(controllerHandle);
         MOTIONSENSOR_CLOSE_SUCCESS(sensorHandle, controllerHandle);
     }
 }
@@ -915,8 +826,8 @@ UT_ADD_TEST(VTS_L1_MOTIONSENSOR, Start_Negative_InvalidConfig)
  * This test opens a sensor without starting it, then calls stop, asserting
  * that EX_ILLEGAL_STATE is returned.
  *
- * **Test Group ID:** 01@n
- * **Test Case ID:** 017@n
+ * **Test Group ID:**: 01@n
+ * **Test Case ID:** 014@n
  * **Priority:** High@n
  *
  * **Pre-Conditions:** None@n
@@ -924,14 +835,14 @@ UT_ADD_TEST(VTS_L1_MOTIONSENSOR, Start_Negative_InvalidConfig)
  * **User Interaction:** None@n
  *
  * **Test Procedure:**@n
- * | Variation / Step | Description | Test Data | Expected Result | Notes |
- * | :----: | --------- | ---------- |-------------- | ----- |
- * | 01 | Call getMotionSensorIds and iterate all sensors | Output: sensorIdsOpt | Sensor IDs list obtained | Should be successful |
- * | 02 | Get sensor handle and open with valid listener | Input: sensorId, listener | Controller returned | Should Pass |
- * | 03 | Call stop without having called start | Input: none | Returns EX_ILLEGAL_STATE | Should Pass |
+ * | Variation / Step | Description | Test Data | Expected Result | Notes |@n
+ * | :----: | --------- | ---------- |-------------- | ----- |@n
+ * | 01 | Call getMotionSensorIds and iterate all sensors | Output: sensorIdsOpt | Sensor IDs list obtained | Should be successful |@n
+ * | 02 | Get sensor handle and open with valid listener | Input: sensorId, listener | Controller returned | Should Pass |@n
+ * | 03 | Call stop without having called start | Input: none | Returns EX_ILLEGAL_STATE | Should Pass |@n
  * | 04 | Close the sensor | Input: controllerHandle | Close succeeds | Should Pass |
  */
-UT_ADD_TEST(VTS_L1_MOTIONSENSOR, Stop_Negative_AlreadyStopped)
+UT_ADD_TEST(VTS_L1_MOTIONSENSOR, stop_neg)
 {
     std::optional<std::vector<std::optional<IMotionSensor::Id>>> sensorIdsOpt;
     MOTIONSENSOR_GET_SENSOR_IDS_SUCCESS(gMOTIONSENSORMGRHandle, sensorIdsOpt);
@@ -964,8 +875,8 @@ UT_ADD_TEST(VTS_L1_MOTIONSENSOR, Stop_Negative_AlreadyStopped)
  * This test starts each sensor with noMotionSeconds=60, calls getStartConfig,
  * and asserts the retrieved noMotionSeconds matches the configured value.
  *
- * **Test Group ID:** 01@n
- * **Test Case ID:** 018@n
+ * **Test Group ID:**: 01@n
+ * **Test Case ID:** 015@n
  * **Priority:** High@n
  *
  * **Pre-Conditions:** None@n
@@ -973,15 +884,15 @@ UT_ADD_TEST(VTS_L1_MOTIONSENSOR, Stop_Negative_AlreadyStopped)
  * **User Interaction:** None@n
  *
  * **Test Procedure:**@n
- * | Variation / Step | Description | Test Data | Expected Result | Notes |
- * | :----: | --------- | ---------- |-------------- | ----- |
- * | 01 | Call getMotionSensorIds and iterate all sensors | Output: sensorIdsOpt | Sensor IDs list obtained | Should be successful |
- * | 02 | Get sensor handle and open with valid listener | Input: sensorId, listener | Controller returned | Should Pass |
- * | 03 | Call start with mode=MOTION, noMotionSeconds=60 | Input: config | Start succeeds | Should Pass |
- * | 04 | Call getStartConfig | Output: retrieved | retrieved.noMotionSeconds == 60 | Should Pass |
+ * | Variation / Step | Description | Test Data | Expected Result | Notes |@n
+ * | :----: | --------- | ---------- |-------------- | ----- |@n
+ * | 01 | Call getMotionSensorIds and iterate all sensors | Output: sensorIdsOpt | Sensor IDs list obtained | Should be successful |@n
+ * | 02 | Get sensor handle and open with valid listener | Input: sensorId, listener | Controller returned | Should Pass |@n
+ * | 03 | Call start with mode=MOTION, noMotionSeconds=60 | Input: config | Start succeeds | Should Pass |@n
+ * | 04 | Call getStartConfig | Output: retrieved | retrieved.noMotionSeconds == 60 | Should Pass |@n
  * | 05 | Stop and close | Input: controllerHandle | Stop and close succeed | Should Pass |
  */
-UT_ADD_TEST(VTS_L1_MOTIONSENSOR, GetStartConfig_Positive)
+UT_ADD_TEST(VTS_L1_MOTIONSENSOR, getStartConfig_pos)
 {
     std::optional<std::vector<std::optional<IMotionSensor::Id>>> sensorIdsOpt;
     MOTIONSENSOR_GET_SENSOR_IDS_SUCCESS(gMOTIONSENSORMGRHandle, sensorIdsOpt);
@@ -1007,8 +918,7 @@ UT_ADD_TEST(VTS_L1_MOTIONSENSOR, GetStartConfig_Positive)
         config.noMotionSeconds = 60;
         MOTIONSENSOR_START_SUCCESS(controllerHandle, config);
         StartConfig retrieved;
-        MOTIONSENSOR_GET_START_CONFIG_SUCCESS(controllerHandle, retrieved);
-        UT_ASSERT_EQUAL(retrieved.noMotionSeconds, config.noMotionSeconds);
+        MOTIONSENSOR_GET_START_CONFIG_SUCCESS(controllerHandle, retrieved, config);
         MOTIONSENSOR_STOP_SUCCESS(controllerHandle);
         MOTIONSENSOR_CLOSE_SUCCESS(sensorHandle, controllerHandle);
     }
@@ -1020,8 +930,8 @@ UT_ADD_TEST(VTS_L1_MOTIONSENSOR, GetStartConfig_Positive)
  * This test opens each sensor without starting it, then calls getStartConfig,
  * asserting EX_ILLEGAL_STATE is returned.
  *
- * **Test Group ID:** 01@n
- * **Test Case ID:** 019@n
+ * **Test Group ID:**: 01@n
+ * **Test Case ID:** 016@n
  * **Priority:** High@n
  *
  * **Pre-Conditions:** None@n
@@ -1029,14 +939,14 @@ UT_ADD_TEST(VTS_L1_MOTIONSENSOR, GetStartConfig_Positive)
  * **User Interaction:** None@n
  *
  * **Test Procedure:**@n
- * | Variation / Step | Description | Test Data | Expected Result | Notes |
- * | :----: | --------- | ---------- |-------------- | ----- |
- * | 01 | Call getMotionSensorIds and iterate all sensors | Output: sensorIdsOpt | Sensor IDs list obtained | Should be successful |
- * | 02 | Get sensor handle and open with valid listener | Input: sensorId, listener | Controller returned | Should Pass |
- * | 03 | Call getStartConfig while in STOPPED state | Output: config | Returns EX_ILLEGAL_STATE | Should Pass |
+ * | Variation / Step | Description | Test Data | Expected Result | Notes |@n
+ * | :----: | --------- | ---------- |-------------- | ----- |@n
+ * | 01 | Call getMotionSensorIds and iterate all sensors | Output: sensorIdsOpt | Sensor IDs list obtained | Should be successful |@n
+ * | 02 | Get sensor handle and open with valid listener | Input: sensorId, listener | Controller returned | Should Pass |@n
+ * | 03 | Call getStartConfig while in STOPPED state | Output: config | Returns EX_ILLEGAL_STATE | Should Pass |@n
  * | 04 | Close the sensor | Input: controllerHandle | Close succeeds | Should Pass |
  */
-UT_ADD_TEST(VTS_L1_MOTIONSENSOR, GetStartConfig_Negative_Stopped)
+UT_ADD_TEST(VTS_L1_MOTIONSENSOR, getStartConfig_neg)
 {
     std::optional<std::vector<std::optional<IMotionSensor::Id>>> sensorIdsOpt;
     MOTIONSENSOR_GET_SENSOR_IDS_SUCCESS(gMOTIONSENSORMGRHandle, sensorIdsOpt);
@@ -1069,8 +979,8 @@ UT_ADD_TEST(VTS_L1_MOTIONSENSOR, GetStartConfig_Negative_Stopped)
  * This test opens each sensor and calls getSensitivity on the controller,
  * asserting the returned value is >= 0.
  *
- * **Test Group ID:** 01@n
- * **Test Case ID:** 020@n
+ * **Test Group ID:**: 01@n
+ * **Test Case ID:** 017@n
  * **Priority:** High@n
  *
  * **Pre-Conditions:** None@n
@@ -1078,14 +988,14 @@ UT_ADD_TEST(VTS_L1_MOTIONSENSOR, GetStartConfig_Negative_Stopped)
  * **User Interaction:** None@n
  *
  * **Test Procedure:**@n
- * | Variation / Step | Description | Test Data | Expected Result | Notes |
- * | :----: | --------- | ---------- |-------------- | ----- |
- * | 01 | Call getMotionSensorIds and iterate all sensors | Output: sensorIdsOpt | Sensor IDs list obtained | Should be successful |
- * | 02 | Get sensor handle and open with valid listener | Input: sensorId, listener | Controller returned | Should Pass |
- * | 03 | Call getSensitivity | Output: sensitivity | sensitivity >= 0 | Should Pass |
+ * | Variation / Step | Description | Test Data | Expected Result | Notes |@n
+ * | :----: | --------- | ---------- |-------------- | ----- |@n
+ * | 01 | Call getMotionSensorIds and iterate all sensors | Output: sensorIdsOpt | Sensor IDs list obtained | Should be successful |@n
+ * | 02 | Get sensor handle and open with valid listener | Input: sensorId, listener | Controller returned | Should Pass |@n
+ * | 03 | Call getSensitivity | Output: sensitivity | sensitivity >= 0 | Should Pass |@n
  * | 04 | Close the sensor | Input: controllerHandle | Close succeeds | Should Pass |
  */
-UT_ADD_TEST(VTS_L1_MOTIONSENSOR, GetSensitivity_Positive)
+UT_ADD_TEST(VTS_L1_MOTIONSENSOR, getSensitivity_pos)
 {
     std::optional<std::vector<std::optional<IMotionSensor::Id>>> sensorIdsOpt;
     MOTIONSENSOR_GET_SENSOR_IDS_SUCCESS(gMOTIONSENSORMGRHandle, sensorIdsOpt);
@@ -1120,8 +1030,8 @@ UT_ADD_TEST(VTS_L1_MOTIONSENSOR, GetSensitivity_Positive)
  * setSensitivity with minSensitivity, maxSensitivity, and their midpoint,
  * asserting each call succeeds.
  *
- * **Test Group ID:** 01@n
- * **Test Case ID:** 021@n
+ * **Test Group ID:**: 01@n
+ * **Test Case ID:** 018@n
  * **Priority:** High@n
  *
  * **Pre-Conditions:** None@n
@@ -1129,16 +1039,16 @@ UT_ADD_TEST(VTS_L1_MOTIONSENSOR, GetSensitivity_Positive)
  * **User Interaction:** None@n
  *
  * **Test Procedure:**@n
- * | Variation / Step | Description | Test Data | Expected Result | Notes |
- * | :----: | --------- | ---------- |-------------- | ----- |
- * | 01 | Call getMotionSensorIds and iterate all sensors | Output: sensorIdsOpt | Sensor IDs list obtained | Should be successful |
- * | 02 | Get sensor handle, open, and get capabilities | Input: sensorId, listener | Controller and caps returned | Should Pass |
- * | 03 | Call setSensitivity with caps.minSensitivity | Input: minSensitivity | Returns true | Should Pass |
- * | 04 | Call setSensitivity with caps.maxSensitivity | Input: maxSensitivity | Returns true | Should Pass |
- * | 05 | Call setSensitivity with midpoint (min+max)/2 | Input: midpoint | Returns true | Should Pass |
+ * | Variation / Step | Description | Test Data | Expected Result | Notes |@n
+ * | :----: | --------- | ---------- |-------------- | ----- |@n
+ * | 01 | Call getMotionSensorIds and iterate all sensors | Output: sensorIdsOpt | Sensor IDs list obtained | Should be successful |@n
+ * | 02 | Get sensor handle, open, and get capabilities | Input: sensorId, listener | Controller and caps returned | Should Pass |@n
+ * | 03 | Call setSensitivity with caps.minSensitivity | Input: minSensitivity | Returns true | Should Pass |@n
+ * | 04 | Call setSensitivity with caps.maxSensitivity | Input: maxSensitivity | Returns true | Should Pass |@n
+ * | 05 | Call setSensitivity with midpoint (min+max)/2 | Input: midpoint | Returns true | Should Pass |@n
  * | 06 | Close the sensor | Input: controllerHandle | Close succeeds | Should Pass |
  */
-UT_ADD_TEST(VTS_L1_MOTIONSENSOR, SetSensitivity_Positive_MinMaxRange)
+UT_ADD_TEST(VTS_L1_MOTIONSENSOR, setSensitivity_pos)
 {
     std::optional<std::vector<std::optional<IMotionSensor::Id>>> sensorIdsOpt;
     MOTIONSENSOR_GET_SENSOR_IDS_SUCCESS(gMOTIONSENSORMGRHandle, sensorIdsOpt);
@@ -1169,15 +1079,15 @@ UT_ADD_TEST(VTS_L1_MOTIONSENSOR, SetSensitivity_Positive_MinMaxRange)
     }
 }
 
-
 /**
- * @brief Validate that setSensitivity returns EX_ILLEGAL_ARGUMENT for out-of-range values.
+ * @brief Validate setSensitivity failure cases: out-of-range values and sensor already started.
  *
- * This test calls setSensitivity with minSensitivity-1 and maxSensitivity+1,
- * asserting both calls return EX_ILLEGAL_ARGUMENT.
+ * This test exercises two negative setSensitivity paths for each sensor:
+ * 1. Calling setSensitivity with minSensitivity-1 and maxSensitivity+1 — must return EX_ILLEGAL_ARGUMENT.
+ * 2. Calling setSensitivity while the sensor is in STARTED state — must return EX_ILLEGAL_STATE.
  *
- * **Test Group ID:** 01@n
- * **Test Case ID:** 022@n
+ * **Test Group ID:**: 01@n
+ * **Test Case ID:** 019@n
  * **Priority:** High@n
  *
  * **Pre-Conditions:** None@n
@@ -1185,15 +1095,17 @@ UT_ADD_TEST(VTS_L1_MOTIONSENSOR, SetSensitivity_Positive_MinMaxRange)
  * **User Interaction:** None@n
  *
  * **Test Procedure:**@n
- * | Variation / Step | Description | Test Data | Expected Result | Notes |
- * | :----: | --------- | ---------- |-------------- | ----- |
- * | 01 | Call getMotionSensorIds and iterate all sensors | Output: sensorIdsOpt | Sensor IDs list obtained | Should be successful |
- * | 02 | Get sensor handle, open, and get capabilities | Input: sensorId, listener | Controller and caps returned | Should Pass |
- * | 03 | Call setSensitivity with caps.minSensitivity-1 | Input: minSensitivity-1 | Returns EX_ILLEGAL_ARGUMENT | Should Pass |
- * | 04 | Call setSensitivity with caps.maxSensitivity+1 | Input: maxSensitivity+1 | Returns EX_ILLEGAL_ARGUMENT | Should Pass |
- * | 05 | Close the sensor | Input: controllerHandle | Close succeeds | Should Pass |
+ * | Variation / Step | Description | Test Data | Expected Result | Notes |@n
+ * | :----: | --------- | ---------- |-------------- | ----- |@n
+ * | 01 | Call getMotionSensorIds and iterate all sensors | Output: sensorIdsOpt | Sensor IDs list obtained | Should be successful |@n
+ * | 02 | Get sensor handle, open, and get capabilities | Input: sensorId, listener | Controller and caps returned | Should Pass |@n
+ * | 03 | Call setSensitivity with caps.minSensitivity-1 | Input: minSensitivity-1 | Returns EX_ILLEGAL_ARGUMENT | Should Pass |@n
+ * | 04 | Call setSensitivity with caps.maxSensitivity+1 | Input: maxSensitivity+1 | Returns EX_ILLEGAL_ARGUMENT | Should Pass |@n
+ * | 05 | Call start with valid config | Input: mode=MOTION, noMotionSeconds=30 | Start succeeds | Should Pass |@n
+ * | 06 | Call setSensitivity while in STARTED state | Input: caps.minSensitivity | Returns EX_ILLEGAL_STATE | Should Pass |@n
+ * | 07 | Stop and close | Input: controllerHandle | Stop and close succeed | Should Pass |
  */
-UT_ADD_TEST(VTS_L1_MOTIONSENSOR, SetSensitivity_OutOfRange)
+UT_ADD_TEST(VTS_L1_MOTIONSENSOR, setSensitivity_neg)
 {
     std::optional<std::vector<std::optional<IMotionSensor::Id>>> sensorIdsOpt;
     MOTIONSENSOR_GET_SENSOR_IDS_SUCCESS(gMOTIONSENSORMGRHandle, sensorIdsOpt);
@@ -1218,76 +1130,26 @@ UT_ADD_TEST(VTS_L1_MOTIONSENSOR, SetSensitivity_OutOfRange)
         MOTIONSENSOR_GET_CAPABILITIES_SUCCESS(sensorHandle, caps);
         MOTIONSENSOR_SET_SENSITIVITY_FAILURE(controllerHandle, caps.minSensitivity - 1, Status::EX_ILLEGAL_ARGUMENT);
         MOTIONSENSOR_SET_SENSITIVITY_FAILURE(controllerHandle, caps.maxSensitivity + 1, Status::EX_ILLEGAL_ARGUMENT);
-
-        MOTIONSENSOR_CLOSE_SUCCESS(sensorHandle, controllerHandle);
-    }
-}
-
-
-/**
- * @brief Validate that setSensitivity returns EX_ILLEGAL_STATE when the sensor is started.
- *
- * This test starts each sensor, then calls setSensitivity, asserting that
- * EX_ILLEGAL_STATE is returned since sensitivity cannot be changed while running.
- *
- * **Test Group ID:** 01@n
- * **Test Case ID:** 023@n
- * **Priority:** High@n
- *
- * **Pre-Conditions:** None@n
- * **Dependencies:** None@n
- * **User Interaction:** None@n
- *
- * **Test Procedure:**@n
- * | Variation / Step | Description | Test Data | Expected Result | Notes |
- * | :----: | --------- | ---------- |-------------- | ----- |
- * | 01 | Call getMotionSensorIds and iterate all sensors | Output: sensorIdsOpt | Sensor IDs list obtained | Should be successful |
- * | 02 | Get sensor handle, open, and start | Input: sensorId, listener, config | Sensor started successfully | Should Pass |
- * | 03 | Get capabilities to obtain minSensitivity | Output: caps | Capabilities returned | Should Pass |
- * | 04 | Call setSensitivity while in STARTED state | Input: caps.minSensitivity | Returns EX_ILLEGAL_STATE | Should Pass |
- * | 05 | Stop and close | Input: controllerHandle | Stop and close succeed | Should Pass |
- */
-UT_ADD_TEST(VTS_L1_MOTIONSENSOR, SetSensitivity_Negative_WhileStarted)
-{
-    std::optional<std::vector<std::optional<IMotionSensor::Id>>> sensorIdsOpt;
-    MOTIONSENSOR_GET_SENSOR_IDS_SUCCESS(gMOTIONSENSORMGRHandle, sensorIdsOpt);
-    if (!sensorIdsOpt || sensorIdsOpt->empty())
-    {
-        UT_LOG_WARNING("No sensors available");
-        return;
-    }
-    for (const auto& idOpt : *sensorIdsOpt)
-    {
-        if (!idOpt)
-            continue;
-        assertSensorIdInHFP(idOpt->value);
-        MotionSensorId sensorIdObj;
-        sensorIdObj.value = idOpt->value;
-        android::sp<IMotionSensor> sensorHandle;
-        MOTIONSENSOR_GET_SENSOR_SUCCESS(gMOTIONSENSORMGRHandle, sensorIdObj, sensorHandle);
-        android::sp<IMotionSensorControllerListener> listener = android::sp<MotionSensorControllerListener>::make();
-        android::sp<IMotionSensorController> controllerHandle;
-        MOTIONSENSOR_OPEN_SUCCESS(sensorHandle, listener, controllerHandle);
         StartConfig config;
         config.operationalMode = OperationalMode::MOTION;
         config.noMotionSeconds = 30;
         MOTIONSENSOR_START_SUCCESS(controllerHandle, config);
-        Capabilities caps;
-        MOTIONSENSOR_GET_CAPABILITIES_SUCCESS(sensorHandle, caps);
         MOTIONSENSOR_SET_SENSITIVITY_FAILURE(controllerHandle, caps.minSensitivity, Status::EX_ILLEGAL_STATE);
         MOTIONSENSOR_STOP_SUCCESS(controllerHandle);
         MOTIONSENSOR_CLOSE_SUCCESS(sensorHandle, controllerHandle);
     }
 }
 
+
 /**
  * @brief Validate that isAutonomousDuringDeepSleepEnabled returns the expected value based on capabilities.
  *
- * This test opens each sensor, reads its capabilities, calls isAutonomousDuringDeepSleepEnabled,
- * and asserts the returned value matches the supportsDeepSleepAutonomy capability flag.
+ * This test opens each sensor, reads its capabilities, verifies the initial autonomous state is false,
+ * calls setAutonomousDuringDeepSleep(true), then calls isAutonomousDuringDeepSleepEnabled and asserts
+ * the returned value matches the supportsDeepSleepAutonomy capability flag.
  *
- * **Test Group ID:** 01@n
- * **Test Case ID:** 024@n
+ * **Test Group ID:**: 01@n
+ * **Test Case ID:** 020@n
  * **Priority:** High@n
  *
  * **Pre-Conditions:** None@n
@@ -1295,14 +1157,16 @@ UT_ADD_TEST(VTS_L1_MOTIONSENSOR, SetSensitivity_Negative_WhileStarted)
  * **User Interaction:** None@n
  *
  * **Test Procedure:**@n
- * | Variation / Step | Description | Test Data | Expected Result | Notes |
- * | :----: | --------- | ---------- |-------------- | ----- |
- * | 01 | Call getMotionSensorIds and iterate all sensors | Output: sensorIdsOpt | Sensor IDs list obtained | Should be successful |
- * | 02 | Get sensor handle, open, and get capabilities | Input: sensorId, listener | Controller and caps returned | Should Pass |
- * | 03 | Call isAutonomousDuringDeepSleepEnabled | Output: enabled | Value matches caps.supportsDeepSleepAutonomy | Should Pass |
- * | 04 | Close the sensor | Input: controllerHandle | Close succeeds | Should Pass |
+ * | Variation / Step | Description | Test Data | Expected Result | Notes |@n
+ * | :----: | --------- | ---------- |-------------- | ----- |@n
+ * | 01 | Call getMotionSensorIds and iterate all sensors | Output: sensorIdsOpt | Sensor IDs list obtained | Should be successful |@n
+ * | 02 | Get sensor handle, open, and get capabilities | Input: sensorId, listener | Controller and caps returned | Should Pass |@n
+ * | 03 | Call isAutonomousDuringDeepSleepEnabled | Output: enabled | enabled == false (default) | Should Pass |@n
+ * | 04 | Call setAutonomousDuringDeepSleep(true) | Input: enabled=true | Call succeeds | Should Pass |@n
+ * | 05 | Call isAutonomousDuringDeepSleepEnabled | Output: enabled | enabled == caps.supportsDeepSleepAutonomy | Should Pass |@n
+ * | 06 | Close the sensor | Input: controllerHandle | Close succeeds | Should Pass |
  */
-UT_ADD_TEST(VTS_L1_MOTIONSENSOR, GetAutonomous_Positive)
+UT_ADD_TEST(VTS_L1_MOTIONSENSOR, isAutonomousDuringDeepSleepEnabled_pos)
 {
     std::optional<std::vector<std::optional<IMotionSensor::Id>>> sensorIdsOpt;
     MOTIONSENSOR_GET_SENSOR_IDS_SUCCESS(gMOTIONSENSORMGRHandle, sensorIdsOpt);
@@ -1340,8 +1204,8 @@ UT_ADD_TEST(VTS_L1_MOTIONSENSOR, GetAutonomous_Positive)
  * This test opens each sensor and calls setAutonomousDuringDeepSleep(true),
  * asserting the call succeeds with status ok.
  *
- * **Test Group ID:** 01@n
- * **Test Case ID:** 025@n
+ * **Test Group ID:**: 01@n
+ * **Test Case ID:** 021@n
  * **Priority:** High@n
  *
  * **Pre-Conditions:** None@n
@@ -1349,14 +1213,14 @@ UT_ADD_TEST(VTS_L1_MOTIONSENSOR, GetAutonomous_Positive)
  * **User Interaction:** None@n
  *
  * **Test Procedure:**@n
- * | Variation / Step | Description | Test Data | Expected Result | Notes |
- * | :----: | --------- | ---------- |-------------- | ----- |
- * | 01 | Call getMotionSensorIds and iterate all sensors | Output: sensorIdsOpt | Sensor IDs list obtained | Should be successful |
- * | 02 | Get sensor handle, open, and get capabilities | Input: sensorId, listener | Controller and caps returned | Should Pass |
- * | 03 | Call setAutonomousDuringDeepSleep(true) | Input: enabled=true | Call succeeds, status ok | Should Pass |
+ * | Variation / Step | Description | Test Data | Expected Result | Notes |@n
+ * | :----: | --------- | ---------- |-------------- | ----- |@n
+ * | 01 | Call getMotionSensorIds and iterate all sensors | Output: sensorIdsOpt | Sensor IDs list obtained | Should be successful |@n
+ * | 02 | Get sensor handle, open, and get capabilities | Input: sensorId, listener | Controller and caps returned | Should Pass |@n
+ * | 03 | Call setAutonomousDuringDeepSleep(true) | Input: enabled=true | Call succeeds, status ok | Should Pass |@n
  * | 04 | Close the sensor | Input: controllerHandle | Close succeeds | Should Pass |
  */
-UT_ADD_TEST(VTS_L1_MOTIONSENSOR, SetAutonomous_Positive)
+UT_ADD_TEST(VTS_L1_MOTIONSENSOR, setAutonomousDuringDeepSleep_pos)
 {
     std::optional<std::vector<std::optional<IMotionSensor::Id>>> sensorIdsOpt;
     MOTIONSENSOR_GET_SENSOR_IDS_SUCCESS(gMOTIONSENSORMGRHandle, sensorIdsOpt);
@@ -1390,8 +1254,8 @@ UT_ADD_TEST(VTS_L1_MOTIONSENSOR, SetAutonomous_Positive)
  * This test starts each sensor and then calls setAutonomousDuringDeepSleep(true),
  * asserting EX_ILLEGAL_STATE is returned since the setting cannot be changed while running.
  *
- * **Test Group ID:** 01@n
- * **Test Case ID:** 026@n
+ * **Test Group ID:**: 01@n
+ * **Test Case ID:** 022@n
  * **Priority:** High@n
  *
  * **Pre-Conditions:** None@n
@@ -1399,14 +1263,14 @@ UT_ADD_TEST(VTS_L1_MOTIONSENSOR, SetAutonomous_Positive)
  * **User Interaction:** None@n
  *
  * **Test Procedure:**@n
- * | Variation / Step | Description | Test Data | Expected Result | Notes |
- * | :----: | --------- | ---------- |-------------- | ----- |
- * | 01 | Call getMotionSensorIds and iterate all sensors | Output: sensorIdsOpt | Sensor IDs list obtained | Should be successful |
- * | 02 | Get sensor handle, open, and start | Input: sensorId, listener, config | Sensor started | Should Pass |
- * | 03 | Call setAutonomousDuringDeepSleep(true) while started | Input: enabled=true | Returns EX_ILLEGAL_STATE | Should Pass |
+ * | Variation / Step | Description | Test Data | Expected Result | Notes |@n
+ * | :----: | --------- | ---------- |-------------- | ----- |@n
+ * | 01 | Call getMotionSensorIds and iterate all sensors | Output: sensorIdsOpt | Sensor IDs list obtained | Should be successful |@n
+ * | 02 | Get sensor handle, open, and start | Input: sensorId, listener, config | Sensor started | Should Pass |@n
+ * | 03 | Call setAutonomousDuringDeepSleep(true) while started | Input: enabled=true | Returns EX_ILLEGAL_STATE | Should Pass |@n
  * | 04 | Stop and close | Input: controllerHandle | Stop and close succeed | Should Pass |
  */
-UT_ADD_TEST(VTS_L1_MOTIONSENSOR, SetAutonomous_Negative_WhileStarted)
+UT_ADD_TEST(VTS_L1_MOTIONSENSOR, setAutonomousDuringDeepSleep_neg)
 {
     std::optional<std::vector<std::optional<IMotionSensor::Id>>> sensorIdsOpt;
     MOTIONSENSOR_GET_SENSOR_IDS_SUCCESS(gMOTIONSENSORMGRHandle, sensorIdsOpt);
@@ -1443,8 +1307,8 @@ UT_ADD_TEST(VTS_L1_MOTIONSENSOR, SetAutonomous_Negative_WhileStarted)
  * This test calls setActiveWindows with an empty vector (24-hour monitoring),
  * then with two windows including one that wraps past midnight, asserting all calls succeed.
  *
- * **Test Group ID:** 01@n
- * **Test Case ID:** 027@n
+ * **Test Group ID:**: 01@n
+ * **Test Case ID:** 023@n
  * **Priority:** High@n
  *
  * **Pre-Conditions:** None@n
@@ -1452,15 +1316,15 @@ UT_ADD_TEST(VTS_L1_MOTIONSENSOR, SetAutonomous_Negative_WhileStarted)
  * **User Interaction:** None@n
  *
  * **Test Procedure:**@n
- * | Variation / Step | Description | Test Data | Expected Result | Notes |
- * | :----: | --------- | ---------- |-------------- | ----- |
- * | 01 | Call getMotionSensorIds and iterate all sensors | Output: sensorIdsOpt | Sensor IDs list obtained | Should be successful |
- * | 02 | Get sensor handle and open with valid listener | Input: sensorId, listener | Controller returned | Should Pass |
- * | 03 | Call setActiveWindows with empty vector | Input: windows = {} | Returns true | Should Pass |
- * | 04 | Call setActiveWindows with 08:00-20:00 and 22:00-06:00 windows | Input: 2 windows | Returns true | Should Pass |
+ * | Variation / Step | Description | Test Data | Expected Result | Notes |@n
+ * | :----: | --------- | ---------- |-------------- | ----- |@n
+ * | 01 | Call getMotionSensorIds and iterate all sensors | Output: sensorIdsOpt | Sensor IDs list obtained | Should be successful |@n
+ * | 02 | Get sensor handle and open with valid listener | Input: sensorId, listener | Controller returned | Should Pass |@n
+ * | 03 | Call setActiveWindows with empty vector | Input: windows = {} | Returns true | Should Pass |@n
+ * | 04 | Call setActiveWindows with 08:00-20:00 and 22:00-06:00 windows | Input: 2 windows | Returns true | Should Pass |@n
  * | 05 | Close the sensor | Input: controllerHandle | Close succeeds | Should Pass |
  */
-UT_ADD_TEST(VTS_L1_MOTIONSENSOR, SetActiveWindows_Positive)
+UT_ADD_TEST(VTS_L1_MOTIONSENSOR, setActiveWindows_pos)
 {
     std::optional<std::vector<std::optional<IMotionSensor::Id>>> sensorIdsOpt;
     MOTIONSENSOR_GET_SENSOR_IDS_SUCCESS(gMOTIONSENSORMGRHandle, sensorIdsOpt);
@@ -1498,13 +1362,15 @@ UT_ADD_TEST(VTS_L1_MOTIONSENSOR, SetActiveWindows_Positive)
 }
 
 /**
- * @brief Validate that setActiveWindows returns EX_ILLEGAL_ARGUMENT for out-of-range time values.
+ * @brief Validate setActiveWindows failure cases: out-of-range time values and sensor already started.
  *
- * This test calls setActiveWindows with endTimeOfDaySeconds=90000 (exceeds 86399)
- * and with startTimeOfDaySeconds=-10 (negative), asserting both fail with EX_ILLEGAL_ARGUMENT.
+ * This test exercises two negative setActiveWindows paths for each sensor:
+ * 1. Calling setActiveWindows with endTimeOfDaySeconds=90000 (exceeds 86399) and startTimeOfDaySeconds=-10
+ *    (negative) — must return EX_ILLEGAL_ARGUMENT.
+ * 2. Calling setActiveWindows while the sensor is in STARTED state — must return EX_ILLEGAL_STATE.
  *
- * **Test Group ID:** 01@n
- * **Test Case ID:** 028@n
+ * **Test Group ID:**: 01@n
+ * **Test Case ID:** 024@n
  * **Priority:** High@n
  *
  * **Pre-Conditions:** None@n
@@ -1512,15 +1378,17 @@ UT_ADD_TEST(VTS_L1_MOTIONSENSOR, SetActiveWindows_Positive)
  * **User Interaction:** None@n
  *
  * **Test Procedure:**@n
- * | Variation / Step | Description | Test Data | Expected Result | Notes |
- * | :----: | --------- | ---------- |-------------- | ----- |
- * | 01 | Call getMotionSensorIds and iterate all sensors | Output: sensorIdsOpt | Sensor IDs list obtained | Should be successful |
- * | 02 | Get sensor handle and open with valid listener | Input: sensorId, listener | Controller returned | Should Pass |
- * | 03 | Call setActiveWindows with endTimeOfDaySeconds=90000 | Input: window (0 to 90000) | Returns EX_ILLEGAL_ARGUMENT | Should Pass |
- * | 04 | Call setActiveWindows with startTimeOfDaySeconds=-10 | Input: window (-10 to 21600) | Returns EX_ILLEGAL_ARGUMENT | Should Pass |
- * | 05 | Close the sensor | Input: controllerHandle | Close succeeds | Should Pass |
+ * | Variation / Step | Description | Test Data | Expected Result | Notes |@n
+ * | :----: | --------- | ---------- |-------------- | ----- |@n
+ * | 01 | Call getMotionSensorIds and iterate all sensors | Output: sensorIdsOpt | Sensor IDs list obtained | Should be successful |@n
+ * | 02 | Get sensor handle and open with valid listener | Input: sensorId, listener | Controller returned | Should Pass |@n
+ * | 03 | Call setActiveWindows with endTimeOfDaySeconds=90000 | Input: window (0 to 90000) | Returns EX_ILLEGAL_ARGUMENT | Should Pass |@n
+ * | 04 | Call setActiveWindows with startTimeOfDaySeconds=-10 | Input: window (-10 to 21600) | Returns EX_ILLEGAL_ARGUMENT | Should Pass |@n
+ * | 05 | Call start with valid config | Input: mode=MOTION, noMotionSeconds=30 | Start succeeds | Should Pass |@n
+ * | 06 | Call setActiveWindows with a valid window while started | Input: window (0 to 3600) | Returns EX_ILLEGAL_STATE | Should Pass |@n
+ * | 07 | Stop and close | Input: controllerHandle | Stop and close succeed | Should Pass |
  */
-UT_ADD_TEST(VTS_L1_MOTIONSENSOR, SetActiveWindows_Negative_OutOfRange)
+UT_ADD_TEST(VTS_L1_MOTIONSENSOR, setActiveWindows_neg)
 {
     std::optional<std::vector<std::optional<IMotionSensor::Id>>> sensorIdsOpt;
     MOTIONSENSOR_GET_SENSOR_IDS_SUCCESS(gMOTIONSENSORMGRHandle, sensorIdsOpt);
@@ -1551,63 +1419,15 @@ UT_ADD_TEST(VTS_L1_MOTIONSENSOR, SetActiveWindows_Negative_OutOfRange)
         w.endTimeOfDaySeconds   = 21600; // > 86399
         windows.push_back(w);
         MOTIONSENSOR_SET_ACTIVE_WINDOWS_FAILURE(controllerHandle, windows, Status::EX_ILLEGAL_ARGUMENT);
-
-        MOTIONSENSOR_CLOSE_SUCCESS(sensorHandle, controllerHandle);
-    }
-}
-
-/**
- * @brief Validate that setActiveWindows returns EX_ILLEGAL_STATE when the sensor is started.
- *
- * This test starts each sensor, then calls setActiveWindows, asserting
- * EX_ILLEGAL_STATE is returned since active windows cannot be changed while running.
- *
- * **Test Group ID:** 01@n
- * **Test Case ID:** 029@n
- * **Priority:** High@n
- *
- * **Pre-Conditions:** None@n
- * **Dependencies:** None@n
- * **User Interaction:** None@n
- *
- * **Test Procedure:**@n
- * | Variation / Step | Description | Test Data | Expected Result | Notes |
- * | :----: | --------- | ---------- |-------------- | ----- |
- * | 01 | Call getMotionSensorIds and iterate all sensors | Output: sensorIdsOpt | Sensor IDs list obtained | Should be successful |
- * | 02 | Get sensor handle, open, and start | Input: sensorId, listener, config | Sensor started | Should Pass |
- * | 03 | Call setActiveWindows with a valid window while started | Input: window (0 to 3600) | Returns EX_ILLEGAL_STATE | Should Pass |
- * | 04 | Stop and close | Input: controllerHandle | Stop and close succeed | Should Pass |
- */
-UT_ADD_TEST(VTS_L1_MOTIONSENSOR, SetActiveWindows_Negative_WhileStarted)
-{
-    std::optional<std::vector<std::optional<IMotionSensor::Id>>> sensorIdsOpt;
-    MOTIONSENSOR_GET_SENSOR_IDS_SUCCESS(gMOTIONSENSORMGRHandle, sensorIdsOpt);
-    if (!sensorIdsOpt || sensorIdsOpt->empty())
-    {
-        UT_LOG_WARNING("No sensors available");
-        return;
-    }
-    for (const auto& idOpt : *sensorIdsOpt)
-    {
-        if (!idOpt)
-            continue;
-        assertSensorIdInHFP(idOpt->value);
-        MotionSensorId sensorIdObj;
-        sensorIdObj.value = idOpt->value;
-        android::sp<IMotionSensor> sensorHandle;
-        MOTIONSENSOR_GET_SENSOR_SUCCESS(gMOTIONSENSORMGRHandle, sensorIdObj, sensorHandle);
-        android::sp<IMotionSensorControllerListener> listener = android::sp<MotionSensorControllerListener>::make();
-        android::sp<IMotionSensorController> controllerHandle;
-        MOTIONSENSOR_OPEN_SUCCESS(sensorHandle, listener, controllerHandle);
         StartConfig config;
         config.operationalMode = OperationalMode::MOTION;
         config.noMotionSeconds = 30;
         MOTIONSENSOR_START_SUCCESS(controllerHandle, config);
-        std::vector<TimeWindow> windows;
-        TimeWindow w;
-        w.startTimeOfDaySeconds = 0;
-        w.endTimeOfDaySeconds   = 3600;
-        windows.push_back(w);
+        windows.clear();
+        TimeWindow wStarted;
+        wStarted.startTimeOfDaySeconds = 0;
+        wStarted.endTimeOfDaySeconds   = 3600;
+        windows.push_back(wStarted);
         MOTIONSENSOR_SET_ACTIVE_WINDOWS_FAILURE(controllerHandle, windows, Status::EX_ILLEGAL_STATE);
         MOTIONSENSOR_STOP_SUCCESS(controllerHandle);
         MOTIONSENSOR_CLOSE_SUCCESS(sensorHandle, controllerHandle);
@@ -1620,8 +1440,8 @@ UT_ADD_TEST(VTS_L1_MOTIONSENSOR, SetActiveWindows_Negative_WhileStarted)
  * This test sets one active window (08:00-20:00), calls getActiveWindows, and asserts
  * the retrieved windows match the configured values.
  *
- * **Test Group ID:** 01@n
- * **Test Case ID:** 030@n
+ * **Test Group ID:**: 01@n
+ * **Test Case ID:** 025@n
  * **Priority:** High@n
  *
  * **Pre-Conditions:** None@n
@@ -1629,15 +1449,15 @@ UT_ADD_TEST(VTS_L1_MOTIONSENSOR, SetActiveWindows_Negative_WhileStarted)
  * **User Interaction:** None@n
  *
  * **Test Procedure:**@n
- * | Variation / Step | Description | Test Data | Expected Result | Notes |
- * | :----: | --------- | ---------- |-------------- | ----- |
- * | 01 | Call getMotionSensorIds and iterate all sensors | Output: sensorIdsOpt | Sensor IDs list obtained | Should be successful |
- * | 02 | Get sensor handle and open with valid listener | Input: sensorId, listener | Controller returned | Should Pass |
- * | 03 | Call setActiveWindows with one window (28800 to 72000) | Input: window | Returns true | Should Pass |
- * | 04 | Call getActiveWindows | Output: retrieved | retrieved.size()==1, times match configured values | Should Pass |
+ * | Variation / Step | Description | Test Data | Expected Result | Notes |@n
+ * | :----: | --------- | ---------- |-------------- | ----- |@n
+ * | 01 | Call getMotionSensorIds and iterate all sensors | Output: sensorIdsOpt | Sensor IDs list obtained | Should be successful |@n
+ * | 02 | Get sensor handle and open with valid listener | Input: sensorId, listener | Controller returned | Should Pass |@n
+ * | 03 | Call setActiveWindows with one window (28800 to 72000) | Input: window | Returns true | Should Pass |@n
+ * | 04 | Call getActiveWindows | Output: retrieved | retrieved.size()==1, times match configured values | Should Pass |@n
  * | 05 | Close the sensor | Input: controllerHandle | Close succeeds | Should Pass |
  */
-UT_ADD_TEST(VTS_L1_MOTIONSENSOR, GetActiveWindows_Positive)
+UT_ADD_TEST(VTS_L1_MOTIONSENSOR, getActiveWindows_pos)
 {
     std::optional<std::vector<std::optional<IMotionSensor::Id>>> sensorIdsOpt;
     MOTIONSENSOR_GET_SENSOR_IDS_SUCCESS(gMOTIONSENSORMGRHandle, sensorIdsOpt);
@@ -1679,8 +1499,8 @@ UT_ADD_TEST(VTS_L1_MOTIONSENSOR, GetActiveWindows_Positive)
  * This test sets one active window, calls clearActiveWindows, then calls
  * getActiveWindows and asserts the returned list is empty.
  *
- * **Test Group ID:** 01@n
- * **Test Case ID:** 031@n
+ * **Test Group ID:**: 01@n
+ * **Test Case ID:** 026@n
  * **Priority:** High@n
  *
  * **Pre-Conditions:** None@n
@@ -1688,16 +1508,16 @@ UT_ADD_TEST(VTS_L1_MOTIONSENSOR, GetActiveWindows_Positive)
  * **User Interaction:** None@n
  *
  * **Test Procedure:**@n
- * | Variation / Step | Description | Test Data | Expected Result | Notes |
- * | :----: | --------- | ---------- |-------------- | ----- |
- * | 01 | Call getMotionSensorIds and iterate all sensors | Output: sensorIdsOpt | Sensor IDs list obtained | Should be successful |
- * | 02 | Get sensor handle and open with valid listener | Input: sensorId, listener | Controller returned | Should Pass |
- * | 03 | Call setActiveWindows with one window (28800 to 72000) | Input: window | Returns true | Should Pass |
- * | 04 | Call clearActiveWindows | Input: none | Returns true | Should Pass |
- * | 05 | Call getActiveWindows and verify empty | Output: retrieved | retrieved is empty | Should Pass |
+ * | Variation / Step | Description | Test Data | Expected Result | Notes |@n
+ * | :----: | --------- | ---------- |-------------- | ----- |@n
+ * | 01 | Call getMotionSensorIds and iterate all sensors | Output: sensorIdsOpt | Sensor IDs list obtained | Should be successful |@n
+ * | 02 | Get sensor handle and open with valid listener | Input: sensorId, listener | Controller returned | Should Pass |@n
+ * | 03 | Call setActiveWindows with one window (28800 to 72000) | Input: window | Returns true | Should Pass |@n
+ * | 04 | Call clearActiveWindows | Input: none | Returns true | Should Pass |@n
+ * | 05 | Call getActiveWindows and verify empty | Output: retrieved | retrieved is empty | Should Pass |@n
  * | 06 | Close the sensor | Input: controllerHandle | Close succeeds | Should Pass |
  */
-UT_ADD_TEST(VTS_L1_MOTIONSENSOR, ClearActiveWindows_Positive)
+UT_ADD_TEST(VTS_L1_MOTIONSENSOR, clearActiveWindows_pos)
 {
     std::optional<std::vector<std::optional<IMotionSensor::Id>>> sensorIdsOpt;
     MOTIONSENSOR_GET_SENSOR_IDS_SUCCESS(gMOTIONSENSORMGRHandle, sensorIdsOpt);
@@ -1738,8 +1558,8 @@ UT_ADD_TEST(VTS_L1_MOTIONSENSOR, ClearActiveWindows_Positive)
  * This test starts each sensor, then calls clearActiveWindows, asserting
  * EX_ILLEGAL_STATE is returned since windows cannot be cleared while the sensor is running.
  *
- * **Test Group ID:** 01@n
- * **Test Case ID:** 032@n
+ * **Test Group ID:**: 01@n
+ * **Test Case ID:** 027@n
  * **Priority:** High@n
  *
  * **Pre-Conditions:** None@n
@@ -1747,14 +1567,14 @@ UT_ADD_TEST(VTS_L1_MOTIONSENSOR, ClearActiveWindows_Positive)
  * **User Interaction:** None@n
  *
  * **Test Procedure:**@n
- * | Variation / Step | Description | Test Data | Expected Result | Notes |
- * | :----: | --------- | ---------- |-------------- | ----- |
- * | 01 | Call getMotionSensorIds and iterate all sensors | Output: sensorIdsOpt | Sensor IDs list obtained | Should be successful |
- * | 02 | Get sensor handle, open, and start | Input: sensorId, listener, config | Sensor started | Should Pass |
- * | 03 | Call clearActiveWindows while in STARTED state | Input: none | Returns EX_ILLEGAL_STATE | Should Pass |
+ * | Variation / Step | Description | Test Data | Expected Result | Notes |@n
+ * | :----: | --------- | ---------- |-------------- | ----- |@n
+ * | 01 | Call getMotionSensorIds and iterate all sensors | Output: sensorIdsOpt | Sensor IDs list obtained | Should be successful |@n
+ * | 02 | Get sensor handle, open, and start | Input: sensorId, listener, config | Sensor started | Should Pass |@n
+ * | 03 | Call clearActiveWindows while in STARTED state | Input: none | Returns EX_ILLEGAL_STATE | Should Pass |@n
  * | 04 | Stop and close | Input: controllerHandle | Stop and close succeed | Should Pass |
  */
-UT_ADD_TEST(VTS_L1_MOTIONSENSOR, ClearActiveWindows_Negative_WhileStarted)
+UT_ADD_TEST(VTS_L1_MOTIONSENSOR, clearActiveWindows_neg)
 {
     std::optional<std::vector<std::optional<IMotionSensor::Id>>> sensorIdsOpt;
     MOTIONSENSOR_GET_SENSOR_IDS_SUCCESS(gMOTIONSENSORMGRHandle, sensorIdsOpt);

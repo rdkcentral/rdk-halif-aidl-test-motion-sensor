@@ -104,13 +104,14 @@ class VTS_MOTIONSENSOR_L3_MotionEventDetection(motionSensorHelperClass):
 
             # Write a clean, self-consistent YAML for this sensor run.
             l3cfg['motionsensor']['L3']['EventDetection']['sensor_index']       = sensor_index
+            l3cfg['motionsensor']['L3']['EventDetection']['operational_mode']   = 'MOTION'
             l3cfg['motionsensor']['L3']['EventDetection']['max_expected_events'] = max_events
             l3cfg['motionsensor']['L3']['EventDetection']['event_timeout_ms']    = timeout_ms
             with open(self.l3TestConfigFile, 'w') as fh:
                 yaml.dump(l3cfg, fh, default_flow_style=False, sort_keys=False)
 
             result = self.runL3Test(
-                "MotionEventDetection",
+                "EventDetection",
                 triggerCallable=self._make_trigger(sensor_id, max_events * 2),  # Fire extra events to verify C++ test only counts expected number
                 triggerDelay=trigger_delay)
 
