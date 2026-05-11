@@ -30,6 +30,10 @@ motionsensor:
       active_start_seconds: 0
       active_stop_seconds: 0
       event_timeout_ms: 15000
+      # Overwritten per run by Python for DeepSleepAutonomy: idle seconds before
+      # the vcomponent enters deep sleep (matches --deep-sleep-duration CLI arg).
+      # event_timeout_ms is also overwritten to (deep_sleep_duration_seconds+15)*1000.
+      deep_sleep_duration_seconds: 60
       # maximum number of events to collect (test passes if at least 1 arrives).
       max_expected_events: 3
       # Overwritten per run by Python: true = autonomy ON, false = autonomy OFF.

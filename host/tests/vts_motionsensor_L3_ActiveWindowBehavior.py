@@ -12,8 +12,7 @@
 #* ******************************************************************************
 
 """
-L3 ActiveWindowBehavior test for the MotionSensor vcomponent.
-
+L3 ActiveWindowBehavior test for the MotionSensor HAL.
 """
 
 import os
@@ -238,7 +237,7 @@ class VTS_MOTIONSENSOR_L3_ActiveWindowBehavior(motionSensorHelperClass):
 
         The callable fires MOTION events every ``trigger_interval_s`` for the full
         Phase-1 duration (``timeout_s`` seconds).  All events are suppressed by the
-        vcomponent's active-window filter; the C++ ``getNextEvent`` eventually times
+        HAL service active-window filter; the C++ ``getNextEvent`` eventually times
         out.  After the Phase-1 timeout the callable waits ``_INTER_PHASE_DELAY_S``
         for Phase-2 setup, then fires a single Phase-2 trigger (no window -> passes).
 
@@ -325,7 +324,7 @@ class VTS_MOTIONSENSOR_L3_ActiveWindowBehavior(motionSensorHelperClass):
 
         # Query DUT's current local time
         # Window computations MUST use the DUT's clock, not the host's clock.
-        # The vcomponent calls localtime_r(time(nullptr)) which uses the DUT's
+        # The HAL service calls localtime_r(time(nullptr)) which uses the DUT's
         # system timezone.  If the host and DUT are in different timezones the
         # windows would be miscalculated and every positive scenario would fail.
         prompt   = self.cpe.get("prompt", "~#")
@@ -454,7 +453,7 @@ class VTS_MOTIONSENSOR_L3_ActiveWindowBehavior(motionSensorHelperClass):
                     outcome = "PASSED" if passed else "FAILED"
                 else:
                     outcome = (
-                        "PASSED (suppression confirmed — vcomponent gated all Phase-1 events)"
+                        "PASSED (suppression confirmed — HAL service gated all Phase-1 events)"
                         if passed else
                         "FAILED (event leaked through closed window — window gating broken)"
                     )

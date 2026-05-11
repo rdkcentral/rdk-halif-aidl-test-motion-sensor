@@ -86,7 +86,7 @@ class motionSensorHelperClass(utHelperClass):
         self.l3TestConfigFolder = os.path.join(
             self.targetWorkspace, "test_configuration").replace("\\", "/")
 
-        # Establish HAL session (test binary) and a second session for vcomponent
+        # Establish HAL session (test binary) and a second session for HAL service
         self.hal_session = self.dut.getConsoleSession("ssh_hal_test")
         self.hal_session_1 = self.dut.getConsoleSession("ssh_hal_test_1")
 
@@ -109,16 +109,18 @@ class motionSensorHelperClass(utHelperClass):
                     self.hal_session, target_tarfile, self.targetWorkspace)
 
         #TODO: remove once the vendor layer start handled by vDevice service
-        self.vcomponentLogFile = "/tmp/vcomponent_motionsensor.log"
+        self.halServiceLogFile = "/tmp/motionsensor_service.log"
         self.utilities.change_directory(
             self.hal_session_1, self.targetWorkspace)
         self.hal_session_1.write(f"pkill -f {self.cpe.get('motionsensor_process_name')} 2>/dev/null; sleep 1")
         time.sleep(1)
+        deepSleepDuration = self.deviceTestSetup.get('deep_sleep_duration_seconds', 60)
         # Redirect stdout+stderr to a log file; read back via hal_session_1 after
-        # each test case so vcomponent logs appear in the VTS report.
+        # each test case so HAL service logs appear in the VTS report.
         self.hal_session_1.write(
             f"./{self.cpe.get('motionsensor_process_name')} --port {controllerPort} "
-            f"> {self.vcomponentLogFile} 2>&1 &")
+            f"--deep-sleep-duration {deepSleepDuration} "
+            f"> {self.halServiceLogFile} 2>&1 &")
         time.sleep(2)
 
         self.motionSensorDevice = MotionSensorController(
@@ -192,21 +194,21 @@ class motionSensorHelperClass(utHelperClass):
         if results is None:
             results = False
 
-        self._emitVcomponentLogs(testcase)
+        self._emitHalServiceLogs(testcase)
 
         self.log.stepResult(
             results,
             f"Test Suite: {MOTIONSENSOR_L3_TEST_SUITE_NAME}  Test Case: {testcase}")
         return results
 
-    def _emitVcomponentLogs(self, testcase: str):
+    def _emitHalServiceLogs(self, testcase: str):
         """
-        Reads the vcomponent log file from the target via hal_session_1 and emits
+        Reads the HAL service log file from the target via hal_session_1 and emits
         each line into the VTS log, then truncates the file so the next test case
         sees only its own output.
 
         hal_session_1 is used (not hal_session) because hal_session has the UT
-        menu running on it; hal_session_1 is the dedicated vcomponent session and
+        menu running on it; hal_session_1 is the dedicated HAL service session and
         is free to run shell commands between control-plane interactions.
 
         Args:
@@ -214,15 +216,15 @@ class motionSensorHelperClass(utHelperClass):
         """
         try:
             prompt = self.cpe.get("prompt", "~#")
-            self.hal_session_1.write(f"cat {self.vcomponentLogFile}")
+            self.hal_session_1.write(f"cat {self.halServiceLogFile}")
             logContent = self.hal_session_1.read_until(prompt, timeout=5)
-            self.log.info(f"--- vcomponent logs for {testcase} ---")
+            self.log.info(f"--- HAL service logs for {testcase} ---")
             for line in logContent.splitlines():
                 stripped = line.strip()
                 if stripped:
-                    self.log.info(f"[vcomponent] {stripped}")
-            self.log.info(f"--- end vcomponent logs for {testcase} ---")
+                    self.log.info(f"[HAL service] {stripped}")
+            self.log.info(f"--- end HAL service logs for {testcase} ---")
             # Truncate so the next test case starts with a clean log.
-            self.hal_session_1.write(f"> {self.vcomponentLogFile}")
+            self.hal_session_1.write(f"> {self.halServiceLogFile}")
         except Exception as exc:
-            self.log.warn(f"[vcomponent log capture] Could not read log file: {exc}")
+            self.log.warn(f"[HAL service log capture] Could not read log file: {exc}")

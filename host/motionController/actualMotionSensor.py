@@ -37,15 +37,3 @@ class actualMotionSensor(MotionSensorControllerInterface):
     def triggerNoMotionEvent(self, sensorId: int):
         """Trigger a real NO_MOTION event — not yet implemented."""
         raise NotImplementedError("actualMotionSensor.triggerNoMotionEvent not implemented")
-
-    def triggerDeepSleepStart(self, sensorId: int):
-        """Simulate real deep sleep entry — not yet implemented."""
-        raise NotImplementedError("actualMotionSensor.triggerDeepSleepStart not implemented")
-
-    def triggerDeepSleepEnd(self, sensorId: int):
-        """Simulate real deep sleep exit — not yet implemented."""
-        raise NotImplementedError("actualMotionSensor.triggerDeepSleepEnd not implemented")
-
-    def simulateIdleDeepSleep(self, sensorId: int, idle_seconds: float):
-        """Prompt operator to let the device go idle then enter deep sleep."""
-        raise NotImplementedError("actualMotionSensor.simulateIdleDeepSleep not implemented")
