@@ -35,7 +35,7 @@ motionsensor:
       # event_timeout_ms is also overwritten to (deep_sleep_duration_seconds+15)*1000.
       deep_sleep_duration_seconds: 60
       # maximum number of events to collect (test passes if at least 1 arrives).
-      max_expected_events: 3
+      max_expected_events: 5
       # Overwritten per run by Python: true = autonomy ON, false = autonomy OFF.
       autonomy_enabled: true
       # Overwritten per run by Python (mirrors autonomy_enabled):

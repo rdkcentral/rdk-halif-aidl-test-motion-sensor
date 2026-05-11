@@ -147,10 +147,11 @@ class VTS_MOTIONSENSOR_L3_DeepSleepAutonomy(motionSensorHelperClass):
         self.log.info(
             f"[DeepSleepAutonomy] RUN sensor_index={sensor_index} "
             f"sensor_id={sensor_id} sleepDuration={sleep_duration}s {label}")
-
+        test_node  = l3cfg['motionsensor']['L3']['EventDetection']
+        timeout_ms = int(test_node.get('event_timeout_ms', 15000)) or 15000
         l3cfg['motionsensor']['L3']['EventDetection']['sensor_index']              = sensor_index
         l3cfg['motionsensor']['L3']['EventDetection']['deep_sleep_duration_seconds'] = int(sleep_duration)
-        l3cfg['motionsensor']['L3']['EventDetection']['event_timeout_ms']            = (int(sleep_duration) + 15) * 1000
+        l3cfg['motionsensor']['L3']['EventDetection']['event_timeout_ms']            = (int(sleep_duration) *1000) + timeout_ms
         l3cfg['motionsensor']['L3']['EventDetection']['autonomy_enabled']            = autonomy_enabled
         l3cfg['motionsensor']['L3']['EventDetection']['expect_wakeup']               = autonomy_enabled
         with open(self.l3TestConfigFile, 'w') as fh:
@@ -162,6 +163,11 @@ class VTS_MOTIONSENSOR_L3_DeepSleepAutonomy(motionSensorHelperClass):
             triggerCallable=trigger,
             triggerDelay=_TRIGGER_START_DELAY_S)
 
+        # Restore event_timeout_ms to the default so subsequent tests
+        # (e.g. ActiveWindowBehavior) do not inherit the large DeepSleep value.
+        l3cfg['motionsensor']['L3']['EventDetection']['event_timeout_ms'] = timeout_ms
+        with open(self.l3TestConfigFile, 'w') as fh:
+            yaml.dump(l3cfg, fh, default_flow_style=False, sort_keys=False)
         # After the C++ test concludes, perform a host-side ping check to confirm
         # whether the DUT woke up (or stayed asleep) as expected.
         # TODO (unified repo): replace _verifyWakeupViaPing with a direct
@@ -205,6 +211,7 @@ class VTS_MOTIONSENSOR_L3_DeepSleepAutonomy(motionSensorHelperClass):
 
         for sensor_index, sensor_id in enumerate(sensor_ids):
             # Run 1: autonomy ON  → primary event delivered, device wakes, probe arrives
+
             result_a = self.runDeepSleepAutonomyTest(
                 sensor_index, sensor_id, sleep_duration, True, l3cfg)
             # Run 2: autonomy OFF → primary gated, device stays asleep, probe gated
@@ -222,3 +229,4 @@ if __name__ == "__main__":
     summaryLog = logModule(summaryLogName, level=logModule.INFO)
     test = VTS_MOTIONSENSOR_L3_DeepSleepAutonomy(summaryLog)
     test.run(False)
+

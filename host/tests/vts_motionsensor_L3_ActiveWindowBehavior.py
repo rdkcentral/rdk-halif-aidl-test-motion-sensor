@@ -304,10 +304,11 @@ class VTS_MOTIONSENSOR_L3_ActiveWindowBehavior(motionSensorHelperClass):
         """
         with open(self.l3TestConfigFile, 'r') as fh:
             l3cfg = yaml.safe_load(fh)
+        test_node  = l3cfg['motionsensor']['L3']['EventDetection']
+        timeout_ms = int(test_node.get('event_timeout_ms', 15000)) or 15000
+        trigger_interval_s = float(test_node.get('trigger_interval_seconds', 3))
+        default_events = int(test_node.get('max_expected_events', 5 )) or 5
 
-        aw_node           = l3cfg['motionsensor']['L3']['EventDetection']
-        timeout_ms        = int(aw_node.get('event_timeout_ms', 15000))
-        trigger_interval_s = float(aw_node.get('trigger_interval_seconds', 3))
         timeout_s         = timeout_ms / 1000.0
         window_scenarios  = _WINDOW_SCENARIOS
 
@@ -465,6 +466,10 @@ class VTS_MOTIONSENSOR_L3_ActiveWindowBehavior(motionSensorHelperClass):
                 if not passed:
                     all_passed = False
 
+        l3cfg['motionsensor']['L3']['EventDetection']['max_expected_events'] = default_events
+        with open(self.l3TestConfigFile, 'w') as fh:
+            yaml.dump(l3cfg, fh, default_flow_style=False, sort_keys=False)
+
         return all_passed
 
 
@@ -473,6 +478,4 @@ if __name__ == "__main__":
     summaryLog = logModule(summaryLogName, level=logModule.INFO)
     test = VTS_MOTIONSENSOR_L3_ActiveWindowBehavior(summaryLog)
     test.run(False)
-
-
 

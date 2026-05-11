@@ -82,13 +82,11 @@ class VTS_MOTIONSENSOR_L3_MotionEventDetection(motionSensorHelperClass):
         # Read test parameters from the local L3 config YAML.
         with open(self.l3TestConfigFile, 'r') as fh:
             l3cfg = yaml.safe_load(fh)
-        test_node    = l3cfg['motionsensor']['L3']['EventDetection']
-        max_events   = int(test_node.get('max_expected_events', 1))
-        timeout_ms   = int(test_node.get('event_timeout_ms',
-                                         test_node.get('timeout_ms', 30000)))
-        # Fire the trigger at half the C++ event-wait timeout so it always
-        # arrives before the test times out, regardless of config changes.
-        trigger_delay = (timeout_ms / 1000.0) / 2.0
+        test_node  = l3cfg['motionsensor']['L3']['EventDetection']
+        # Guard against stale 0 written by ActiveWindowBehavior (gated scenarios).
+        max_events = int(test_node.get('max_expected_events', 5)) or 5
+        timeout_ms = int(test_node.get('event_timeout_ms', 15000)) or 15000
+        trigger_delay = 3.0  # fire well within event_timeout_ms
 
         # Read all sensor IDs from the HFP profile.
         sensor_ids = self._readSensorIdsFromProfile()
@@ -104,8 +102,10 @@ class VTS_MOTIONSENSOR_L3_MotionEventDetection(motionSensorHelperClass):
                 f"[MotionEventDetection] sensor_index={sensor_index} "
                 f"sensor_id={sensor_id}  max_events={max_events}")
 
-            # Update sensor_index so the C++ test exercises this sensor.
-            l3cfg['motionsensor']['L3']['EventDetection']['sensor_index'] = sensor_index
+            # Write a clean, self-consistent YAML for this sensor run.
+            l3cfg['motionsensor']['L3']['EventDetection']['sensor_index']       = sensor_index
+            l3cfg['motionsensor']['L3']['EventDetection']['max_expected_events'] = max_events
+            l3cfg['motionsensor']['L3']['EventDetection']['event_timeout_ms']    = timeout_ms
             with open(self.l3TestConfigFile, 'w') as fh:
                 yaml.dump(l3cfg, fh, default_flow_style=False, sort_keys=False)
 
@@ -125,3 +125,4 @@ if __name__ == "__main__":
     summaryLog = logModule(summaryLogName, level=logModule.INFO)
     test = VTS_MOTIONSENSOR_L3_MotionEventDetection(summaryLog)
     test.run(False)
+
