@@ -52,6 +52,9 @@
 #include "vts_motionsensor.h"
 #include "vts_motionsensor_helper_functions.h"
 
+using std::lock_guard;
+using std::unique_lock;
+
 /* ========================================================================== */
 /*  MotionSensorControllerListener Implementations                            */
 /* ========================================================================== */
@@ -108,7 +111,7 @@ bool MotionSensorControllerListener::getNextStateChange(pair<State, State>& stat
     return true;
 }
 
-bool MotionSensorControllerListener::getNextStateChange(pair<State, State>& stateChange, chrono::milliseconds timeout)
+bool MotionSensorControllerListener::getNextStateChange(pair<State, State>& stateChange, std::chrono::milliseconds timeout)
 {
     UT_LOG_INFO("MotionSensorControllerListener::getNextStateChange (timeout=%lldms) called",
                 static_cast<long long>(timeout.count()));
@@ -193,7 +196,7 @@ bool MotionSensorEventListener::getNextEvent(OperationalMode& outMode)
     return true;
 }
 
-bool MotionSensorEventListener::getNextEvent(OperationalMode& outMode, chrono::milliseconds timeout)
+bool MotionSensorEventListener::getNextEvent(OperationalMode& outMode, std::chrono::milliseconds timeout)
 {
     UT_LOG_INFO("MotionSensorEventListener::getNextEvent (timeout=%lldms) called",
                 static_cast<long long>(timeout.count()));

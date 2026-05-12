@@ -78,12 +78,6 @@ class VTS_MOTIONSENSOR_L3_DeepSleepAutonomy(motionSensorHelperClass):
         When *autonomy_enabled* is True the device is expected to wake, so a
         successful ping is required.  When False the device should stay asleep
         and the ping is expected to fail (no response).
-
-        TODO: In the unified repo, replace the ping-based check below with a
-              direct query to the deepsleep module (e.g. checking the power
-              level via ``deepsleepHelperClass.getPowerLevel()``) so that the
-              wakeup verdict does not depend on network reachability alone.
-
         Args:
             autonomy_enabled (bool):  True if the device is expected to be awake.
             ping_timeout     (float): Seconds to wait for a ping reply.
@@ -91,7 +85,22 @@ class VTS_MOTIONSENSOR_L3_DeepSleepAutonomy(motionSensorHelperClass):
         Returns:
             bool: True if the observed wakeup state matches *autonomy_enabled*.
         """
-        # TODO (unified repo): replace with deepsleepDevice.getPowerLevel() check
+        # NOTE: Wake-up verification via ping / power-level query is not yet
+        # implemented.  This stub unconditionally returns True so that the
+        # surrounding test logic compiles and runs; it does NOT validate actual
+        # wake/sleep behaviour.
+        #
+        # TODO (unified repo): implement one of the two options below before
+        #   enabling this check in CI:
+        #
+        #   Step 1 — ping-based:
+        #       return  self.pingTest()"
+        #
+        #   Step 2: (preferred once unified repo is ready):
+        #       level  = self.getPowerLevel()
+        #       awake  = (level == PowerLevel.ON)
+        #       return awake == autonomy_enabled
+        #
         return True
 
     def _make_trigger(self, sensor_id: int, sleep_duration: float) -> callable:

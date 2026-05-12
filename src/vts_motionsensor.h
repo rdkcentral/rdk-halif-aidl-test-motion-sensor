@@ -93,8 +93,10 @@ using android::sp;
 using android::String16;
 using android::defaultServiceManager;
 using android::binder::Status;
-using namespace std;
-using namespace std::chrono;
+using std::pair;
+using std::queue;
+using std::mutex;
+using std::condition_variable;
 
 using namespace com::rdk::hal::sensor::motion;
 #define MAX_TRANSITORY_STATE_WAIT_MS   5
@@ -126,10 +128,10 @@ typedef com::rdk::hal::sensor::motion::IMotionSensor::Id MotionSensorId;
 #define MOTIONSENSOR_GET_SENSOR_SUCCESS(managerHandle, sensorId, sensorHandle) \
     do { \
         ::android::binder::Status status; \
-        UT_LOG_DEBUG("Calling getMotionSensor(IN:sensorId[%d], OUT:sensorHandle[])", sensorId); \
+        UT_LOG_DEBUG("Calling getMotionSensor(IN:sensorId[%d], OUT:sensorHandle[])", (sensorId).value); \
         status = (managerHandle)->getMotionSensor(sensorId, &sensorHandle); \
         UT_LOG_DEBUG("Result getMotionSensor(IN:sensorId[%d], OUT:sensorHandle[%p]), status:[isOK:%s, exception:%s]", \
-            sensorId, sensorHandle.get(), \
+            (sensorId).value, sensorHandle.get(), \
             UT_Control_GetMapString(bool_mapTable_motionsensor, status.isOk()), \
             UT_Control_GetMapString(statusMotionSensorException_mapTable, status.exceptionCode())); \
         UT_ASSERT_TRUE(status.isOk()); \
@@ -140,10 +142,10 @@ typedef com::rdk::hal::sensor::motion::IMotionSensor::Id MotionSensorId;
 #define MOTIONSENSOR_GET_SENSOR_FAILURE(managerHandle, sensorId, sensorHandle, expectedException) \
     do { \
         ::android::binder::Status status; \
-        UT_LOG_DEBUG("Calling getMotionSensor(IN:sensorId[%d], OUT:sensorHandle[])", sensorId); \
+        UT_LOG_DEBUG("Calling getMotionSensor(IN:sensorId[%d], OUT:sensorHandle[])", (sensorId).value); \
         status = (managerHandle)->getMotionSensor(sensorId, &sensorHandle); \
         UT_LOG_DEBUG("Result getMotionSensor(IN:sensorId[%d], OUT:sensorHandle[%p]), status:[isOK:%s, exception:%s]", \
-            sensorId, sensorHandle.get(), \
+            (sensorId).value, sensorHandle.get(), \
             UT_Control_GetMapString(bool_mapTable_motionsensor, status.isOk()), \
             UT_Control_GetMapString(statusMotionSensorException_mapTable, status.exceptionCode())); \
         if (expectedException == Status::EX_NONE) \
@@ -192,10 +194,13 @@ typedef com::rdk::hal::sensor::motion::IMotionSensor::Id MotionSensorId;
         int32_t sleep_time = 0; \
         do \
         { \
-            this_thread::sleep_for(chrono::milliseconds(MAX_TRANSITORY_STATE_WAIT_MS)); \
+            std::this_thread::sleep_for(std::chrono::milliseconds(MAX_TRANSITORY_STATE_WAIT_MS)); \
             sleep_time += MAX_TRANSITORY_STATE_WAIT_MS; \
-            MOTIONSENSOR_GET_STATE_SUCCESS((sensorHandle), lastState, desiredState); \
-        } while (sleep_time < MAX_FINAL_STATE_WAIT_MS && lastState != desiredState); \
+            ::android::binder::Status _ws_status; \
+            _ws_status = (sensorHandle)->getState(&(lastState)); \
+            UT_ASSERT_TRUE(_ws_status.isOk()); \
+            UT_ASSERT_EQUAL(_ws_status.exceptionCode(), Status::EX_NONE); \
+        } while (sleep_time < MAX_FINAL_STATE_WAIT_MS && (lastState) != (desiredState)); \
     } while (0)
 
 #define MOTIONSENSOR_GET_CAPABILITIES_SUCCESS(sensorHandle, capabilities) \
@@ -221,7 +226,7 @@ typedef com::rdk::hal::sensor::motion::IMotionSensor::Id MotionSensorId;
             UT_Control_GetMapString(bool_mapTable_motionsensor, status.isOk()), \
             UT_Control_GetMapString(statusMotionSensorException_mapTable, status.exceptionCode())); \
         if (expectedException == Status::EX_NONE) \
-            UT_ASSERT_TRUE(status.MOTIONSENSOR_REGISTER_EVENT_SUCCESS()); \
+            UT_ASSERT_TRUE(status.isOk()); \
         else \
             UT_ASSERT_FALSE(status.isOk()); \
         UT_ASSERT_EQUAL(status.exceptionCode(), expectedException); \
@@ -261,7 +266,7 @@ typedef com::rdk::hal::sensor::motion::IMotionSensor::Id MotionSensorId;
 #define MOTIONSENSOR_CLOSE_SUCCESS(sensorHandle, controllerHandle) \
     do { \
         ::android::binder::Status status; \
-        bool _aidl_return; \
+        bool _aidl_return = false; \
         UT_LOG_DEBUG("Calling close(IN:controllerHandle[%p], OUT:_aidl_return[])", controllerHandle.get()); \
         status = (sensorHandle)->close(controllerHandle, &_aidl_return); \
         UT_LOG_DEBUG("Result close(IN:controllerHandle[%p], OUT:_aidl_return[%s]), status:[isOK:%s, exception:%s]", \
@@ -277,7 +282,7 @@ typedef com::rdk::hal::sensor::motion::IMotionSensor::Id MotionSensorId;
 #define MOTIONSENSOR_CLOSE_FAILURE(sensorHandle, controllerHandle, expectedException) \
     do { \
         ::android::binder::Status status; \
-        bool _aidl_return; \
+        bool _aidl_return = false; \
         UT_LOG_DEBUG("Calling close(IN:controllerHandle[%p], OUT:_aidl_return[])", controllerHandle.get()); \
         status = (sensorHandle)->close(controllerHandle, &_aidl_return); \
         UT_LOG_DEBUG("Result close(IN:controllerHandle[%p], OUT:_aidl_return[%s]), status:[isOK:%s, exception:%s]", \
@@ -296,7 +301,7 @@ typedef com::rdk::hal::sensor::motion::IMotionSensor::Id MotionSensorId;
 #define MOTIONSENSOR_REGISTER_EVENT_SUCCESS(sensorHandle, eventListener) \
     do { \
         ::android::binder::Status status; \
-        bool _aidl_return; \
+        bool _aidl_return = false; \
         UT_LOG_DEBUG("Calling registerEventListener(IN:eventListener[%p], OUT:_aidl_return[])", eventListener.get()); \
         status = (sensorHandle)->registerEventListener(eventListener, &_aidl_return); \
         UT_LOG_DEBUG("Result registerEventListener(IN:eventListener[%p], OUT:_aidl_return[%s]), status:[isOK:%s, exception:%s]", \
@@ -312,7 +317,7 @@ typedef com::rdk::hal::sensor::motion::IMotionSensor::Id MotionSensorId;
 #define MOTIONSENSOR_REGISTER_EVENT_FAILURE(sensorHandle, eventListener, expectedException) \
     do { \
         ::android::binder::Status status; \
-        bool _aidl_return; \
+        bool _aidl_return = false; \
         UT_LOG_DEBUG("Calling registerEventListener(IN:eventListener[%p], OUT:_aidl_return[])", (eventListener ? eventListener.get() : nullptr)); \
         status = (sensorHandle)->registerEventListener(eventListener, &_aidl_return); \
         UT_LOG_DEBUG("Result registerEventListener(IN:eventListener[%p], OUT:_aidl_return[%s]), status:[isOK:%s, exception:%s]", \
@@ -331,7 +336,7 @@ typedef com::rdk::hal::sensor::motion::IMotionSensor::Id MotionSensorId;
 #define MOTIONSENSOR_UNREGISTER_EVENT_SUCCESS(sensorHandle, eventListener) \
     do { \
         ::android::binder::Status status; \
-        bool _aidl_return; \
+        bool _aidl_return = false; \
         UT_LOG_DEBUG("Calling unregisterEventListener(IN:eventListener[%p], OUT:_aidl_return[])", eventListener.get()); \
         status = (sensorHandle)->unregisterEventListener(eventListener, &_aidl_return); \
         UT_LOG_DEBUG("Result unregisterEventListener(IN:eventListener[%p], OUT:_aidl_return[%s]), status:[isOK:%s, exception:%s]", \
@@ -347,7 +352,7 @@ typedef com::rdk::hal::sensor::motion::IMotionSensor::Id MotionSensorId;
 #define MOTIONSENSOR_UNREGISTER_EVENT_FAILURE(sensorHandle, eventListener, expectedException) \
     do { \
         ::android::binder::Status status; \
-        bool _aidl_return; \
+        bool _aidl_return = false; \
         UT_LOG_DEBUG("Calling unregisterEventListener(IN:eventListener[%p], OUT:_aidl_return[])", (eventListener ? eventListener.get() : nullptr)); \
         status = (sensorHandle)->unregisterEventListener(eventListener, &_aidl_return); \
         UT_LOG_DEBUG("Result unregisterEventListener(IN:eventListener[%p], OUT:_aidl_return[%s]), status:[isOK:%s, exception:%s]", \
@@ -469,7 +474,7 @@ typedef com::rdk::hal::sensor::motion::IMotionSensor::Id MotionSensorId;
 #define MOTIONSENSOR_SET_SENSITIVITY_SUCCESS(controllerHandle, sensitivity) \
     do { \
         ::android::binder::Status status; \
-        bool _aidl_return; \
+        bool _aidl_return = false; \
         UT_LOG_DEBUG("Calling setSensitivity(IN:sensitivity[%d], OUT:_aidl_return[])", sensitivity); \
         status = (controllerHandle)->setSensitivity(sensitivity, &_aidl_return); \
         UT_LOG_DEBUG("Result setSensitivity(IN:sensitivity[%d], OUT:_aidl_return[%s]), status:[isOK:%s, exception:%s]", \
@@ -485,7 +490,7 @@ typedef com::rdk::hal::sensor::motion::IMotionSensor::Id MotionSensorId;
 #define MOTIONSENSOR_SET_SENSITIVITY_FAILURE(controllerHandle, sensitivity, expectedException) \
     do { \
         ::android::binder::Status status; \
-        bool _aidl_return; \
+        bool _aidl_return = false; \
         UT_LOG_DEBUG("Calling setSensitivity(IN:sensitivity[%d], OUT:_aidl_return[])", sensitivity); \
         status = (controllerHandle)->setSensitivity(sensitivity, &_aidl_return); \
         UT_LOG_DEBUG("Result setSensitivity(IN:sensitivity[%d], OUT:_aidl_return[%s]), status:[isOK:%s, exception:%s]", \
@@ -504,7 +509,7 @@ typedef com::rdk::hal::sensor::motion::IMotionSensor::Id MotionSensorId;
 #define MOTIONSENSOR_SET_AUTONOMOUS_SUCCESS(controllerHandle, enabled) \
     do { \
         ::android::binder::Status status; \
-        bool _aidl_return; \
+        bool _aidl_return = false; \
         UT_LOG_DEBUG("Calling setAutonomousDuringDeepSleep(IN:enabled[%s], OUT:_aidl_return[])", \
             UT_Control_GetMapString(bool_mapTable_motionsensor, enabled)); \
         status = (controllerHandle)->setAutonomousDuringDeepSleep(enabled, &_aidl_return); \
@@ -514,13 +519,14 @@ typedef com::rdk::hal::sensor::motion::IMotionSensor::Id MotionSensorId;
             UT_Control_GetMapString(bool_mapTable_motionsensor, status.isOk()), \
             UT_Control_GetMapString(statusMotionSensorException_mapTable, status.exceptionCode())); \
         UT_ASSERT_TRUE(status.isOk()); \
+        UT_ASSERT_TRUE(_aidl_return); \
         UT_ASSERT_EQUAL(status.exceptionCode(), Status::EX_NONE); \
     } while (0)
 
 #define MOTIONSENSOR_SET_AUTONOMOUS_FAILURE(controllerHandle, enabled, expectedException) \
     do { \
         ::android::binder::Status status; \
-        bool _aidl_return; \
+        bool _aidl_return = false; \
         UT_LOG_DEBUG("Calling setAutonomousDuringDeepSleep(IN:enabled[%s], OUT:_aidl_return[])", \
             UT_Control_GetMapString(bool_mapTable_motionsensor, enabled)); \
         status = (controllerHandle)->setAutonomousDuringDeepSleep(enabled, &_aidl_return); \
@@ -556,7 +562,7 @@ typedef com::rdk::hal::sensor::motion::IMotionSensor::Id MotionSensorId;
 #define MOTIONSENSOR_SET_ACTIVE_WINDOWS_SUCCESS(controllerHandle, windows) \
     do { \
         ::android::binder::Status status; \
-        bool _aidl_return; \
+        bool _aidl_return = false; \
         UT_LOG_DEBUG("Calling setActiveWindows(IN:windows[count:%zu], OUT:_aidl_return[])", windows.size()); \
         status = (controllerHandle)->setActiveWindows(windows, &_aidl_return); \
         UT_LOG_DEBUG("Result setActiveWindows(IN:windows[count:%zu], OUT:_aidl_return[%s]), status:[isOK:%s, exception:%s]", \
@@ -572,7 +578,7 @@ typedef com::rdk::hal::sensor::motion::IMotionSensor::Id MotionSensorId;
 #define MOTIONSENSOR_SET_ACTIVE_WINDOWS_FAILURE(controllerHandle, windows, expectedException) \
     do { \
         ::android::binder::Status status; \
-        bool _aidl_return; \
+        bool _aidl_return = false; \
         UT_LOG_DEBUG("Calling setActiveWindows(IN:windows[count:%zu], OUT:_aidl_return[])", windows.size()); \
         status = (controllerHandle)->setActiveWindows(windows, &_aidl_return); \
         UT_LOG_DEBUG("Result setActiveWindows(IN:windows[count:%zu], OUT:_aidl_return[%s]), status:[isOK:%s, exception:%s]", \
@@ -604,7 +610,7 @@ typedef com::rdk::hal::sensor::motion::IMotionSensor::Id MotionSensorId;
 #define MOTIONSENSOR_CLEAR_ACTIVE_WINDOWS_SUCCESS(controllerHandle) \
     do { \
         ::android::binder::Status status; \
-        bool _aidl_return; \
+        bool _aidl_return = false; \
         UT_LOG_DEBUG("Calling clearActiveWindows(OUT:_aidl_return[])"); \
         status = (controllerHandle)->clearActiveWindows(&_aidl_return); \
         UT_LOG_DEBUG("Result clearActiveWindows(OUT:_aidl_return[%s]), status:[isOK:%s, exception:%s]", \
@@ -619,7 +625,7 @@ typedef com::rdk::hal::sensor::motion::IMotionSensor::Id MotionSensorId;
 #define MOTIONSENSOR_CLEAR_ACTIVE_WINDOWS_FAILURE(controllerHandle, expectedException) \
     do { \
         ::android::binder::Status status; \
-        bool _aidl_return; \
+        bool _aidl_return = false; \
         UT_LOG_DEBUG("Calling clearActiveWindows(OUT:_aidl_return[])"); \
         status = (controllerHandle)->clearActiveWindows(&_aidl_return); \
         UT_LOG_DEBUG("Result clearActiveWindows(OUT:_aidl_return[%s]), status:[isOK:%s, exception:%s]", \
@@ -651,7 +657,7 @@ public:
     android::binder::Status onActiveWindowExited() override;
 
     bool getNextStateChange(pair<State, State>& stateChange);
-    bool getNextStateChange(pair<State, State>& stateChange, chrono::milliseconds timeout);
+    bool getNextStateChange(pair<State, State>& stateChange, std::chrono::milliseconds timeout);
     bool hasActiveWindowEntered();
     bool hasActiveWindowExited();
     void resetStateQueue();
@@ -676,7 +682,7 @@ public:
         ::com::rdk::hal::sensor::motion::OperationalMode mode) override;
 
     bool getNextEvent(OperationalMode& outMode);
-    bool getNextEvent(OperationalMode& outMode, chrono::milliseconds timeout);
+    bool getNextEvent(OperationalMode& outMode, std::chrono::milliseconds timeout);
     bool hasEvent();
     void resetEventQueue();
 

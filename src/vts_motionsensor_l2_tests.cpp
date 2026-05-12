@@ -149,12 +149,12 @@ UT_ADD_TEST(VTS_L2_MOTIONSENSOR, StateTransitions)
         UT_ASSERT_EQUAL(state, State::STARTED);
 
         // Verify onStateChanged for STOPPED → STARTING
-        UT_ASSERT_TRUE(controllerListener->getNextStateChange(stateChange, chrono::milliseconds(MAX_FINAL_STATE_WAIT_MS)));
+        UT_ASSERT_TRUE(controllerListener->getNextStateChange(stateChange, std::chrono::milliseconds(MAX_FINAL_STATE_WAIT_MS)));
         UT_ASSERT_EQUAL(stateChange.first, State::STOPPED);
         UT_ASSERT_EQUAL(stateChange.second, State::STARTING);
 
         // Verify onStateChanged for STARTING → STARTED
-        UT_ASSERT_TRUE(controllerListener->getNextStateChange(stateChange, chrono::milliseconds(MAX_FINAL_STATE_WAIT_MS)));
+        UT_ASSERT_TRUE(controllerListener->getNextStateChange(stateChange, std::chrono::milliseconds(MAX_FINAL_STATE_WAIT_MS)));
         UT_ASSERT_EQUAL(stateChange.first, State::STARTING);
         UT_ASSERT_EQUAL(stateChange.second, State::STARTED);
 
@@ -170,12 +170,12 @@ UT_ADD_TEST(VTS_L2_MOTIONSENSOR, StateTransitions)
         UT_ASSERT_EQUAL(state, State::STOPPED);
 
         // Verify onStateChanged for STARTED → STOPPING
-        UT_ASSERT_TRUE(controllerListener->getNextStateChange(stateChange, chrono::milliseconds(MAX_FINAL_STATE_WAIT_MS)));
+        UT_ASSERT_TRUE(controllerListener->getNextStateChange(stateChange, std::chrono::milliseconds(MAX_FINAL_STATE_WAIT_MS)));
         UT_ASSERT_EQUAL(stateChange.first, State::STARTED);
         UT_ASSERT_EQUAL(stateChange.second, State::STOPPING);
 
         // Verify onStateChanged for STOPPING → STOPPED
-        UT_ASSERT_TRUE(controllerListener->getNextStateChange(stateChange, chrono::milliseconds(MAX_FINAL_STATE_WAIT_MS)));
+        UT_ASSERT_TRUE(controllerListener->getNextStateChange(stateChange, std::chrono::milliseconds(MAX_FINAL_STATE_WAIT_MS)));
         UT_ASSERT_EQUAL(stateChange.first, State::STOPPING);
         UT_ASSERT_EQUAL(stateChange.second, State::STOPPED);
 
