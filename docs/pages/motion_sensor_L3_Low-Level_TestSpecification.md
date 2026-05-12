@@ -19,14 +19,14 @@
 
 This document describes the Level 3 (L3) Low-Level Test Specification for the Motion Sensor HAL.
 
-L3 testing validates end-to-end Motion Sensor HAL functionality using real device operations (or vComponent with control-plane injection). The test suite exercises:
+L3 testing validates end-to-end Motion Sensor HAL functionality using real device operations with control-plane event injection. The test suite exercises:
 
 * Motion event delivery with listener gating validation
 * No-motion (inactivity) event delivery with configurable timeout
 * Active time-window event suppression and gating
 * Deep sleep autonomy — motion detection while the SoC is in a low-power sleep state
 
-L3 tests require external stimulus injected by the Python host via the UT control plane. The DUT-side VTS binary starts the sensor, waits for events, and validates results; the Python host is responsible for triggering events via the vComponent control port or physical hardware.
+L3 tests require external stimulus injected by the Python host via the UT control plane. The DUT-side VTS binary starts the sensor, waits for events, and validates results; the Python host is responsible for triggering events via the control port (physical or virtual).
 
 ---
 
@@ -70,7 +70,7 @@ The L3 Motion Sensor test suite operates as follows:
 2. Python host uploads the updated YAML to the DUT target directory.
 3. Python host starts the DUT-side VTS binary via SSH (or triggers it within the RAFT framework).
 4. DUT-side VTS parses the YAML, performs the test steps, and waits for events.
-5. Python host injects synthetic events via the vComponent control port (or monitors real hardware).
+5. Python host injects synthetic events via the UT control port (or monitors real hardware).
 6. DUT-side VTS validates received events and reports pass/fail.
 7. Python host collects the result and logs it.
 
@@ -104,7 +104,7 @@ The L3 Motion Sensor test suite operates as follows:
 ### Pre-Conditions
 
 * Motion Sensor HAL service must be running.
-* vComponent (or physical hardware) must be running with the control plane enabled.
+* The HAL service must be running with the control plane enabled.
 * YAML configuration must be present at the path defined by `VTS_MOTIONSENSOR_TEST_CONFIG_PATH`.
 * [test_configuration/vts_l3_MotionSensor.yaml](../../test_configuration/vts_l3_MotionSensor.yaml) must have `MotionEventDetection` section populated.
 
@@ -195,7 +195,7 @@ motionsensor:
 ### Pre-Conditions
 
 * Motion Sensor HAL service must be running.
-* vComponent must be running with the control plane enabled.
+* The HAL service must be running with the control plane enabled.
 * [test_configuration/vts_l3_MotionSensor.yaml](../../test_configuration/vts_l3_MotionSensor.yaml) must have `NoMotionEventDetection` section populated.
 
 ### Dependencies
@@ -242,7 +242,7 @@ graph TD
 | 1 | Parse YAML for `NoMotionEventDetection` | `vts_l3_MotionSensor.yaml` | Config parsed successfully |
 | 2 | Call `start(config)` with `mode=NO_MOTION` | `StartConfig{NO_MOTION, noMotionSeconds=5}` | Start succeeds |
 | 3 | Wait for STARTED state | State queue | State is `STARTED` |
-| 4 | Host simulates `noMotionSeconds` of inactivity, then injects `NO_MOTION` event | `noMotionSeconds` from YAML | Host-side command sent to vComponent |
+| 4 | Host simulates `noMotionSeconds` of inactivity, then injects `NO_MOTION` event | `noMotionSeconds` from YAML | Host-side command sent to HAL service |
 | 5 | Wait for `onEvent` callback | `eventTimeoutMs` from YAML | Event received |
 | 6 | Verify event type | Received mode | `OperationalMode::NO_MOTION` |
 | 7 | Unregister listener; host injects additional event | 2000 ms window | Event NOT received |
@@ -281,7 +281,7 @@ motionsensor:
 ### Pre-Conditions
 
 * Motion Sensor HAL service must be running.
-* vComponent must be running with control-plane enabled.
+* The HAL service must be running with the control plane enabled.
 * [test_configuration/vts_l3_MotionSensor.yaml](../../test_configuration/vts_l3_MotionSensor.yaml) must have `ActiveWindowBehavior` section populated.
 * Python host will iterate multiple window scenarios (positive/suppression) and update YAML fields before each iteration.
 
@@ -393,7 +393,7 @@ motionsensor:
 ### Pre-Conditions
 
 * Motion Sensor HAL service must be running.
-* vComponent must support deep sleep simulation via the control plane.
+* The HAL service must support deep sleep simulation via the control plane.
 * [test_configuration/vts_l3_MotionSensor.yaml](../../test_configuration/vts_l3_MotionSensor.yaml) must have `DeepSleepAutonomy` section populated.
 * If `Capabilities.supportsDeepSleepAutonomy` is `false`, the test is skipped automatically.
 
@@ -448,9 +448,9 @@ graph TD
 | 4 | Call `setAutonomousDuringDeepSleep(true)` | `enabled=true` | Returns `true` |
 | 5 | Call `start(config)` with `mode=MOTION` | Valid `StartConfig` | Start succeeds |
 | 6 | Wait for STARTED state | State queue | State is `STARTED` |
-| 7 | Host sends `DEEP_SLEEP_START` command | Control plane | vComponent enters simulated sleep |
+| 7 | Host sends `DEEP_SLEEP_START` command | Control plane | HAL service enters simulated sleep |
 | 8 | Host waits `deepSleepDurationSeconds`, then injects MOTION event | — | Event injected during sleep |
-| 9 | Host sends `DEEP_SLEEP_END` command | Control plane | vComponent exits simulated sleep |
+| 9 | Host sends `DEEP_SLEEP_END` command | Control plane | HAL service exits simulated sleep |
 | 10 | Wait for `onEvent` callback | `eventTimeoutMs` | Event received; type is `MOTION` |
 | 11 | Stop sensor | — | Stop succeeds |
 | 12 | Call `setAutonomousDuringDeepSleep(false)` | `enabled=false` | Returns `true` |

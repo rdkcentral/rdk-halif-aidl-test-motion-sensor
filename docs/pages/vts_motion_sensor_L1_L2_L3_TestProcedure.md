@@ -77,7 +77,7 @@ Set environment variables:
 - `LINUX_BINDER_OUT_DIR`: Path to Linux binder output directory.
 - `UT_CORE_VERSION`: UT-Core version (optional; defaults to latest tag).
 - `RDK_HALIF_AIDL_VERSION`: AIDL HAL spec version (optional; defaults to latest HEAD).
-- `VCOMPONENT_MOTIONSENSOR_VERSION`: Motion Sensor vComponent version (if applicable in your setup).
+- `VCOMPONENT_MOTIONSENSOR_VERSION`: Motion Sensor simulator version (if applicable).
 
 
 Example:
@@ -151,7 +151,7 @@ Update the console sessions and `motionSensorController` block for your test set
 |----------------|-------------|
 | `default` | Device status and basic operations |
 | `ssh_hal_test` | Executes Motion Sensor HAL VTS binary on DUT |
-| `ssh_hal_test_1` | Second SSH session for vComponent control |
+| `ssh_hal_test_1` | Second SSH session for HAL service control |
 
 ```yaml
 rackConfig:
@@ -187,7 +187,6 @@ rackConfig:
                   prompt: "~#"
             motionSensorController:
                 type: virtual-motionsensor-client
-                vendor: "vComponent"
                 address: "127.0.0.1"
                 username: ""
                 password: ''
@@ -199,8 +198,8 @@ rackConfig:
               workspaceDirectory: "./logs/workspace"
 ```
 
-> **motionSensorController:** Configure this field according to your test platform. For physical hardware testing, use `manual-motionsensor-client` as `RAFT` doesn't support a motion sensor controller device. For virtual device testing, use `virtual-motionsensor-client`. For virtual device testing, provide the connection details of the device running vComponent.
-- `control_port` - The port number where vComponent accepts command requests.
+> **motionSensorController:** Configure this field according to your test platform. For physical hardware testing, use `manual-motionsensor-client` as `RAFT` doesn't support a motion sensor controller device. For virtual device testing, use `virtual-motionsensor-client` and provide the connection details of the device running the HAL service.
+- `control_port` - The port number where the HAL service accepts command requests.
 
 ---
 
@@ -307,7 +306,7 @@ graph TD
 1. Read and update `vts_l3_MotionSensor.yaml` (`sensor_index`, `num_events`).
 2. Upload updated YAML to DUT target directory.
 3. Execute `MotionEventDetection` test case on DUT via SSH.
-4. For each expected event: inject a MOTION event via the vComponent control port.
+4. For each expected event: inject a MOTION event via the control port.
 5. Collect DUT output and validate pass/fail result.
 
 ---
@@ -471,7 +470,7 @@ graph TD
 1. Query DUT capabilities to determine `supportsDeepSleepAutonomy`; skip if `false`.
 2. Execute `DeepSleepAutonomy` on DUT.
 3. **Phase 1 (autonomy enabled):**
-   a. Send `DEEP_SLEEP_START` command to vComponent.
+   a. Send `DEEP_SLEEP_START` command to the HAL service.
    b. Wait `deepSleepDurationSeconds`.
    c. Inject a MOTION event via control port.
    d. Send `DEEP_SLEEP_END` command.
@@ -495,9 +494,9 @@ graph TD
 
 ## Notes
 
-### vComponent Mode
+### Virtual Device Mode
 
-When testing with the vComponent, events are injected synthetically via the control plane (HTTP port `8080` by default). The vComponent simulates sensor hardware including:
+When testing with a virtual Motion Sensor HAL service, events are injected synthetically via the control plane (HTTP port `8080` by default). The virtual service simulates sensor hardware including:
 
 - Motion detection events (`MOTION` and `NO_MOTION`)
 - Active window transitions (`onActiveWindowEntered`, `onActiveWindowExited`)
