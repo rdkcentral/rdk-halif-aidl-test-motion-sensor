@@ -187,7 +187,7 @@ rackConfig:
                   prompt: "~#"
             motionSensorController:
                 type: virtual-motionsensor-client
-                address: "127.0.0.1"
+                address: ""
                 username: ""
                 password: ''
                 port: 5522
