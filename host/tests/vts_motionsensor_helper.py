@@ -54,8 +54,15 @@ class motionSensorHelperClass(utHelperClass):
     Handles artifact deployment, session setup, and control-plane trigger helpers.
     """
 
-    def __init__(self, testName: str, qcId: str, log: logModule = None):
-        self.moduleName = "motionsensor"
+    def __init__(
+        self,
+        testName: str,
+        qcId: str,
+        log: logModule = None,
+        moduleName: str = None,
+    ):
+        self.moduleName = "motionsensor" if moduleName is None else moduleName
+        isUnifiedTest = False if moduleName is None else True
         self.interfaceName = "motionsensor"
         super().__init__(testName, qcId, log)
 
@@ -64,30 +71,58 @@ class motionSensorHelperClass(utHelperClass):
             self.log = logModule(self.__class__.__name__)
             self.log.setLevel(self.log.INFO)
 
-        # Parse device configuration
+        # Parse device configuration first (used by path selection below)
         self.deviceTestSetup = self.cpe.get("test")
-        self.targetWorkspace = os.path.join(
-            self.cpe.get("target_directory"), self.moduleName)
-        self.moduleHFPFile = os.path.join(
-            dir_path, self.deviceTestSetup.get("profile"))
-        profileOnTarget = os.path.join(
-            self.targetWorkspace, "profiles",
-            os.path.basename(self.moduleHFPFile)).replace("\\", "/")
         self.waitTime = self.cpe.get("wait_time")
         self.platform = self.cpe.get("platform")
+        self.targetWorkspace = os.path.join(
+            self.cpe.get("target_directory"), self.moduleName)
+
+        component_root = os.path.normpath(os.path.join(dir_path, "../.."))
+        unified_root = os.path.normpath(os.path.join(dir_path, "../../../.."))
+
+        if not isUnifiedTest:
+            self.paths = {
+                "testMenuConfigFile": MOTIONSENSOR_TEST_MENU_CONFIGURATION_FILE,
+                "l3TestConfigFile": MOTIONSENSOR_L3_TEST_CONFIG_FILE,
+                "moduleHFPFile": os.path.join(dir_path, self.deviceTestSetup.get("profile")),
+            }
+            artifactBaseDir = dir_path
+            targetCfgBase = self.targetWorkspace
+        else:
+            self.paths = {
+                "testMenuConfigFile": os.path.join(
+                    unified_root, "host/tests/TestCases/vts_l3_test_setup.yaml"
+                ),
+                "l3TestConfigFile": os.path.join(
+                    component_root, "test_configuration/vts_l3_MotionSensor.yaml"
+                ),
+                "moduleHFPFile": os.path.join(
+                    component_root, "profiles/hfp-motionsensor-vcomponent.yaml"
+                ),
+            }
+            artifactBaseDir = os.path.join(component_root, "host")
+            targetCfgBase = os.path.join(self.targetWorkspace, "bin").replace("\\", "/")
+
+        for attr, path in self.paths.items():
+            normalized_path = os.path.normpath(path).replace("\\", "/")
+            setattr(self, attr, normalized_path)
+            self.paths[attr] = normalized_path
+
+        profileOnTarget = os.path.join(
+            targetCfgBase, "profiles", os.path.basename(self.paths["moduleHFPFile"])
+        ).replace("\\", "/")
 
         # Load test menu configuration
-        controllerPort = self.deviceTestSetup.get("controller_port", 8080)
-        self.l3TestConfigFile = MOTIONSENSOR_L3_TEST_CONFIG_FILE
+        controllerPort = self.deviceTestSetup.get("motionsensor_controller_port", 8080)
         self.testMenuConfiguration = ConfigRead(
-            MOTIONSENSOR_TEST_MENU_CONFIGURATION_FILE, self.moduleName)
+            self.paths["testMenuConfigFile"], self.moduleName)
         self.testMenuConfiguration.test.execute = (
             self.testMenuConfiguration.test.execute + f" -p {profileOnTarget}")
         self.l3TestConfigFolder = os.path.join(
-            self.targetWorkspace, "test_configuration").replace("\\", "/")
+            targetCfgBase, "test_configuration").replace("\\", "/")
 
-        # Establish HAL session (test binary) and a second session for HAL service
-        self.hal_session = self.dut.getConsoleSession("ssh_hal_test")
+        self.hal_session = self.dut.getConsoleSession("ssh_hal_test_0")
         self.hal_session_1 = self.dut.getConsoleSession("ssh_hal_test_1")
 
         # Initialize UT menu navigator and utilities
@@ -98,7 +133,7 @@ class motionSensorHelperClass(utHelperClass):
         # Copy required artifacts to target device
         self.utilities.change_directory(self.hal_session, self.targetWorkspace)
         for artifact in self.testMenuConfiguration.test.artifacts:
-            filesPath = os.path.join(dir_path, artifact)
+            filesPath = os.path.normpath(os.path.join(artifactBaseDir, artifact))
             self.utilities.sftpCopy(
                 self.hal_session, filesPath, self.targetWorkspace)
             if tarfile.is_tarfile(filesPath):
@@ -107,20 +142,9 @@ class motionSensorHelperClass(utHelperClass):
                     os.path.basename(artifact)).replace("\\", "/")
                 self.utilities.untar(
                     self.hal_session, target_tarfile, self.targetWorkspace)
-
-        #TODO: remove once the vendor layer start handled by vDevice service
-        self.halServiceLogFile = "/tmp/motionsensor_service.log"
-        self.utilities.change_directory(
-            self.hal_session_1, self.targetWorkspace)
-        self.hal_session_1.write(f"pkill -f {self.cpe.get('motionsensor_process_name')} 2>/dev/null; sleep 1")
-        time.sleep(1)
-        deepSleepDuration = self.deviceTestSetup.get('deep_sleep_duration_seconds', 60)
-        # Redirect stdout+stderr to a log file; read back via hal_session_1 after
-        # each test case so HAL service logs appear in the VTS report.
-        self.hal_session_1.write(
-            f"./{self.cpe.get('motionsensor_process_name')} --port {controllerPort} "
-            f"--deep-sleep-duration {deepSleepDuration} "
-            f"> {self.halServiceLogFile} 2>&1 &")
+        self.targetWorkspace = targetCfgBase
+        self.utilities.change_directory(self.hal_session, self.targetWorkspace)
+        self.utilities.change_directory(self.hal_session_1, self.targetWorkspace)
         time.sleep(2)
 
         self.motionSensorDevice = MotionSensorController(
@@ -131,13 +155,13 @@ class motionSensorHelperClass(utHelperClass):
 
     def _readSensorIdsFromProfile(self) -> list:
         """
-        Reads sensor IDs from the local HFP profile YAML (``self.moduleHFPFile``).
+        Reads sensor IDs from the local HFP profile YAML (``moduleHFPFile``).
         Returns a list of integer IDs in the same order as the profile
         (index 0 = sensor_index 0 passed to ``getSensorAtIndex`` in C++).
         Falls back to ``[0]`` if the profile cannot be read.
         """
         try:
-            with open(self.moduleHFPFile, 'r') as fh:
+            with open(self.paths["moduleHFPFile"], 'r') as fh:
                 profile = yaml.safe_load(fh)
             sensors = profile.get('sensor', {}).get('motion', [])
             ids = [int(s['id']) for s in sensors if 'id' in s]
@@ -147,7 +171,7 @@ class motionSensorHelperClass(utHelperClass):
             self.log.info(f"[_readSensorIdsFromProfile] Found {len(ids)} sensor(s): {ids}")
             return ids
         except Exception as exc:
-            self.log.warning(f"[_readSensorIdsFromProfile] Could not read '{self.moduleHFPFile}': {exc}")
+            self.log.warning(f"[_readSensorIdsFromProfile] Could not read '{self.paths['moduleHFPFile']}': {exc}")
             return [0]
 
     def runL3Test(self, testcase: str, triggerCallable=None, triggerDelay: float = 25.0) -> bool:
@@ -172,7 +196,7 @@ class motionSensorHelperClass(utHelperClass):
             bool: True if the test passed, False otherwise.
         """
         self.utilities.sftpCopy(
-            self.hal_session, self.l3TestConfigFile, self.l3TestConfigFolder)
+            self.hal_session, self.paths["l3TestConfigFile"], self.paths["l3TestConfigFolder"])
         self.utMenu.start()
 
         # Start trigger AFTER the test binary is running (CEC pattern).

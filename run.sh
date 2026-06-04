@@ -42,11 +42,5 @@ start_vcomponent_service()
     echo "Started vComponent ${SERVICE_NAME} (PID: $vcomponentservice_pid)"
 }
 
-if check_process $SERVICE_NAME; then
-    echo "Continuing with existing ${SERVICE_NAME} (PID: $(pgrep -f $SERVICE_NAME))"
-else
-    start_vcomponent_service
-fi
-
 echo "Executing [vts_motionsensor_hal_test]"
 "${RUN_DIR}/vts_motionsensor_hal_test" "$@"

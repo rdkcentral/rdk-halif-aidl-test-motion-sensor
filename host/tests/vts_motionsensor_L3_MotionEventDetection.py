@@ -48,10 +48,10 @@ class VTS_MOTIONSENSOR_L3_MotionEventDetection(motionSensorHelperClass):
 
     INTER_EVENT_DELAY_S = 2.0   # seconds between successive event injections
 
-    def __init__(self, log: logModule = None):
+    def __init__(self, log: logModule = None, moduleName: str = None):
         self.testName = "MotionSensor_L3_MotionEventDetection"
         qcId = "1"
-        super().__init__(self.testName, qcId, log)
+        super().__init__(self.testName, qcId, log, moduleName)
 
     def _make_trigger(self, sid: int, n: int):
         """Return a no-arg callable that fires *n* MOTION stimuli for sensor *sid*."""
@@ -80,7 +80,7 @@ class VTS_MOTIONSENSOR_L3_MotionEventDetection(motionSensorHelperClass):
             bool: True if all sensors passed, False otherwise.
         """
         # Read test parameters from the local L3 config YAML.
-        with open(self.l3TestConfigFile, 'r') as fh:
+        with open(self.paths["l3TestConfigFile"], 'r') as fh:
             l3cfg = yaml.safe_load(fh)
         test_node  = l3cfg['motionsensor']['L3']['EventDetection']
         # Guard against stale 0 written by ActiveWindowBehavior (gated scenarios).
@@ -107,7 +107,7 @@ class VTS_MOTIONSENSOR_L3_MotionEventDetection(motionSensorHelperClass):
             l3cfg['motionsensor']['L3']['EventDetection']['operational_mode']   = 'MOTION'
             l3cfg['motionsensor']['L3']['EventDetection']['max_expected_events'] = max_events
             l3cfg['motionsensor']['L3']['EventDetection']['event_timeout_ms']    = timeout_ms
-            with open(self.l3TestConfigFile, 'w') as fh:
+            with open(self.paths["l3TestConfigFile"], 'w') as fh:
                 yaml.dump(l3cfg, fh, default_flow_style=False, sort_keys=False)
 
             result = self.runL3Test(
