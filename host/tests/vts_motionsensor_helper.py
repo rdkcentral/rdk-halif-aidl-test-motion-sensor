@@ -196,7 +196,7 @@ class motionSensorHelperClass(utHelperClass):
             bool: True if the test passed, False otherwise.
         """
         self.utilities.sftpCopy(
-            self.hal_session, self.paths["l3TestConfigFile"], self.paths["l3TestConfigFolder"])
+            self.hal_session, self.paths["l3TestConfigFile"], self.l3TestConfigFolder)
         self.utMenu.start()
 
         # Start trigger AFTER the test binary is running (CEC pattern).
