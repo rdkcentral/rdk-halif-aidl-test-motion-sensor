@@ -59,7 +59,7 @@
  * profile. The binder thread pool is started per-suite in each fixture's
  * SetUp().
  */
-void VTS_MOTIONSENSOR_init(void);
+UT_status_t VTS_MOTIONSENSOR_init(void);
 
 /**
  * @brief Destroy/cleanup the Motion Sensor VTS test suite.

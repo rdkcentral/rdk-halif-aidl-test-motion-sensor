@@ -83,15 +83,14 @@ static UT_status_t vts_motionsensor_getService()
     return UT_STATUS_OK;
 }
 
-void VTS_MOTIONSENSOR_init(void)
+UT_status_t VTS_MOTIONSENSOR_init(void)
 {
     UT_LOG_INFO("VTS_MOTIONSENSOR_init: Connecting to IMotionSensorManager service");
 
     if(vts_motionsensor_getService() != UT_STATUS_OK)
     {
         UT_LOG_ERROR("Failed to get MOTIONSENSOR Service");
-        UT_ASSERT_TRUE_FATAL(false);
-        return;
+        return UT_STATUS_FAILURE;
     }
 
     UT_LOG_INFO("VTS_MOTIONSENSOR_init: Successfully connected to IMotionSensorManager");
@@ -100,6 +99,7 @@ void VTS_MOTIONSENSOR_init(void)
     vts_motionsensor_parse_hfp();
 
     UT_LOG_INFO("VTS_MOTIONSENSOR_init: Initialization complete");
+    return UT_STATUS_OK;
 }
 
 void VTS_MOTIONSENSOR_destroy(void)
