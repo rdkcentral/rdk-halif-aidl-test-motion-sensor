@@ -218,37 +218,7 @@ class motionSensorHelperClass(utHelperClass):
         if results is None:
             results = False
 
-        self._emitHalServiceLogs(testcase)
-
         self.log.stepResult(
             results,
             f"Test Suite: {MOTIONSENSOR_L3_TEST_SUITE_NAME}  Test Case: {testcase}")
         return results
-
-    def _emitHalServiceLogs(self, testcase: str):
-        """
-        Reads the HAL service log file from the target via hal_session_1 and emits
-        each line into the VTS log, then truncates the file so the next test case
-        sees only its own output.
-
-        hal_session_1 is used (not hal_session) because hal_session has the UT
-        menu running on it; hal_session_1 is the dedicated HAL service session and
-        is free to run shell commands between control-plane interactions.
-
-        Args:
-            testcase (str): Test case name, used only for the log header.
-        """
-        try:
-            prompt = self.cpe.get("prompt", "~#")
-            self.hal_session_1.write(f"cat {self.halServiceLogFile}")
-            logContent = self.hal_session_1.read_until(prompt, timeout=5)
-            self.log.info(f"--- HAL service logs for {testcase} ---")
-            for line in logContent.splitlines():
-                stripped = line.strip()
-                if stripped:
-                    self.log.info(f"[HAL service] {stripped}")
-            self.log.info(f"--- end HAL service logs for {testcase} ---")
-            # Truncate so the next test case starts with a clean log.
-            self.hal_session_1.write(f"> {self.halServiceLogFile}")
-        except Exception as exc:
-            self.log.warn(f"[HAL service log capture] Could not read log file: {exc}")
