@@ -52,6 +52,8 @@
 #ifndef __VTS_MOTIONSENSOR_INIT_H__
 #define __VTS_MOTIONSENSOR_INIT_H__
 
+#include <ut.h>
+
 /**
  * @brief Initialize the Motion Sensor VTS test suite.
  *

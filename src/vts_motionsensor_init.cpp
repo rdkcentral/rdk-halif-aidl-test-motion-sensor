@@ -49,6 +49,7 @@
  * @file vts_motionsensor_init.cpp
  */
 
+#include <ut.h>
 #include "vts_motionsensor_init.h"
 #include "vts_motionsensor.h"
 #include "vts_motionsensor_parse_hfp.h"
