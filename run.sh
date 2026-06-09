@@ -24,23 +24,5 @@ SERVICE_NAME=Vendor-MotionSensor
 
 export LD_LIBRARY_PATH=${RUN_DIR}:${LD_LIBRARY_PATH}
 
-# Function to check if a process is running
-check_process()
-{
-    local process_name=$1
-    pgrep -f "$process_name" > /dev/null
-    return $?
-}
-
-start_vcomponent_service()
-{
-    ${RUN_DIR}/$SERVICE_NAME &
-    vcomponentservice_pid=$!
-    # Wait for service to be ready
-    sleep 1
-
-    echo "Started vComponent ${SERVICE_NAME} (PID: $vcomponentservice_pid)"
-}
-
 echo "Executing [vts_motionsensor_hal_test]"
 "${RUN_DIR}/vts_motionsensor_hal_test" "$@"
