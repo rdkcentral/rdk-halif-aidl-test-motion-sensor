@@ -122,7 +122,10 @@ class motionSensorHelperClass(utHelperClass):
         self.l3TestConfigFolder = os.path.join(
             targetCfgBase, "test_configuration").replace("\\", "/")
 
-        self.hal_session = self.dut.getConsoleSession("ssh_hal_test_0")
+        try:
+            self.hal_session = self.dut.getConsoleSession("ssh_hal_test_0")
+        except Exception:
+            self.hal_session = self.dut.getConsoleSession("ssh_hal_test")
         self.hal_session_1 = self.dut.getConsoleSession("ssh_hal_test_1")
 
         # Initialize UT menu navigator and utilities
