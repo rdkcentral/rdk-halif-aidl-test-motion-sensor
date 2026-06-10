@@ -60,6 +60,10 @@
  * Binds to the IMotionSensorManager binder service and parses the HFP
  * profile. The binder thread pool is started per-suite in each fixture's
  * SetUp().
+ *
+ * @return UT_STATUS_OK on successful initialization.
+ * @return UT_STATUS_FAILURE if the IMotionSensorManager service cannot be
+ *         acquired.
  */
 UT_status_t VTS_MOTIONSENSOR_init(void);
 
