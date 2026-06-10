@@ -48,7 +48,6 @@ declare -r BUILD_INSTALL_PREFIX=${TOP_BUILD_DIR}/usr
 declare -r AIDL_LIB_DIR=${TOP}/aidl_lib
 declare -r RDK_HAL_DIR=${TOP}/rdk-halif-aidl
 declare -r PROFILES_DIR=${TOP}/profiles
-declare -r VCOMPONENT_DIR=${TOP}/vcomponent
 
 OUT_TAR_FILE=vts-motionsensor.tar.gz
 
@@ -231,7 +230,6 @@ install_test()
     install -t ${INSTALL_PATH} run.sh
 
     cp -r ${PROFILES_DIR} ${INSTALL_PATH}
-    cp -r "${VCOMPONENT_DIR}/vcomponent_configurations" ${INSTALL_PATH}
     cp -r "${TOP}/test_configuration" ${INSTALL_PATH}
 
     cd ${INSTALL_PATH}
@@ -247,7 +245,6 @@ clean_test()
     echo -e "${BOLD}removing *.o${RESET}"
 
     make clean
-    make -C ${VCOMPONENT_DIR} clean
     make -C ${AIDL_LIB_DIR} clean
 
     rm -rf ${TOP_BUILD_DIR}/bin/${OUT_TAR_FILE}
@@ -262,7 +259,6 @@ dist_clean_test()
     rm -rf $TOP_BUILD_DIR
     rm -rf $RDK_HAL_DIR
     rm -rf ${UT_CORE_DIR}
-    rm -rf ${VCOMPONENT_DIR}
 }
 
 ###############################################################################
