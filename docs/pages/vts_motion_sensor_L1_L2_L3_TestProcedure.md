@@ -183,13 +183,6 @@ rackConfig:
                   ip: ""
                   password: ""
                   prompt: "~#"
-            motionSensorController:
-                type: virtual-motionsensor-client
-                address: ""
-                username: ""
-                password: ''
-                port: 5522
-                control_port: 8080
             outbound:
               download_url: "tftp://tftp-server.com/rack1/slot1/"
               upload_url: "sftp://server-address/home/workspace/tftp/rack1/slot1/"

@@ -65,14 +65,6 @@ rackConfig:
                             ip: ""      # IP address of the target device (vcomponent session)
                             password: ""
                             prompt: "~#"
-                    motionSensorController:
-                        type: virtual-motionsensor-client
-                        vendor: "vComponent"
-                        address: "" # IP address of the target device
-                        username: ""         # Login username
-                        password: ''         # Login password
-                        port: 5522
-                        control_port: 8080
                     outbound:
                         download_url: "tftp://tftp-server.com/rack1/slot1/"
                         upload_url: "sftp://server-address/home/workspace/tftp/rack1/slot1/"
