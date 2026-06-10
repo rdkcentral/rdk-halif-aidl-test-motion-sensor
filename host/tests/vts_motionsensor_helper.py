@@ -46,6 +46,7 @@ MOTIONSENSOR_L3_TEST_CONFIG_FILE = os.path.join(
     os.path.join(dir_path, "../../test_configuration"), "vts_l3_MotionSensor.yaml")
 
 MOTIONSENSOR_L3_TEST_SUITE_NAME = "VTS_L3_MOTIONSENSOR"
+DEFAULT_CONTROLLER_PORT = 8080
 
 
 class motionSensorHelperClass(utHelperClass):
@@ -114,7 +115,7 @@ class motionSensorHelperClass(utHelperClass):
         ).replace("\\", "/")
 
         # Load test menu configuration
-        controllerPort = self.deviceTestSetup.get("motionsensor_controller_port", 8080)
+        controllerPort = self.deviceTestSetup.get("motionsensor_controller_port", DEFAULT_CONTROLLER_PORT)
         self.testMenuConfiguration = ConfigRead(
             self.paths["testMenuConfigFile"], self.moduleName)
         self.testMenuConfiguration.test.execute = (
