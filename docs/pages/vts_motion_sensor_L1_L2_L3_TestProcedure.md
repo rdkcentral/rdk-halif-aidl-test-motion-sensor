@@ -143,7 +143,6 @@ cd /tmp/motionsensor
 
 Example: [host/configs/vts_rack_configuration.yaml](../../host/configs/vts_rack_configuration.yaml)
 
-Update the console sessions and `motionSensorController` block for your test setup.
 
 | Console Session | Description |
 |----------------|-------------|
@@ -188,9 +187,6 @@ rackConfig:
               upload_url: "sftp://server-address/home/workspace/tftp/rack1/slot1/"
               workspaceDirectory: "./logs/workspace"
 ```
-
-> **motionSensorController:** Configure this field according to your test platform. For physical hardware testing, use `manual-motionsensor-client` as `RAFT` doesn't support a motion sensor controller device. For virtual device testing, use `virtual-motionsensor-client` and provide the connection details of the device running the HAL service.
-- `control_port` - The port number where the HAL service accepts command requests.
 
 ---
 
@@ -500,7 +496,6 @@ No physical sensor or motion stimulus is required.
 
 For real hardware testing:
 
-- Replace the `motionSensorController` block in the rack config with the appropriate physical hardware controller type.
 - Ensure the physical sensor is correctly wired and accessible.
 - L3 event injection steps require a physical mechanism to trigger (or suppress) motion events during the test window (e.g., a controllable IR light source for PIR sensors, or a motorized actuator).
 
