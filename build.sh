@@ -30,7 +30,6 @@ RESET='\033[0m'
 declare -r TOP=`dirname $(realpath $0)`
 declare -r HALIF_VERSION=current
 RDK_HALIF_AIDL_VERSION="${RDK_HALIF_AIDL_VERSION="main"}"
-VCOMPONENT_MOTIONSENSOR_VERSION="${VCOMPONENT_MOTIONSENSOR_VERSION="main"}"
 RDK_HALIF_TEST_BASE_URL="https://github.com/rdkcentral/rdk-halif-binder-test-"
 
 declare -A HALIF_COMPONENTS=(
@@ -280,7 +279,6 @@ help()
 echo -e "${BOLD}${GREEN}VTS Version                  : ${RESET}${YELLOW}$(git rev-parse --abbrev-ref HEAD)${RESET}"
 echo -e "${BOLD}${GREEN}UT_CORE_VERSION              : ${RESET}${YELLOW}$UT_CORE_VERSION${RESET}"
 echo -e "${BOLD}${GREEN}RDK_HALIF_AIDL_VERSION       : ${RESET}${YELLOW}$RDK_HALIF_AIDL_VERSION${RESET}"
-echo -e "${BOLD}${GREEN}VCOMPONENT_MOTIONSENSOR_VERSION : ${RESET}${YELLOW}$VCOMPONENT_MOTIONSENSOR_VERSION${RESET}"
 echo -e "${BOLD}${GREEN}AIDL_BIN                     : ${RESET}${YELLOW}$AIDL_BIN${RESET}"
 echo -e "${BOLD}${GREEN}LINUX_BINDER_OUT_DIR         : ${RESET}${YELLOW}$LINUX_BINDER_OUT_DIR${RESET}"
 
