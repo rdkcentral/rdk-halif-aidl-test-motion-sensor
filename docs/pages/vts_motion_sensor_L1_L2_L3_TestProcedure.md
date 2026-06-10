@@ -147,7 +147,7 @@ Example: [host/configs/vts_rack_configuration.yaml](../../host/configs/vts_rack_
 | Console Session | Description |
 |----------------|-------------|
 | `default` | Device status and basic operations |
-| `ssh_hal_test` | Executes Motion Sensor HAL VTS binary on DUT |
+| `ssh_hal_test_0` | Executes Motion Sensor HAL VTS binary on DUT |
 | `ssh_hal_test_1` | Second SSH session for HAL service control |
 
 ```yaml
@@ -168,7 +168,7 @@ rackConfig:
                   ip: ""
                   password: ""
                   prompt: "~#"
-              - ssh_hal_test:
+              - ssh_hal_test_0:
                   type: "ssh"
                   port: 5522
                   username: "root"
@@ -205,7 +205,7 @@ deviceConfig:
     wait_time: 240
     test:
       profile: "../../profiles/hfp-motionsensor-vcomponent.yaml"
-      controller_port: 8080
+      motionsensor_controller_port: 8080
 ```
 
 ---
