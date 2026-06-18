@@ -41,9 +41,9 @@ from raft.framework.plugins.ut_raft.utBaseUtils import utBaseUtils
 from motionController.MotionSensorController import MotionSensorController
 
 MOTIONSENSOR_TEST_MENU_CONFIGURATION_FILE = os.path.join(
-    dir_path, "vts_motionsensor_testMenuConfiguration.yaml")
+    dir_path, "vts_motionsensor_testMenuConfiguration.yaml").replace("\\", "/")
 MOTIONSENSOR_L3_TEST_CONFIG_FILE = os.path.join(
-    os.path.join(dir_path, "../../test_configuration"), "vts_l3_MotionSensor.yaml")
+    os.path.join(dir_path, "../../test_configuration"), "vts_l3_MotionSensor.yaml").replace("\\", "/")
 
 MOTIONSENSOR_L3_TEST_SUITE_NAME = "VTS_L3_MOTIONSENSOR"
 DEFAULT_CONTROLLER_PORT = 8080
@@ -77,16 +77,16 @@ class motionSensorHelperClass(utHelperClass):
         self.waitTime = self.cpe.get("wait_time")
         self.platform = self.cpe.get("platform")
         self.targetWorkspace = os.path.join(
-            self.cpe.get("target_directory"), self.moduleName)
+            self.cpe.get("target_directory"), self.moduleName).replace("\\", "/")
 
-        component_root = os.path.normpath(os.path.join(dir_path, "../.."))
-        unified_root = os.path.normpath(os.path.join(dir_path, "../../../.."))
+        component_root = os.path.normpath(os.path.join(dir_path, "../..")).replace("\\", "/")
+        unified_root = os.path.normpath(os.path.join(dir_path, "../../../..")).replace("\\", "/")
 
         if not isUnifiedTest:
             self.paths = {
                 "testMenuConfigFile": MOTIONSENSOR_TEST_MENU_CONFIGURATION_FILE,
                 "l3TestConfigFile": MOTIONSENSOR_L3_TEST_CONFIG_FILE,
-                "moduleHFPFile": os.path.join(dir_path, self.deviceTestSetup.get("profile")),
+                "moduleHFPFile": os.path.join(dir_path, self.deviceTestSetup.get("profile")).replace("\\", "/"),
             }
             artifactBaseDir = dir_path
             targetCfgBase = self.targetWorkspace
@@ -94,15 +94,15 @@ class motionSensorHelperClass(utHelperClass):
             self.paths = {
                 "testMenuConfigFile": os.path.join(
                     unified_root, "host/tests/TestCases/vts_l3_test_setup.yaml"
-                ),
+                ).replace("\\", "/"),
                 "l3TestConfigFile": os.path.join(
                     component_root, "test_configuration/vts_l3_MotionSensor.yaml"
-                ),
+                ).replace("\\", "/"),
                 "moduleHFPFile": os.path.join(
                     component_root, "profiles/hfp-motionsensor-vcomponent.yaml"
-                ),
+                ).replace("\\", "/"),
             }
-            artifactBaseDir = os.path.join(component_root, "host")
+            artifactBaseDir = os.path.join(component_root, "host").replace("\\", "/")
             targetCfgBase = os.path.join(self.targetWorkspace, "bin").replace("\\", "/")
 
         for attr, path in self.paths.items():
@@ -137,7 +137,7 @@ class motionSensorHelperClass(utHelperClass):
         # Copy required artifacts to target device
         self.utilities.change_directory(self.hal_session, self.targetWorkspace)
         for artifact in self.testMenuConfiguration.test.artifacts:
-            filesPath = os.path.normpath(os.path.join(artifactBaseDir, artifact))
+            filesPath = os.path.normpath(os.path.join(artifactBaseDir, artifact)).replace("\\", "/")
             self.utilities.sftpCopy(
                 self.hal_session, filesPath, self.targetWorkspace)
             if tarfile.is_tarfile(filesPath):
