@@ -74,9 +74,9 @@ _WINDOW_SCENARIOS = [
 
 class VTS_MOTIONSENSOR_L3_ActiveWindowBehavior(motionSensorHelperClass):
 
-    def __init__(self, log: logModule = None):
+    def __init__(self, log: logModule = None, moduleName: str = None):
         self.testName = "MotionSensor_L3_ActiveWindowBehavior"
-        super().__init__(self.testName, "3", log)
+        super().__init__(self.testName, "3", log, moduleName)
 
     # ------------------------------------------------------------------
     # Helpers
@@ -302,7 +302,7 @@ class VTS_MOTIONSENSOR_L3_ActiveWindowBehavior(motionSensorHelperClass):
         Returns:
             bool: True if every applicable scenario on every sensor passed.
         """
-        with open(self.l3TestConfigFile, 'r') as fh:
+        with open(self.paths["l3TestConfigFile"], 'r') as fh:
             l3cfg = yaml.safe_load(fh)
         test_node  = l3cfg['motionsensor']['L3']['EventDetection']
         timeout_ms = int(test_node.get('event_timeout_ms', 15000)) or 15000
@@ -427,7 +427,7 @@ class VTS_MOTIONSENSOR_L3_ActiveWindowBehavior(motionSensorHelperClass):
                 l3cfg['motionsensor']['L3']['EventDetection']['window_start_seconds']  = start
                 l3cfg['motionsensor']['L3']['EventDetection']['window_end_seconds']    = end
                 l3cfg['motionsensor']['L3']['EventDetection']['max_expected_events']   = 1 if expect_event else 0
-                with open(self.l3TestConfigFile, 'w') as fh:
+                with open(self.paths["l3TestConfigFile"], 'w') as fh:
                     yaml.dump(l3cfg, fh, default_flow_style=False, sort_keys=False)
 
                 # Build trigger callable
@@ -467,7 +467,7 @@ class VTS_MOTIONSENSOR_L3_ActiveWindowBehavior(motionSensorHelperClass):
                     all_passed = False
 
         l3cfg['motionsensor']['L3']['EventDetection']['max_expected_events'] = default_events
-        with open(self.l3TestConfigFile, 'w') as fh:
+        with open(self.paths["l3TestConfigFile"], 'w') as fh:
             yaml.dump(l3cfg, fh, default_flow_style=False, sort_keys=False)
 
         return all_passed

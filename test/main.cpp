@@ -78,7 +78,12 @@ int main(int argc, char **argv)
     UT_LOG_INFO("\t VTS MOTION SENSOR HALIF Test Version: \033[0;32m%s\033[0m",MOTIONSENSOR_VERSION);
     UT_LOG_INFO("==========================================================================");
 
-    VTS_MOTIONSENSOR_init();
+    result = VTS_MOTIONSENSOR_init();
+    if (result != UT_STATUS_OK)
+    {
+        UT_LOG_ERROR("VTS_MOTIONSENSOR_init failed. Aborting test execution.");
+        return result;
+    }
 
     result = UT_run_tests();
 

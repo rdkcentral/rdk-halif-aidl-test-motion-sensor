@@ -46,13 +46,13 @@ class VTS_MOTIONSENSOR_L1_L2_Tests(motionSensorHelperClass):
     Collects and aggregates test results for pass/fail reporting.
     """
 
-    def __init__(self, log: logModule = None):
+    def __init__(self, log: logModule = None, moduleName: str = None):
         """
         Initializes the test class.
         """
         qcId = "1"
         self.testName = "MotionSensor_L1_L2_L3"
-        super().__init__(self.testName, qcId, log)
+        super().__init__(self.testName, qcId, log, moduleName)
 
         self.testCaseConfiguration = ConfigRead(
             MOTIONSENSOR_TESTCASES_CONFIGURATION_FILE, self.moduleName)

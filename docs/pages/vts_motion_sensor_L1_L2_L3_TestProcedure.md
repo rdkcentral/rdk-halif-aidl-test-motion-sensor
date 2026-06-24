@@ -77,7 +77,6 @@ Set environment variables:
 - `LINUX_BINDER_OUT_DIR`: Path to Linux binder output directory.
 - `UT_CORE_VERSION`: UT-Core version (optional; defaults to latest tag).
 - `RDK_HALIF_AIDL_VERSION`: AIDL HAL spec version (optional; defaults to latest HEAD).
-- `VCOMPONENT_MOTIONSENSOR_VERSION`: Motion Sensor simulator version (if applicable).
 
 
 Example:
@@ -85,7 +84,6 @@ Example:
 ```bash
 export UT_CORE_VERSION=5.0.0
 export RDK_HALIF_AIDL_VERSION=0.15.0
-export VCOMPONENT_MOTIONSENSOR_VERSION=0.1.0
 export AIDL_BIN=/path/to/linux_binder_idl/out/aidl
 export LINUX_BINDER_OUT_DIR=/path/to/linux_binder_idl/local/
 ```
@@ -145,12 +143,11 @@ cd /tmp/motionsensor
 
 Example: [host/configs/vts_rack_configuration.yaml](../../host/configs/vts_rack_configuration.yaml)
 
-Update the console sessions and `motionSensorController` block for your test setup.
 
 | Console Session | Description |
 |----------------|-------------|
 | `default` | Device status and basic operations |
-| `ssh_hal_test` | Executes Motion Sensor HAL VTS binary on DUT |
+| `ssh_hal_test_0` | Executes Motion Sensor HAL VTS binary on DUT |
 | `ssh_hal_test_1` | Second SSH session for HAL service control |
 
 ```yaml
@@ -171,7 +168,7 @@ rackConfig:
                   ip: ""
                   password: ""
                   prompt: "~#"
-              - ssh_hal_test:
+              - ssh_hal_test_0:
                   type: "ssh"
                   port: 5522
                   username: "root"
@@ -185,21 +182,11 @@ rackConfig:
                   ip: ""
                   password: ""
                   prompt: "~#"
-            motionSensorController:
-                type: virtual-motionsensor-client
-                address: ""
-                username: ""
-                password: ''
-                port: 5522
-                control_port: 8080
             outbound:
               download_url: "tftp://tftp-server.com/rack1/slot1/"
               upload_url: "sftp://server-address/home/workspace/tftp/rack1/slot1/"
               workspaceDirectory: "./logs/workspace"
 ```
-
-> **motionSensorController:** Configure this field according to your test platform. For physical hardware testing, use `manual-motionsensor-client` as `RAFT` doesn't support a motion sensor controller device. For virtual device testing, use `virtual-motionsensor-client` and provide the connection details of the device running the HAL service.
-- `control_port` - The port number where the HAL service accepts command requests.
 
 ---
 
@@ -214,12 +201,11 @@ deviceConfig:
     model: "VTV"
     soc_vendor: "intel"
     target_directory: "/tmp/"
-    motionsensor_process_name: "Vendor-MotionSensor"
     prompt: "~#"
     wait_time: 240
     test:
       profile: "../../profiles/hfp-motionsensor-vcomponent.yaml"
-      controller_port: 8080
+      motionsensor_controller_port: 8080
 ```
 
 ---
@@ -510,7 +496,6 @@ No physical sensor or motion stimulus is required.
 
 For real hardware testing:
 
-- Replace the `motionSensorController` block in the rack config with the appropriate physical hardware controller type.
 - Ensure the physical sensor is correctly wired and accessible.
 - L3 event injection steps require a physical mechanism to trigger (or suppress) motion events during the test window (e.g., a controllable IR light source for PIR sensors, or a motorized actuator).
 
