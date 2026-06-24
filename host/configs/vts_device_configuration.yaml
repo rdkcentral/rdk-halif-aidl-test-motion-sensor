@@ -27,10 +27,9 @@ deviceConfig:
         model:      "VTV"
         soc_vendor: "intel"
         target_directory: "/tmp/"
-        motionsensor_process_name: "Vendor-MotionSensor"
         prompt: "~#" # Prompt string on console
         wait_time: 240 # Configurable timeout value to limit the total duration of individual tests
         test:
             profile: "../../profiles/hfp-motionsensor-vcomponent.yaml" # HFP profile used to meet platform requirements
-            controller_port: 8080 # Port where the vcomponent control plane is listening
+            motionsensor_controller_port: 8080 # Port where the vcomponent control plane is listening
             deep_sleep_duration_seconds: 60 # Seconds to simulate idle before deep sleep

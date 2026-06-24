@@ -52,14 +52,20 @@
 #ifndef __VTS_MOTIONSENSOR_INIT_H__
 #define __VTS_MOTIONSENSOR_INIT_H__
 
+#include <ut.h>
+
 /**
  * @brief Initialize the Motion Sensor VTS test suite.
  *
  * Binds to the IMotionSensorManager binder service and parses the HFP
  * profile. The binder thread pool is started per-suite in each fixture's
  * SetUp().
+ *
+ * @return UT_STATUS_OK on successful initialization.
+ * @return UT_STATUS_FAILURE if the IMotionSensorManager service cannot be
+ *         acquired.
  */
-void VTS_MOTIONSENSOR_init(void);
+UT_status_t VTS_MOTIONSENSOR_init(void);
 
 /**
  * @brief Destroy/cleanup the Motion Sensor VTS test suite.

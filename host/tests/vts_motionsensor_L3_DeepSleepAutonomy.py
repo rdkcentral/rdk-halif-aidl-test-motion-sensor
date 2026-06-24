@@ -65,10 +65,10 @@ class VTS_MOTIONSENSOR_L3_DeepSleepAutonomy(motionSensorHelperClass):
     configured via --deep-sleep-duration (read from the device config).
     """
 
-    def __init__(self, log: logModule = None):
+    def __init__(self, log: logModule = None, moduleName: str = None):
         self.testName = "MotionSensor_L3_DeepSleepAutonomy"
         qcId = "4"
-        super().__init__(self.testName, qcId, log)
+        super().__init__(self.testName, qcId, log, moduleName)
 
     def _verifyWakeupViaPing(self, autonomy_enabled: bool,
                               ping_timeout: float = 10.0) -> bool:
@@ -163,7 +163,7 @@ class VTS_MOTIONSENSOR_L3_DeepSleepAutonomy(motionSensorHelperClass):
         l3cfg['motionsensor']['L3']['EventDetection']['event_timeout_ms']            = (int(sleep_duration) *1000) + timeout_ms
         l3cfg['motionsensor']['L3']['EventDetection']['autonomy_enabled']            = autonomy_enabled
         l3cfg['motionsensor']['L3']['EventDetection']['expect_wakeup']               = autonomy_enabled
-        with open(self.l3TestConfigFile, 'w') as fh:
+        with open(self.paths["l3TestConfigFile"], 'w') as fh:
             yaml.dump(l3cfg, fh, default_flow_style=False, sort_keys=False)
 
         trigger = self._make_trigger(sensor_id, sleep_duration)
@@ -175,7 +175,7 @@ class VTS_MOTIONSENSOR_L3_DeepSleepAutonomy(motionSensorHelperClass):
         # Restore event_timeout_ms to the default so subsequent tests
         # (e.g. ActiveWindowBehavior) do not inherit the large DeepSleep value.
         l3cfg['motionsensor']['L3']['EventDetection']['event_timeout_ms'] = timeout_ms
-        with open(self.l3TestConfigFile, 'w') as fh:
+        with open(self.paths["l3TestConfigFile"], 'w') as fh:
             yaml.dump(l3cfg, fh, default_flow_style=False, sort_keys=False)
         # After the C++ test concludes, perform a host-side ping check to confirm
         # whether the DUT woke up (or stayed asleep) as expected.
@@ -203,7 +203,7 @@ class VTS_MOTIONSENSOR_L3_DeepSleepAutonomy(motionSensorHelperClass):
         Returns:
             bool: True if every sensor passed, False otherwise.
         """
-        with open(self.l3TestConfigFile, 'r') as fh:
+        with open(self.paths["l3TestConfigFile"], 'r') as fh:
             l3cfg = yaml.safe_load(fh)
 
         sleep_duration = float(
