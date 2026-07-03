@@ -20,44 +20,46 @@
 
 .PHONY: all clean
 
-CXX      ?= g++
+CXX ?= g++
 
 AIDL_LIB_NAME := aidl_client
-AIDL_LIB      := lib$(AIDL_LIB_NAME).so
+AIDL_LIB := lib$(AIDL_LIB_NAME).so
 
-BUILD_DIR     ?= $(CURDIR)/../build
-AIDL_GEN_DIR  ?= $(BUILD_DIR)/current
-AIDL_SRC_DIR  := $(AIDL_GEN_DIR)/cpp/com/rdk/hal
+BUILD_DIR ?= $(CURDIR)/../build
 
-# Source and object files
-AIDL_SRC := $(shell find $(AIDL_SRC_DIR) -type f \( -name '*.cpp' -o -name '*.c' \))
-AIDL_OBJ := $(AIDL_SRC:%.cpp=%.o)
+# Versioned src/include dirs resolved from rdk-halif-aidl by build.sh
+# Guard errors so 'make clean' works without these being set
+ifneq ($(MAKECMDGOALS),clean)
+HALIF_AIDL_SRC_DIR ?= $(error HALIF_AIDL_SRC_DIR is not set - run via build.sh)
+HALIF_AIDL_INC_DIR ?= $(error HALIF_AIDL_INC_DIR is not set - run via build.sh)
+BINDER_SDK_INCLUDE_DIR ?= $(error BINDER_SDK_INCLUDE_DIR is not set - run via build.sh)
+BINDER_SDK_LIB_DIR ?= $(error BINDER_SDK_LIB_DIR is not set - run via build.sh)
 
-AIDL_LIB_PATH := $(BUILD_DIR)/usr/lib/$(AIDL_LIB)
+# Source files from the versioned AIDL src directory
+AIDL_SRC := $(shell find $(HALIF_AIDL_SRC_DIR) -type f -name '*.cpp')
+endif
 
-# Flags
-AIDL_LIB_INC_FLAGS := -I$(AIDL_GEN_DIR)/h \
-                      -I$(BUILD_DIR)/usr/include
+AIDL_LIB_INC_FLAGS := -I$(HALIF_AIDL_INC_DIR)
+AIDL_LIB_INC_FLAGS += -I$(BINDER_SDK_INCLUDE_DIR)
 
-AIDL_LIB_LD_LIBS   := -lbinder -lutils
+AIDL_LIB_LD_LIBS := -lbinder -lutils
 
-AIDL_LIB_LDFLAGS   := -L$(BUILD_DIR)/usr/lib \
-                      -Wl,-rpath-link=$(BUILD_DIR)/usr/lib
+AIDL_LIB_LDFLAGS := -L$(BINDER_SDK_LIB_DIR)
+AIDL_LIB_LDFLAGS += -Wl,-rpath-link=$(BINDER_SDK_LIB_DIR)
 
-AIDL_LIB_CFLAGS    := -Wall -Wextra -std=c++17 -ggdb -fPIC
+AIDL_LIB_CFLAGS := -Wall -Wextra -std=c++17 -ggdb -fPIC
 
-# Default target
-all: $(AIDL_LIB_PATH)
+AIDL_LIB := $(BUILD_DIR)/usr/lib/$(AIDL_LIB)
 
-# Build shared library
-$(AIDL_LIB_PATH): $(AIDL_OBJ)
+all: $(AIDL_LIB)
+
+$(AIDL_LIB): $(AIDL_SRC:%.cpp=%.o)
+	mkdir -p $(dir $@)
 	$(CXX) -shared $(AIDL_LIB_LDFLAGS) $^ -o $@ $(AIDL_LIB_LD_LIBS)
 
-# Compile objects
 %.o: %.cpp
 	$(CXX) $(AIDL_LIB_CFLAGS) $(AIDL_LIB_INC_FLAGS) -c $< -o $@
 
-# Clean target
 clean:
-	@echo "Cleaning object files and library..."
-	rm -f $(AIDL_OBJ) $(AIDL_LIB_PATH)
+	rm -f $(BUILD_DIR)/usr/lib/libaidl_client.so
+	find $(CURDIR) -name '*.o' -delete
