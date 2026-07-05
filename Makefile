@@ -73,6 +73,11 @@ INC_DIRS += $(SRC_DIRS)
 
 XLDFLAGS := -L$(ROOT_DIR)/build/usr/lib
 XLDFLAGS += -Wl,-rpath-link=$(ROOT_DIR)/build/usr/lib -Wl,--export-dynamic -Wl,-rpath,.
+# ARM openssl is built by ut-core; add its lib dir before -lssl/-lcrypto so the
+# linker resolves them against the ARM-built libs (not the host sysroot, which lacks
+# the inherited -lssl/-lcrypto flags which would otherwise fail to resolve).
+XLDFLAGS += -L$(ROOT_DIR)/ut-core/framework/ut-control/build/$(TARGET)/openssl/lib
+XLDFLAGS += -Wl,-rpath-link=$(ROOT_DIR)/ut-core/framework/ut-control/build/$(TARGET)/openssl/lib
 XLDFLAGS += -lssl -lcrypto -lbinder -lutils
 XLDFLAGS += -laidl_client
 
