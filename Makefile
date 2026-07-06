@@ -68,18 +68,25 @@ endif
 SRC_DIRS := $(MOTIONSENSOR_TEST_DIR)
 SRC_DIRS += $(ROOT_DIR)/test
 
-INC_DIRS := $(ROOT_DIR)/build/usr/include
+HALIF_OUT_DIR        := $(ROOT_DIR)/rdk-halif-aidl/out
+HALIF_LIB_DIR        := $(HALIF_OUT_DIR)/target/lib/halif
+-include $(HALIF_OUT_DIR)/halif_generated.mk
+
+INC_DIRS := $(HALIF_INC_DIRS)
+INC_DIRS += $(ROOT_DIR)/build/usr/include
 INC_DIRS += $(SRC_DIRS)
 
 XLDFLAGS := -L$(ROOT_DIR)/build/usr/lib
 XLDFLAGS += -Wl,-rpath-link=$(ROOT_DIR)/build/usr/lib -Wl,--export-dynamic -Wl,-rpath,.
+XLDFLAGS += -L$(HALIF_LIB_DIR)
+XLDFLAGS += -Wl,-rpath-link=$(HALIF_LIB_DIR)
+XLDFLAGS += $(HALIF_MODULE_LIBS)
 # ARM openssl is built by ut-core; add its lib dir before -lssl/-lcrypto so the
 # linker resolves them against the ARM-built libs (not the host sysroot, which lacks
 # the inherited -lssl/-lcrypto flags which would otherwise fail to resolve).
 XLDFLAGS += -L$(ROOT_DIR)/ut-core/framework/ut-control/build/$(TARGET)/openssl/lib
 XLDFLAGS += -Wl,-rpath-link=$(ROOT_DIR)/ut-core/framework/ut-control/build/$(TARGET)/openssl/lib
 XLDFLAGS += -lssl -lcrypto -lbinder -lutils
-XLDFLAGS += -laidl_client
 
 # required for std::optional
 CXXFLAGS += -std=c++17

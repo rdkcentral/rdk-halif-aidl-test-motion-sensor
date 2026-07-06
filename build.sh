@@ -633,6 +633,14 @@ install_test()
         # Remove the one we built to avoid a protocol version mismatch.
         rm -f "${INSTALL_PATH}"/libbinder.so*
     fi
+
+    # Install versioned halif libs and their softlinks from the snapshot build
+    local HALIF_LIB_DIR="${RDK_HAL_DIR}/out/target/lib/halif"
+    if [ -d "${HALIF_LIB_DIR}" ]; then
+        find "${HALIF_LIB_DIR}" -maxdepth 1 -name "*.so" \
+            -exec cp -a {} "${INSTALL_PATH}/" \; 2>/dev/null || true
+    fi
+
     cp -r ${PROFILES_DIR} ${INSTALL_PATH}
     cp -r "${TOP}/test_configuration" ${INSTALL_PATH}
 
@@ -722,7 +730,6 @@ package_build_artifacts()
     echo -e "${BOLD}* ${GREEN}Build Started${RESET}                  ${BOLD}*${RESET}"
     echo -e "${BOLD}╚════════════════════════════════╝${RESET}"
     stage_hal_artifacts
-    build_aidl_libs
     build_ut_core
     build_halif_test
     install_test
