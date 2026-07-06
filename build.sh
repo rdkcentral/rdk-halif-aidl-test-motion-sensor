@@ -410,8 +410,9 @@ build_halif_modules()
     component_version="${component_version:-$default_version}"
 
     local sdk_dir_arg=""
-    if [ "${TARGET}" = "arm" ] && [ -n "${BINDER_SDK_DIR:-}" ]; then
-        sdk_dir_arg="--sdk-dir ${BINDER_SDK_DIR}"
+    if [ "${TARGET}" = "arm" ]; then
+        export BINDER_ALLOW_CROSS_ENV=1
+        [ -n "${BINDER_SDK_DIR:-}" ] && sdk_dir_arg="--sdk-dir ${BINDER_SDK_DIR}"
     fi
     (
         cd "${RDK_HAL_DIR}"
@@ -538,27 +539,6 @@ resolve_halif_versions()
 }
 
 ###############################################################################
-# Build the local AIDL client libraries against the staged HAL and Binder SDK.
-###############################################################################
-build_aidl_libs()
-{
-    pushd ${AIDL_LIB_DIR}
-    make -j`nproc` \
-        HALIF_AIDL_SRC_DIR="${HALIF_AIDL_SRC_DIR}" \
-        HALIF_AIDL_INC_DIR="${HALIF_AIDL_INC_DIR}" \
-        BINDER_SDK_INCLUDE_DIR="${LOCAL_BINDER_INCLUDE_DIR}" \
-        BINDER_SDK_LIB_DIR="${LOCAL_BINDER_LIB_DIR}"
-    if [ $? -ne 0 ]; then
-        echo -e "${BOLD}╔══════════════════════════════════════════════╗${RESET}"
-        echo -e "${BOLD}* ${RED}Failed to build the AIDL Lib. Exiting.${RESET}"
-        echo -e "${BOLD}╚══════════════════════════════════════════════╝${RESET}"
-        exit 1
-    fi
-    echo "AIDL Build completed successfully."
-    popd
-}
-
-###############################################################################
 # Clone ut-core if needed, select the requested version, and build it.
 ###############################################################################
 build_ut_core()
@@ -619,26 +599,32 @@ install_test()
     install -t ${INSTALL_PATH} ${TOP_BUILD_DIR}/usr/lib/*
     install -t ${INSTALL_PATH} run.sh
 
-    if [ "${TARGET}" = "arm" ]; then
-        rm -f "${INSTALL_PATH}"/libbinder.so* \
-              "${INSTALL_PATH}"/libutils.so* \
-              "${INSTALL_PATH}"/libbase.so* \
-              "${INSTALL_PATH}"/libcutils.so* \
-              "${INSTALL_PATH}"/libcutils_sockets.so* \
-              "${INSTALL_PATH}"/liblog.so* \
-              "${INSTALL_PATH}"/servicemanager
-    fi
-    if [ "${TARGET}" = "linux" ]; then
-        # The vdevice system libbinder.so matches the kernel binder protocol.
-        # Remove the one we built to avoid a protocol version mismatch.
-        rm -f "${INSTALL_PATH}"/libbinder.so*
-    fi
+    # Remove bundled binder-stack libs — the target system supplies its own.
+    rm -f "${INSTALL_PATH}"/libbinder.so* \
+          "${INSTALL_PATH}"/libutils.so* \
+          "${INSTALL_PATH}"/libbase.so* \
+          "${INSTALL_PATH}"/libcutils.so* \
+          "${INSTALL_PATH}"/libcutils_sockets.so* \
+          "${INSTALL_PATH}"/liblog.so* \
+          "${INSTALL_PATH}"/servicemanager
 
     # Install versioned halif libs and their softlinks from the snapshot build
     local HALIF_LIB_DIR="${RDK_HAL_DIR}/out/target/lib/halif"
     if [ -d "${HALIF_LIB_DIR}" ]; then
-        find "${HALIF_LIB_DIR}" -maxdepth 1 -name "*.so" \
+        # Dereference versioned libs (they may be symlinks to cmake build output)
+        find "${HALIF_LIB_DIR}" -maxdepth 1 -name "lib*-v*-cpp.so" \
+            -exec install -t "${INSTALL_PATH}" {} \; 2>/dev/null || true
+        # Preserve unversioned convenience symlinks (e.g. libsensor-cpp.so -> libsensor-v0.2.0.0-cpp.so)
+        find "${HALIF_LIB_DIR}" -maxdepth 1 -type l -name "lib*-cpp.so" \
+            ! -name "lib*-v*-cpp.so" \
             -exec cp -a {} "${INSTALL_PATH}/" \; 2>/dev/null || true
+    fi
+
+    # Copy ut-control shared library required at runtime
+    local UT_CTRL_LIB_DIR="${UT_CORE_DIR}/framework/ut-control/build/${TARGET}/lib"
+    if [ -d "${UT_CTRL_LIB_DIR}" ]; then
+        find "${UT_CTRL_LIB_DIR}" -maxdepth 1 -name "libut_control.so*" \
+            -exec install -t "${INSTALL_PATH}" {} \; 2>/dev/null || true
     fi
 
     cp -r ${PROFILES_DIR} ${INSTALL_PATH}
