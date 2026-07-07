@@ -682,8 +682,8 @@ public:
     android::binder::Status onEvent(
         const ::com::rdk::hal::sensor::motion::MotionEvent& event) override;
 
-    bool getNextEvent(MotionEvent& outEvent);
-    bool getNextEvent(MotionEvent& outEvent, std::chrono::milliseconds timeout);
+    bool getNextEvent(::com::rdk::hal::sensor::motion::MotionEvent& outEvent);
+    bool getNextEvent(::com::rdk::hal::sensor::motion::MotionEvent& outEvent, std::chrono::milliseconds timeout);
     bool getNextEvent(OperationalMode& outMode);
     bool getNextEvent(OperationalMode& outMode, std::chrono::milliseconds timeout);
     bool hasEvent();
@@ -692,7 +692,7 @@ public:
 private:
     mutex mEventMutex;
     condition_variable mEventCv;
-    queue<MotionEvent> mEventQueue;
+    std::queue<::com::rdk::hal::sensor::motion::MotionEvent> mEventQueue;
 };
 
 #endif // __VTS_MOTIONSENSOR_H__
