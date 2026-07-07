@@ -53,11 +53,11 @@ L3 tests require external stimulus injected by the Python host via the UT contro
 - L3 YAML Configuration — [test_configuration/vts_l3_MotionSensor.yaml](../../test_configuration/vts_l3_MotionSensor.yaml)
 - HFP Profile — [profiles/hfp-motionsensor-vcomponent.yaml](../../profiles/hfp-motionsensor-vcomponent.yaml)
 - Motion Sensor AIDL Interfaces:
-  - [IMotionSensorManager](https://github.com/rdkcentral/rdk-halif-aidl/blob/0.15.0/sensor/current/com/rdk/hal/sensor/motion/IMotionSensorManager.aidl)
-  - [IMotionSensor](https://github.com/rdkcentral/rdk-halif-aidl/blob/0.15.0/sensor/current/com/rdk/hal/sensor/motion/IMotionSensor.aidl)
-  - [IMotionSensorController](https://github.com/rdkcentral/rdk-halif-aidl/blob/0.15.0/sensor/current/com/rdk/hal/sensor/motion/IMotionSensorController.aidl)
-  - [IMotionSensorControllerListener](https://github.com/rdkcentral/rdk-halif-aidl/blob/0.15.0/sensor/current/com/rdk/hal/sensor/motion/IMotionSensorControllerListener.aidl)
-  - [IMotionSensorEventListener](https://github.com/rdkcentral/rdk-halif-aidl/blob/0.15.0/sensor/current/com/rdk/hal/sensor/motion/IMotionSensorEventListener.aidl)
+  - [IMotionSensorManager](https://github.com/rdkcentral/rdk-halif-aidl/blob/0.21.0/sensor/current/com/rdk/hal/sensor/motion/IMotionSensorManager.aidl)
+  - [IMotionSensor](https://github.com/rdkcentral/rdk-halif-aidl/blob/0.21.0/sensor/current/com/rdk/hal/sensor/motion/IMotionSensor.aidl)
+  - [IMotionSensorController](https://github.com/rdkcentral/rdk-halif-aidl/blob/0.21.0/sensor/current/com/rdk/hal/sensor/motion/IMotionSensorController.aidl)
+  - [IMotionSensorControllerListener](https://github.com/rdkcentral/rdk-halif-aidl/blob/0.21.0/sensor/current/com/rdk/hal/sensor/motion/IMotionSensorControllerListener.aidl)
+  - [IMotionSensorEventListener](https://github.com/rdkcentral/rdk-halif-aidl/blob/0.21.0/sensor/current/com/rdk/hal/sensor/motion/IMotionSensorEventListener.aidl)
 
 
 ---

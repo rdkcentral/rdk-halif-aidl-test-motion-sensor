@@ -26,7 +26,7 @@ This repository contains the Test Suites(`L1` , `L2` and `L3`) for Motion Sensor
 
 |SNo|Document Name|Document Description|Document Link|
 |---|-------------|--------------------|-------------|
-|1|`HAL` Specification Document|This document provides specific information on the APIs for which tests are written in this module|[HAL Interface](https://github.com/rdkcentral/rdk-halif-aidl/blob/0.15.0/README.md)|
+|1|`HAL` Specification Document|This document provides specific information on the APIs for which tests are written in this module|[HAL Interface](https://github.com/rdkcentral/rdk-halif-aidl/blob/0.21.0/README.md)|
 |2|High Level Test Specification|High Level Test Specification Documentation for the Motion Sensor|[motion_sensor_High_Level_TestSpecification.md](docs/pages/motion_sensor_High_Level_TestSpecification.md)|
 | 5 | `HAL` Specification Document – **Motion Sensor** | Provides specific information on the APIs for which tests are written in the Motion Sensor HAL module | https://github.com/rdkcentral/rdk-halif-aidl/blob/0.15.0/README.md |
 |4|`L3` Low Level Test Specification|`L3` Low Level Test Specification for the Motion Sensor|[motion_sensor_L3_Low-Level_TestSpecification.md](docs/pages/motion_sensor_L3_Low-Level_TestSpecification.md)|
