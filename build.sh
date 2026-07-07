@@ -54,14 +54,8 @@ BINDER_SDK_VERSION_FILE=${BINDER_SDK_VERSION_FILE:-${TOP}/binder_sdk.version}
 TARGET="linux"
 
 ###############################################################################
-# Cross-compile ARM binder runtime (libbinder.so, libutils.so, etc.) from
-# the linux_binder_idl sources using the ARM cross-compiler.
-#
-# build_modules.sh intentionally does not build binder for ARM — it expects
-# the linux-binder Yocto recipe to pre-stage it. For standalone ARM builds
-# outside Yocto, we cross-compile it here with BUILD_HOST_AIDL=OFF so only
-# the runtime libs are built (skipping the AIDL host tools that require a
-# host/x86 compiler).
+# Cross-compile ARM binder runtime from linux_binder_idl (BUILD_HOST_AIDL=OFF,
+# runtime libs only). Used when no pre-built BINDER_SDK_DIR is provided.
 ###############################################################################
 build_arm_binder()
 {
@@ -74,11 +68,7 @@ build_arm_binder()
         return 0
     fi
 
-    # Clone linux_binder_idl directly — not via build_binder.sh.
-    # build_binder.sh would try to build the full host AIDL compiler, but OE
-    # prepends its own native tools (including an older m4) to PATH even when
-    # CC/CXX are unset — that m4 rejects the --gnu flag bison passes and
-    # breaks the AIDL parser build.  A plain git clone avoids PATH entirely.
+    # Clone linux_binder_idl directly to avoid OE PATH issues with build_binder.sh.
     if [ ! -d "${BINDER_REPO_DIR}/.git" ]; then
         echo "Cloning linux_binder_idl for ARM build..."
         local _binder_version
@@ -105,12 +95,8 @@ build_arm_binder()
         }
     fi
 
-    # The OE toolchain sets CC/CXX to "compiler-path <flags>" (flags embedded).
-    # cmake requires CMAKE_C_COMPILER to be just the binary path; flags go into
-    # CMAKE_C_FLAGS_INIT inside a toolchain file.
-    #
-    # cmake 3.22+ auto-loads OEToolchainConfig.cmake even when CMAKE_TOOLCHAIN_FILE
-    # is cleared. Writing our own toolchain file takes precedence over that.
+    # Write a cmake toolchain file to split CC/CXX binary from flags and
+    # override OEToolchainConfig.cmake auto-loading (cmake 3.22+).
     if [ -z "${CC:-}" ] || [ -z "${CXX:-}" ]; then
         echo -e "${BOLD}${RED}ERROR: CC/CXX not set for ARM binder build. Source the cross-toolchain env or set BINDER_SDK_DIR to a prebuilt Binder SDK.${RESET}"
         exit 1
@@ -136,12 +122,7 @@ set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
 TOOLCHAIN_EOF
 
-    # linux_binder_idl cmake auto-enables BUILD_ENV_YOCTO when OECORE_* env
-    # vars are set (line 174 of its CMakeLists.txt), which skips ALL install()
-    # rules so cmake never installs libs or headers.  Temporarily clear these
-    # vars during cmake configure so BUILD_ENV_YOCTO stays OFF.  The sysroot
-    # path is baked into our toolchain file's CMAKE_C_FLAGS_INIT, so clearing
-    # the OE detection vars does not affect cross-compilation.
+    # Clear OECORE_* vars temporarily so BUILD_ENV_YOCTO stays OFF during cmake configure.
     local _OECORE_NATIVE="${OECORE_NATIVE_SYSROOT:-}"
     local _OECORE_TARGET="${OECORE_TARGET_SYSROOT:-}"
     unset OECORE_NATIVE_SYSROOT OECORE_TARGET_SYSROOT
@@ -175,10 +156,7 @@ TOOLCHAIN_EOF
         exit 1
     }
 
-    # Reorganise the install tree to match what build_binder.sh produces for
-    # the linux target, so that build_modules.sh finds the SDK at the expected
-    # paths (out/target/lib/binder/, out/build/include/binder_sdk/).
-    # Always wipe lib/binder/ — Step 1 (x86 build) may have put x86_64 libs here.
+    # Reorganise install tree to match expected SDK layout (lib/binder/, include/binder_sdk/).
     local ARM_BINDER_INCLUDE="${RDK_HAL_DIR}/out/build"
     if [ -d "${ARM_BINDER_SDK}/lib" ]; then
         rm -rf "${ARM_BINDER_SDK}/lib/binder"
@@ -200,10 +178,8 @@ TOOLCHAIN_EOF
 }
 
 ###############################################################################
-# Create convenience softlinks so the Makefile can link with -l<module>-cpp
-# without embedding the version number:
-#   lib<module>-cpp.so  ->  lib<module>-v<version>-cpp.so
-# Versions are read from rdk-halif-aidl/versions_released.yaml.
+# Create unversioned softlinks (lib<module>-cpp.so -> lib<module>-v<ver>-cpp.so)
+# from versions_released.yaml and write halif_generated.mk.
 ###############################################################################
 create_halif_softlinks()
 {
@@ -513,7 +489,8 @@ resolve_halif_versions()
         default_version="current"
     fi
 
-    local component="sensor"
+    local component
+    component="${!HALIF_COMPONENTS[@]}"
     local version
     version=$(grep -m1 "^[[:space:]]*${component}:" "$versions_file" | awk '{print $2}')
     if [ -z "$version" ]; then
@@ -579,6 +556,9 @@ build_ut_core()
 ###############################################################################
 build_halif_test()
 {
+    # Remove stale .o files so sources are always recompiled for the current TARGET.
+    find "${TOP}/src" "${TOP}/test" -name "*.o" -delete 2>/dev/null || true
+
     make -j`nproc` -C ${TOP} TARGET=$TARGET
     if [ $? -ne 0 ]; then
         echo -e "${BOLD}╔════════════════════════════════════════════╗${RESET}"
