@@ -103,7 +103,7 @@ Constraints:
  
 | Test | Description | HAL APIs |
 |------|------------|----------|
-| Verify lifecycle | Start sensor and verify:<br/>• Initial transition **STOPPED → STARTING →  STARTED** when monitoring begins<br/>• While monitoring is active, `getOperationalMode()` succeeds and returns the configured mode<br/>• Monitoring eventually stops call `stop()` call)<br/>• Sensor reports **STARTED → STOPPING → STOPPED** state once monitoring is inactive<br/><br/>No timing assertions are made; only eventual state correctness is validated.  | `start()`, `getState()`, `getOperationalMode()`, `stop()`, `getState()` |
+| Verify lifecycle | Start sensor and verify:<br/>• Initial transition **STOPPED → STARTING →  STARTED** when monitoring begins<br/>• While monitoring is active, `getOperationalMode()` succeeds and returns the configured mode<br/>• Monitoring eventually stops after `stop()` is called<br/>• Sensor reports **STARTED → STOPPING → STOPPED** state once monitoring is inactive<br/><br/>No timing assertions are made; only eventual state correctness is validated. | `start()`, `getState()`, `getOperationalMode()`, `stop()`, `getState()` |
 | Verify configuration methods| Validate configuration APIs are allowed only in STOPPED and rejected otherwise | setSensitivity(), setActiveWindows(), setAutonomousDuringDeepSleep() |
  
 ---
