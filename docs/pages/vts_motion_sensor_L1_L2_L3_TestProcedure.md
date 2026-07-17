@@ -4,7 +4,6 @@
 
 * [Acronyms, Terms and Abbreviations](#acronyms-terms-and-abbreviations)
 * [Build the VTS](#build-the-vts)
-  * [Build Linux Binder](#build-linux-binder)
   * [Build Motion Sensor VTS](#build-motion-sensor-vts-binaries)
   * [Environment Variables](#environment-variables)
   * [Build](#build)
@@ -44,20 +43,6 @@
 
 ## Build the VTS
 
-### Build Linux Binder
-
-The test suite depends on Linux binder with `AIDL` support.
-
-For detailed instructions, refer to: [Linux Binder](https://github.com/rdkcentral/linux_binder_idl/tree/1.0.0)
-
-```bash
-git clone -b develop 'https://github.com/rdkcentral/linux_binder_idl.git'
-cd linux_binder_idl
-./build-linux-binder-aidl.sh 64
-```
-
----
-
 ### Build Motion Sensor VTS Binaries
 
 Clone and build the Motion Sensor test suite:
@@ -73,8 +58,6 @@ cd rdk-halif-aidl-test-motion-sensor
 
 Set environment variables:
 
-- `AIDL_BIN`: Path to the AIDL compiler.
-- `LINUX_BINDER_OUT_DIR`: Path to Linux binder output directory.
 - `UT_CORE_VERSION`: UT-Core version (optional; defaults to latest tag).
 - `RDK_HALIF_AIDL_VERSION`: AIDL HAL spec version (optional; defaults to latest HEAD).
 
@@ -82,10 +65,9 @@ Set environment variables:
 Example:
 
 ```bash
-export UT_CORE_VERSION=5.0.0
-export RDK_HALIF_AIDL_VERSION=0.15.0
-export AIDL_BIN=/path/to/linux_binder_idl/out/aidl
-export LINUX_BINDER_OUT_DIR=/path/to/linux_binder_idl/local/
+export UT_LOG_LEVEL=4
+export UT_CORE_VERSION=5.1.0
+export RDK_HALIF_AIDL_VERSION=0.21.0
 ```
 
 Enable UT logs (optional):

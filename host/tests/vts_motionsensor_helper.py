@@ -213,7 +213,7 @@ class motionSensorHelperClass(utHelperClass):
             triggerThread.start()
 
         self.log.stepStart(
-            f"Test Suite: {MOTIONSENSOR_L3_TEST_SUITE_NAME}  Test Case: {testcase}")
+            f"Test Suit: {MOTIONSENSOR_L3_TEST_SUITE_NAME}  Test Case: {testcase}")
         output = self.utMenu.select(
             MOTIONSENSOR_L3_TEST_SUITE_NAME, testcase, None, self.waitTime, False)
         if triggerThread is not None:
@@ -224,5 +224,5 @@ class motionSensorHelperClass(utHelperClass):
 
         self.log.stepResult(
             results,
-            f"Test Suite: {MOTIONSENSOR_L3_TEST_SUITE_NAME}  Test Case: {testcase}")
+            f"Test Suit: {MOTIONSENSOR_L3_TEST_SUITE_NAME}  Test Case: {testcase}")
         return results
