@@ -168,19 +168,20 @@ void MotionSensorControllerListener::resetActiveWindowFlags()
 /* ========================================================================== */
 
 android::binder::Status MotionSensorEventListener::onEvent(
-    ::com::rdk::hal::sensor::motion::OperationalMode mode)
+    const ::com::rdk::hal::sensor::motion::MotionEvent& event)
 {
-    UT_LOG_INFO("MotionSensorEventListener::onEvent called with mode:[%s]",
-                ::com::rdk::hal::sensor::motion::toString(mode).c_str());
+    UT_LOG_INFO("MotionSensorEventListener::onEvent called with mode:[%s] ts:[%lld]",
+                ::com::rdk::hal::sensor::motion::toString(event.mode).c_str(),
+                static_cast<long long>(event.timestampMonotonicMs));
     {
         lock_guard<mutex> lock(mEventMutex);
-        mEventQueue.push(mode);
+        mEventQueue.push(event);
     }
     mEventCv.notify_all();
     return android::binder::Status::ok();
 }
 
-bool MotionSensorEventListener::getNextEvent(OperationalMode& outMode)
+bool MotionSensorEventListener::getNextEvent(MotionEvent& outEvent)
 {
     UT_LOG_INFO("MotionSensorEventListener::getNextEvent (no-wait) called");
     lock_guard<mutex> lock(mEventMutex);
@@ -189,14 +190,15 @@ bool MotionSensorEventListener::getNextEvent(OperationalMode& outMode)
         UT_LOG_INFO("MotionSensorEventListener::getNextEvent - queue empty, returning false");
         return false;
     }
-    outMode = mEventQueue.front();
+    outEvent = mEventQueue.front();
     mEventQueue.pop();
-    UT_LOG_INFO("MotionSensorEventListener::getNextEvent - returned mode:[%s]",
-                ::com::rdk::hal::sensor::motion::toString(outMode).c_str());
+    UT_LOG_INFO("MotionSensorEventListener::getNextEvent - returned mode:[%s] ts:[%lld]",
+                ::com::rdk::hal::sensor::motion::toString(outEvent.mode).c_str(),
+                static_cast<long long>(outEvent.timestampMonotonicMs));
     return true;
 }
 
-bool MotionSensorEventListener::getNextEvent(OperationalMode& outMode, std::chrono::milliseconds timeout)
+bool MotionSensorEventListener::getNextEvent(MotionEvent& outEvent, std::chrono::milliseconds timeout)
 {
     UT_LOG_INFO("MotionSensorEventListener::getNextEvent (timeout=%lldms) called",
                 static_cast<long long>(timeout.count()));
@@ -208,11 +210,34 @@ bool MotionSensorEventListener::getNextEvent(OperationalMode& outMode, std::chro
                     static_cast<long long>(timeout.count()));
         return false;
     }
-    outMode = mEventQueue.front();
+    outEvent = mEventQueue.front();
     mEventQueue.pop();
-    UT_LOG_INFO("MotionSensorEventListener::getNextEvent - returned mode:[%s]",
-                ::com::rdk::hal::sensor::motion::toString(outMode).c_str());
+    UT_LOG_INFO("MotionSensorEventListener::getNextEvent - returned mode:[%s] ts:[%lld]",
+                ::com::rdk::hal::sensor::motion::toString(outEvent.mode).c_str(),
+                static_cast<long long>(outEvent.timestampMonotonicMs));
     return true;
+}
+
+bool MotionSensorEventListener::getNextEvent(OperationalMode& outMode)
+{
+    MotionEvent event;
+    bool got = getNextEvent(event);
+    if (got)
+    {
+        outMode = event.mode;
+    }
+    return got;
+}
+
+bool MotionSensorEventListener::getNextEvent(OperationalMode& outMode, std::chrono::milliseconds timeout)
+{
+    MotionEvent event;
+    bool got = getNextEvent(event, timeout);
+    if (got)
+    {
+        outMode = event.mode;
+    }
+    return got;
 }
 
 bool MotionSensorEventListener::hasEvent()
@@ -227,7 +252,7 @@ void MotionSensorEventListener::resetEventQueue()
 {
     UT_LOG_INFO("MotionSensorEventListener::resetEventQueue called");
     lock_guard<mutex> lock(mEventMutex);
-    queue<OperationalMode> empty;
+    queue<MotionEvent> empty;
     swap(mEventQueue, empty);
 }
 

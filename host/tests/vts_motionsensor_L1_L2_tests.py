@@ -106,11 +106,11 @@ class VTS_MOTIONSENSOR_L1_L2_Tests(motionSensorHelperClass):
                     finalresult = False
             else:
                 for test_case in test_cases:
-                    self.log.stepStart(f'Test Suite: {testsuite_name} Test Case: {test_case}')
+                    self.log.stepStart(f'Test Suit: {testsuite_name} Test Case: {test_case}')
                     result = self.runTest(testsuite, test_case)
                     if not result:
                         finalresult = False
-                    self.log.stepResult(result, f'Test Suite: {testsuite_name} Test Case: {test_case}')
+                    self.log.stepResult(result, f'Test Suit: {testsuite_name} Test Case: {test_case}')
 
         return finalresult
 

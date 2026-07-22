@@ -213,16 +213,16 @@ UT_ADD_TEST(VTS_L3_MOTIONSENSOR, EventDetection)
 
     /* Step 2: No spurious/stale events before test begins */
     {
-        OperationalMode staleMode;
-        bool gotStale = evtLsn->getNextEvent(staleMode, std::chrono::milliseconds(200));
+        MotionEvent staleEvent;
+        bool gotStale = evtLsn->getNextEvent(staleEvent, std::chrono::milliseconds(200));
         UT_ASSERT_FALSE(gotStale);
     }
 
     /* Step 3: Listener-gate — unregister, confirm silence, then re-register */
     MOTIONSENSOR_UNREGISTER_EVENT_SUCCESS(sensor, evtLsn);
     {
-        OperationalMode preRegMode;
-        bool gotPreReg = evtLsn->getNextEvent(preRegMode, std::chrono::milliseconds(500));
+        MotionEvent preRegEvent;
+        bool gotPreReg = evtLsn->getNextEvent(preRegEvent, std::chrono::milliseconds(500));
         UT_ASSERT_FALSE(gotPreReg);
     }
     MOTIONSENSOR_REGISTER_EVENT_SUCCESS(sensor, evtLsn);
@@ -245,14 +245,16 @@ UT_ADD_TEST(VTS_L3_MOTIONSENSOR, EventDetection)
     int32_t eventsReceived = 0;
     for (int32_t evtNum = 0; evtNum < cfg.maxExpectedEvents; ++evtNum)
     {
-        OperationalMode receivedMode;
-        bool gotEvent = evtLsn->getNextEvent(receivedMode, std::chrono::milliseconds(cfg.eventTimeoutMs));
+        MotionEvent receivedEvent;
+        bool gotEvent = evtLsn->getNextEvent(receivedEvent, std::chrono::milliseconds(cfg.eventTimeoutMs));
         if (!gotEvent)
             break;   /* no more events arriving within timeout */
-        UT_ASSERT_EQUAL(receivedMode, opMode);
+        UT_ASSERT_EQUAL(receivedEvent.mode, opMode);
+        UT_ASSERT_TRUE(receivedEvent.timestampMonotonicMs > 0);
         eventsReceived++;
-        UT_LOG_INFO("[L3 EventDetection] Event %d/%d received: mode=%s",
-            eventsReceived, cfg.maxExpectedEvents, modeName);
+        UT_LOG_INFO("[L3 EventDetection] Event %d/%d received: mode=%s ts=%lld",
+            eventsReceived, cfg.maxExpectedEvents, modeName,
+            static_cast<long long>(receivedEvent.timestampMonotonicMs));
     }
     UT_ASSERT_TRUE(eventsReceived >= 1);
 
@@ -263,8 +265,8 @@ UT_ADD_TEST(VTS_L3_MOTIONSENSOR, EventDetection)
 
     evtLsn->resetEventQueue();
     {
-        OperationalMode postStopMode;
-        bool gotPostStop = evtLsn->getNextEvent(postStopMode, std::chrono::milliseconds(500));
+        MotionEvent postStopEvent;
+        bool gotPostStop = evtLsn->getNextEvent(postStopEvent, std::chrono::milliseconds(500));
         UT_ASSERT_FALSE(gotPostStop);
     }
 
@@ -272,8 +274,8 @@ UT_ADD_TEST(VTS_L3_MOTIONSENSOR, EventDetection)
     MOTIONSENSOR_UNREGISTER_EVENT_SUCCESS(sensor, evtLsn);
     evtLsn->resetEventQueue();
     {
-        OperationalMode unregMode;
-        bool gotUnreg = evtLsn->getNextEvent(unregMode, std::chrono::milliseconds(2000));
+        MotionEvent unregEvent;
+        bool gotUnreg = evtLsn->getNextEvent(unregEvent, std::chrono::milliseconds(2000));
         UT_ASSERT_FALSE(gotUnreg);
     }
 
@@ -351,14 +353,15 @@ UT_ADD_TEST(VTS_L3_MOTIONSENSOR, ActiveWindowBehavior)
      * numEvents>0 → window open → event must arrive (PASS if true).
      * numEvents=0 → window closed → event suppressed → getNextEvent
      *   times out (PASS if false). */
-    OperationalMode receivedMode;
-    bool gotEvent = evtLsn->getNextEvent(receivedMode, std::chrono::milliseconds(cfg.eventTimeoutMs));
+    MotionEvent receivedEvent;
+    bool gotEvent = evtLsn->getNextEvent(receivedEvent, std::chrono::milliseconds(cfg.eventTimeoutMs));
     if (cfg.numEvents > 0)
     {
         UT_LOG_INFO("[L3 ActiveWindowBehavior] Phase-1: expecting event — gotEvent=%s",
             gotEvent ? "true" : "false");
         UT_ASSERT_TRUE(gotEvent);
-        UT_ASSERT_EQUAL(receivedMode, OperationalMode::MOTION);
+        UT_ASSERT_EQUAL(receivedEvent.mode, OperationalMode::MOTION);
+        UT_ASSERT_TRUE(receivedEvent.timestampMonotonicMs > 0);
     }
     else
     {
@@ -385,9 +388,10 @@ UT_ADD_TEST(VTS_L3_MOTIONSENSOR, ActiveWindowBehavior)
     UT_ASSERT_EQUAL(lastState, State::STARTED);
 
     /* Host injects event again — now with no window restriction */
-    bool gotEvent2 = evtLsn->getNextEvent(receivedMode, std::chrono::milliseconds(cfg.eventTimeoutMs));
+    bool gotEvent2 = evtLsn->getNextEvent(receivedEvent, std::chrono::milliseconds(cfg.eventTimeoutMs));
     UT_ASSERT_TRUE(gotEvent2);
-    UT_ASSERT_EQUAL(receivedMode, OperationalMode::MOTION);
+    UT_ASSERT_EQUAL(receivedEvent.mode, OperationalMode::MOTION);
+    UT_ASSERT_TRUE(receivedEvent.timestampMonotonicMs > 0);
 
     MOTIONSENSOR_STOP_SUCCESS(controller);
     MOTIONSENSOR_WAIT_FOR_STATE(sensor, State::STOPPED, lastState);
@@ -477,15 +481,16 @@ UT_ADD_TEST(VTS_L3_MOTIONSENSOR, DeepSleepAutonomy)
     /* Primary: host sends simulateIdleDeepSleep then MOTION event.
      * autonomy ON  → event delivered + inDeepSleep auto-cleared (device wakes).
      * autonomy OFF → event gated (device stays asleep). */
-    OperationalMode primaryMode;
-    bool gotPrimary = evtLsn->getNextEvent(primaryMode, std::chrono::milliseconds(cfg.eventTimeoutMs));
+    MotionEvent primaryEvent;
+    bool gotPrimary = evtLsn->getNextEvent(primaryEvent, std::chrono::milliseconds(cfg.eventTimeoutMs));
     UT_LOG_INFO("[L3 DeepSleepAutonomy] primary event: expected=%s got=%s",
         cfg.autonomyEnabled ? "arrived" : "dropped",
         gotPrimary ? "arrived" : "dropped");
     if (cfg.autonomyEnabled)
     {
         UT_ASSERT_TRUE(gotPrimary);
-        UT_ASSERT_EQUAL(primaryMode, OperationalMode::MOTION);
+        UT_ASSERT_EQUAL(primaryEvent.mode, OperationalMode::MOTION);
+        UT_ASSERT_TRUE(primaryEvent.timestampMonotonicMs > 0);
     }
     else
     {
@@ -496,15 +501,16 @@ UT_ADD_TEST(VTS_L3_MOTIONSENSOR, DeepSleepAutonomy)
      * autonomy ON  → inDeepSleep was cleared by the primary; probe must arrive.
      * autonomy OFF → device still asleep; probe must also be gated. */
     evtLsn->resetEventQueue();
-    OperationalMode probeMode;
-    bool probeArrived = evtLsn->getNextEvent(probeMode, std::chrono::milliseconds(3000));
+    MotionEvent probeEvent;
+    bool probeArrived = evtLsn->getNextEvent(probeEvent, std::chrono::milliseconds(3000));
     UT_LOG_INFO("[L3 DeepSleepAutonomy] wake probe: expected=%s got=%s",
         cfg.expectWakeup ? "arrived" : "dropped",
         probeArrived ? "arrived" : "dropped");
     if (cfg.expectWakeup)
     {
         UT_ASSERT_TRUE(probeArrived);
-        UT_ASSERT_EQUAL(probeMode, OperationalMode::MOTION);
+        UT_ASSERT_EQUAL(probeEvent.mode, OperationalMode::MOTION);
+        UT_ASSERT_TRUE(probeEvent.timestampMonotonicMs > 0);
     }
     else
     {

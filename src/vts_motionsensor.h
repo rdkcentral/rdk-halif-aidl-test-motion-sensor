@@ -86,6 +86,7 @@
 #include "com/rdk/hal/sensor/motion/TimeWindow.h"
 #include "com/rdk/hal/sensor/motion/LastEventInfo.h"
 #include "com/rdk/hal/sensor/motion/OperationalMode.h"
+#include "com/rdk/hal/sensor/motion/MotionEvent.h"
 
 #include "vts_motionsensor_helper_functions.h"
 
@@ -679,8 +680,10 @@ public:
     virtual ~MotionSensorEventListener() = default;
 
     android::binder::Status onEvent(
-        ::com::rdk::hal::sensor::motion::OperationalMode mode) override;
+        const ::com::rdk::hal::sensor::motion::MotionEvent& event) override;
 
+    bool getNextEvent(::com::rdk::hal::sensor::motion::MotionEvent& outEvent);
+    bool getNextEvent(::com::rdk::hal::sensor::motion::MotionEvent& outEvent, std::chrono::milliseconds timeout);
     bool getNextEvent(OperationalMode& outMode);
     bool getNextEvent(OperationalMode& outMode, std::chrono::milliseconds timeout);
     bool hasEvent();
@@ -689,7 +692,7 @@ public:
 private:
     mutex mEventMutex;
     condition_variable mEventCv;
-    queue<OperationalMode> mEventQueue;
+    std::queue<::com::rdk::hal::sensor::motion::MotionEvent> mEventQueue;
 };
 
 #endif // __VTS_MOTIONSENSOR_H__
