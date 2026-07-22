@@ -67,7 +67,7 @@ Example:
 ```bash
 export UT_LOG_LEVEL=4
 export UT_CORE_VERSION=5.1.0
-export RDK_HALIF_AIDL_VERSION=0.21.0
+export RDK_HALIF_AIDL_VERSION=0.22.0
 ```
 
 Enable UT logs (optional):
@@ -80,6 +80,14 @@ export ENABLE_UT_INFO_LOGGING=1
 
 ### Build
 
+The build script will:
+- Clone `rdk-halif-aidl` at the configured version and bootstrap its Binder SDK via `build_binder.sh`
+- Build the `sensor` HAL module via `build_modules.sh` and stage headers
+- Install Binder service manager, headers, and libraries from the SDK
+- Clone and build the ut-core framework (including `libut_control.so`)
+- Build the MotionSensor VTS test binary
+- Create installation tarball
+
 ```bash
 ./build.sh Target=<Target-name>
 
@@ -89,6 +97,15 @@ export ENABLE_UT_INFO_LOGGING=1
 Build output:
 - Binaries under `build/bin/`
 - Tarball `vts-motionsensor.tar.gz` under `build/bin/`
+
+### Build Options
+
+```bash
+./build.sh Target=<target>    # Build for specified target (linux, arm)
+./build.sh clean              # Clean build artifacts
+./build.sh dist_clean         # Clean all build and checkout folders
+./build.sh help               # Display help message
+```
 
 ---
 
