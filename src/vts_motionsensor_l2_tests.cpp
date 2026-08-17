@@ -305,16 +305,22 @@ UT_ADD_TEST(VTS_L2_MOTIONSENSOR, ConfigurationMethodsRequireStopped)
         MOTIONSENSOR_GET_ACTIVE_WINDOWS_SUCCESS(controllerHandle, clearedWindows);
         UT_ASSERT_TRUE(clearedWindows.empty());
 
-        // setAutonomousDuringDeepSleep must succeed
-        MOTIONSENSOR_SET_AUTONOMOUS_SUCCESS(controllerHandle, true);
-
         // isAutonomousDuringDeepSleepEnabled must reflect the value set above
-        bool autonomousEnabled = false;
-        MOTIONSENSOR_GET_AUTONOMOUS_SUCCESS(controllerHandle, autonomousEnabled, caps.supportsDeepSleepAutonomy);
-
-        // Disable and re-verify
-        MOTIONSENSOR_SET_AUTONOMOUS_SUCCESS(controllerHandle, false);
-        MOTIONSENSOR_GET_AUTONOMOUS_SUCCESS(controllerHandle, autonomousEnabled, false);
+        bool autonomousEnabled;
+        if (caps.supportsDeepSleepAutonomy)
+        {
+            MOTIONSENSOR_SET_AUTONOMOUS_SUCCESS(controllerHandle, false, true);
+            MOTIONSENSOR_GET_AUTONOMOUS_SUCCESS(controllerHandle, autonomousEnabled, false);
+            MOTIONSENSOR_SET_AUTONOMOUS_SUCCESS(controllerHandle, true, true);
+            MOTIONSENSOR_GET_AUTONOMOUS_SUCCESS(controllerHandle, autonomousEnabled, true);
+            MOTIONSENSOR_SET_AUTONOMOUS_SUCCESS(controllerHandle, false, true);
+            MOTIONSENSOR_GET_AUTONOMOUS_SUCCESS(controllerHandle, autonomousEnabled, false);
+        }
+        else
+        {
+            MOTIONSENSOR_SET_AUTONOMOUS_FAILURE(controllerHandle, true, Status::EX_UNSUPPORTED_OPERATION);
+            MOTIONSENSOR_GET_AUTONOMOUS_SUCCESS(controllerHandle, autonomousEnabled, false);
+        }
 
         // Cleanup
         MOTIONSENSOR_CLOSE_SUCCESS(sensorHandle, controllerHandle);

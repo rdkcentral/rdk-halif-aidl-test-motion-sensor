@@ -507,7 +507,7 @@ typedef com::rdk::hal::sensor::motion::IMotionSensor::Id MotionSensorId;
         UT_ASSERT_FALSE(_aidl_return); \
     } while (0)
 
-#define MOTIONSENSOR_SET_AUTONOMOUS_SUCCESS(controllerHandle, enabled) \
+#define MOTIONSENSOR_SET_AUTONOMOUS_SUCCESS(controllerHandle, enabled, supportsAutonomy) \
     do { \
         ::android::binder::Status status; \
         bool _aidl_return = false; \
@@ -519,9 +519,17 @@ typedef com::rdk::hal::sensor::motion::IMotionSensor::Id MotionSensorId;
             UT_Control_GetMapString(bool_mapTable_motionsensor, _aidl_return), \
             UT_Control_GetMapString(bool_mapTable_motionsensor, status.isOk()), \
             UT_Control_GetMapString(statusMotionSensorException_mapTable, status.exceptionCode())); \
-        UT_ASSERT_TRUE(status.isOk()); \
-        UT_ASSERT_TRUE(_aidl_return); \
-        UT_ASSERT_EQUAL(status.exceptionCode(), Status::EX_NONE); \
+        if (supportsAutonomy) \
+        { \
+            UT_ASSERT_TRUE(status.isOk()); \
+            UT_ASSERT_EQUAL(status.exceptionCode(), Status::EX_NONE); \
+            UT_ASSERT_TRUE(_aidl_return); \
+        } \
+        else  \
+        { \
+            UT_ASSERT_FALSE(status.isOk()); \
+            UT_ASSERT_EQUAL(status.exceptionCode(), Status::EX_UNSUPPORTED_OPERATION); \
+        } \
     } while (0)
 
 #define MOTIONSENSOR_SET_AUTONOMOUS_FAILURE(controllerHandle, enabled, expectedException) \
@@ -554,9 +562,7 @@ typedef com::rdk::hal::sensor::motion::IMotionSensor::Id MotionSensorId;
             UT_Control_GetMapString(statusMotionSensorException_mapTable, status.exceptionCode())); \
         UT_ASSERT_TRUE(status.isOk()); \
         UT_ASSERT_EQUAL(status.exceptionCode(), Status::EX_NONE); \
-        if (supportsAutonomy) \
-            UT_ASSERT_TRUE(enabled); \
-        else \
+        if (!supportsAutonomy) \
             UT_ASSERT_FALSE(enabled); \
     } while (0)
 
