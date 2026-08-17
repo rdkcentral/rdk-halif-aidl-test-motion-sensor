@@ -283,6 +283,180 @@ UT_ADD_TEST(VTS_L3_MOTIONSENSOR, EventDetection)
     MOTIONSENSOR_REGISTER_EVENT_SUCCESS(sensor, evtLsn);
 }
 
+UT_ADD_TEST(VTS_L3_MOTIONSENSOR, NoMotionTimerReset)
+{
+    const char *configNode = "EventDetection";
+    motionSensorL3EventTestConfig_t cfg;
+
+    UT_ASSERT_EQUAL_FATAL(
+        vts_motionsensor_parse_eventtest_config(
+            VTS_MOTIONSENSOR_TEST_CONFIG_PATH,
+            gModuleName,
+            gTestGroup,
+            configNode,
+            cfg),
+        UT_STATUS_OK);
+
+    SensorTuple *tup = nullptr;
+    UT_ASSERT_TRUE_FATAL(
+        getSensorAtIndex(cfg.sensorIndex, tup));
+
+    auto& sensor     = std::get<1>(*tup);
+    auto& ctrlLsn    = std::get<2>(*tup);
+    auto& evtLsn     = std::get<3>(*tup);
+    auto& controller = std::get<4>(*tup);
+
+    const int iterations = cfg.maxExpectedEvents;
+
+    ctrlLsn->resetStateQueue();
+    evtLsn->resetEventQueue();
+
+    StartConfig startCfg;
+    startCfg.operationalMode    = OperationalMode::NO_MOTION;
+    startCfg.noMotionSeconds    = cfg.noMotionSeconds;
+    startCfg.activeStartSeconds = 0;
+    startCfg.activeStopSeconds  = 0;
+
+    MOTIONSENSOR_START_SUCCESS(
+        controller,
+        startCfg);
+
+    State lastState;
+
+    MOTIONSENSOR_WAIT_FOR_STATE(
+        sensor,
+        State::STARTED,
+        lastState);
+
+    UT_ASSERT_EQUAL(
+        lastState,
+        State::STARTED);
+
+    UT_LOG_INFO(
+        "[L3 NoMotionTimerReset] Started sensor=%d "
+        "noMotionSeconds=%d iterations=%d",
+        cfg.sensorIndex,
+        cfg.noMotionSeconds,
+        iterations);
+
+    if (iterations == 0)
+    {
+        /*
+        * Phase 3:
+        * no_motion_seconds == 0.
+        * No NO_MOTION event must be generated.
+        */
+        MotionEvent event;
+
+        bool received =
+            evtLsn->getNextEvent(
+                event,
+                std::chrono::milliseconds(cfg.eventTimeoutMs));
+
+        UT_ASSERT_FALSE(received);
+
+        UT_LOG_INFO(
+            "[L3 NoMotionTimerReset] "
+            "no_motion_seconds=0: "
+            "NO_MOTION correctly not generated");
+    }
+    else
+    {
+        for (int i = 0; i < iterations; ++i)
+        {
+            UT_LOG_INFO(
+                "[L3 NoMotionTimerReset] "
+                "Waiting for NO_MOTION %d/%d",
+                i + 1,
+                iterations);
+
+            MotionEvent event;
+
+            int timeoutMs = cfg.eventTimeoutMs;
+            if (cfg.noMotionSeconds > 0)
+            {
+                int requiredNoMotionWaitMs =
+                    static_cast<int>(cfg.noMotionSeconds * 1000) + 2000;
+
+                timeoutMs =
+                    std::max(timeoutMs, requiredNoMotionWaitMs);
+            }
+            bool received =
+                evtLsn->getNextEvent(
+                    event,
+                    std::chrono::milliseconds(timeoutMs));
+
+            UT_ASSERT_TRUE(received);
+            if (!received)
+            {
+                UT_LOG_ERROR(
+                    "[L3 NoMotionTimerReset] "
+                    "NO_MOTION %d/%d not received within %d ms",
+                    i + 1,
+                    iterations,
+                    timeoutMs);
+                break;
+            }
+
+            UT_ASSERT_EQUAL(
+                event.mode,
+                OperationalMode::NO_MOTION);
+
+            UT_ASSERT_TRUE(
+                event.timestampMonotonicMs > 0);
+
+            UT_LOG_INFO(
+                "[L3 NoMotionTimerReset] "
+                "NO_MOTION %d/%d received ts=%lld",
+                i + 1,
+                iterations,
+                static_cast<long long>(
+                    event.timestampMonotonicMs));
+
+            /*
+            * NO_MOTION is one-shot until another MOTION arrives.
+            */
+            if (cfg.noMotionSeconds > 0)
+            {
+                const int noMotionMs =
+                    cfg.noMotionSeconds * 1000;
+
+                const int duplicateCheckMs =
+                    std::min(1000, noMotionMs - 100);
+
+                if (duplicateCheckMs > 0)
+                {
+                    MotionEvent duplicate;
+
+                    bool duplicateReceived =
+                        evtLsn->getNextEvent(
+                            duplicate,
+                            std::chrono::milliseconds(
+                                duplicateCheckMs));
+
+                    UT_LOG_INFO(
+                        "[L3 NoMotionTimerReset] "
+                        "Duplicate check: timeout=%dms received=%s",
+                        duplicateCheckMs,
+                        duplicateReceived ? "true" : "false");
+
+                    UT_ASSERT_FALSE(duplicateReceived);
+                }
+            }
+        }
+    }
+    MOTIONSENSOR_STOP_SUCCESS(controller);
+
+    MOTIONSENSOR_WAIT_FOR_STATE(
+        sensor,
+        State::STOPPED,
+        lastState);
+
+    UT_ASSERT_EQUAL(
+        lastState,
+        State::STOPPED);
+}
+
 /**
  * @brief Validate that active windows gate event emission correctly.
  *

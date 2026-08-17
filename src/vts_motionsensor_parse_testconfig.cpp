@@ -67,7 +67,6 @@ UT_status_t vts_motionsensor_parse_eventtest_config(
     config.activeStopSeconds  = (int32_t)ut_kvp_getUInt32Field(kvp, (node + ".active_stop_seconds").c_str());
     config.eventTimeoutMs     = (int32_t)ut_kvp_getUInt32Field(kvp, (node + ".event_timeout_ms").c_str());
     config.maxExpectedEvents = (int32_t)ut_kvp_getUInt32Field(kvp, (node + ".max_expected_events").c_str());
-    if (config.maxExpectedEvents <= 0) config.maxExpectedEvents = 1;
 
     char modeStr[64] = {};
     ut_kvp_getStringField(kvp, (node + ".operational_mode").c_str(), modeStr, sizeof(modeStr));
