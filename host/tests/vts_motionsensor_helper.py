@@ -99,7 +99,7 @@ class motionSensorHelperClass(utHelperClass):
                     component_root, "test_configuration/vts_l3_MotionSensor.yaml"
                 ).replace("\\", "/"),
                 "moduleHFPFile": os.path.join(
-                    component_root, "profiles/hfp-motionsensor-vcomponent.yaml"
+                    component_root, "profiles/hfp-motionsensor.yaml"
                 ).replace("\\", "/"),
             }
             artifactBaseDir = os.path.join(component_root, "host").replace("\\", "/")

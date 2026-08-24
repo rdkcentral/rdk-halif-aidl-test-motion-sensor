@@ -51,7 +51,7 @@ L3 tests require external stimulus injected by the Python host via the UT contro
 - High Level Test Specification — [motion_sensor_High_Level_TestSpecification.md](motion_sensor_High_Level_TestSpecification.md)
 - L2 Test Specification — [motion_sensor_L2_Low-Level_TestSpecification.md](motion_sensor_L2_Low-Level_TestSpecification.md)
 - L3 YAML Configuration — [test_configuration/vts_l3_MotionSensor.yaml](../../test_configuration/vts_l3_MotionSensor.yaml)
-- HFP Profile — [profiles/hfp-motionsensor-vcomponent.yaml](../../profiles/hfp-motionsensor-vcomponent.yaml)
+- HFP Profile — [profiles/hfp-motionsensor.yaml](../../profiles/hfp-motionsensor.yaml)
 - Motion Sensor AIDL Interfaces:
   - [IMotionSensorManager](https://github.com/rdkcentral/rdk-halif-aidl/blob/main/sensor/current/com/rdk/hal/sensor/motion/IMotionSensorManager.aidl)
   - [IMotionSensor](https://github.com/rdkcentral/rdk-halif-aidl/blob/main/sensor/current/com/rdk/hal/sensor/motion/IMotionSensor.aidl)

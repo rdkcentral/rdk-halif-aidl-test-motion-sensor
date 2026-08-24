@@ -65,7 +65,7 @@ The following test cases validate the Motion Sensor HAL module at L2. All tests 
 - The sensor must be in `State::STOPPED` before the test begins.
 
 **Dependencies:**
-- HFP profile: [profiles/hfp-motionsensor-vcomponent.yaml](../../profiles/hfp-motionsensor-vcomponent.yaml)
+- HFP profile: [profiles/hfp-motionsensor.yaml](../../profiles/hfp-motionsensor.yaml)
 
 **User Interaction:**
 None
@@ -108,7 +108,7 @@ None
 - The sensor must be in `State::STOPPED` before the test begins.
 
 **Dependencies:**
-- HFP profile: [profiles/hfp-motionsensor-vcomponent.yaml](../../profiles/hfp-motionsensor-vcomponent.yaml)
+- HFP profile: [profiles/hfp-motionsensor.yaml](../../profiles/hfp-motionsensor.yaml)
 
 **User Interaction:**
 None
