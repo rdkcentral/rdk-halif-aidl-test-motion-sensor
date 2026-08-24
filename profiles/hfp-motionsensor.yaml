@@ -1,0 +1,60 @@
+#** *****************************************************************************
+# *
+# * If not stated otherwise in this file or this component's LICENSE file the
+# * following copyright and licenses apply:
+# *
+# * Copyright 2026 RDK Management
+# *
+# * Licensed under the Apache License, Version 2.0 (the "License");
+# * you may not use this file except in compliance with the License.
+# * You may obtain a copy of the License at
+# *
+# *
+# * http://www.apache.org/licenses/LICENSE-2.0
+# *
+# * Unless required by applicable law or agreed to in writing, software
+# * distributed under the License is distributed on an "AS IS" BASIS,
+# * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# * See the License for the specific language governing permissions and
+# * limitations under the License.
+# *
+#** ******************************************************************************
+# profiles/hfp-motionsensor.yaml
+# Hardware Feature Profile (HFP) for MotionSensor.
+# Describes the capabilities and default configuration of motion sensors
+# on this platform. Parsed by vts_motionsensor_parse_hfp().
+
+sensor:
+  motion:
+    - id: 0
+      sensorName: "PIR-Front-1"
+
+      sensitivity_range:
+        minSensitivity: 1
+        maxSensitivity: 10
+
+      supportsDeepSleepAutonomy: true
+
+      operational_modes:
+        - MOTION
+        - NO_MOTION
+
+      defaultStartConfig:
+        operationalMode: MOTION
+        noMotionSeconds: 5
+        activeStartSeconds: 0
+        activeStopSeconds: 0
+
+      active_windows:
+        - startTimeOfDaySeconds: 32400   # 09:00:00
+          endTimeOfDaySeconds: 61200     # 17:00:00
+        - startTimeOfDaySeconds: 72000   # 20:00:00
+          endTimeOfDaySeconds: 79200     # 22:00:00
+
+      requirements:
+        min_reaction_time_ms: 500
+
+      notes:
+        - "Front-facing PIR motion detector."
+        - "Supports autonomous operation."
+        - "Active windows can be configured via IMotionSensorController.setActiveWindows()."
