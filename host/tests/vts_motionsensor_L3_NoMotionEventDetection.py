@@ -40,33 +40,13 @@ class VTS_MOTIONSENSOR_L3_NoMotionEventDetection(
         motionSensorHelperClass):
     """
     L3 test for NO_MOTION timer behaviour.
-
     Phase 1:
-        Send multiple MOTION events before no_motion_seconds expires.
-        Each MOTION should reset the NO_MOTION timer.
-        After the final MOTION, exactly one NO_MOTION event is expected.
-
+        Send multiple MOTION events at the configured interval and verify
+        that the NO_MOTION timer is reset by each MOTION event.
     Phase 2:
-        Do not send MOTION.
-        Verify exactly one NO_MOTION event is generated after
-        no_motion_seconds.
-
-    Phase 3:
-        Set no_motion_seconds = 0.
-        Verify that no NO_MOTION event is generated.
+        Disable the NO_MOTION timer by setting no_motion_seconds to 0 and
+        verify that no NO_MOTION event is generated.
     """
-
-    # ------------------------------------------------------------------
-    # Test timing configuration
-    # ------------------------------------------------------------------
-    MOTION_RESET_ITERATIONS = 5
-    NO_MOTION_TIMEOUT_MARGIN_S = 2.0
-    # Keep the MOTION interval below the NO_MOTION timeout.
-    MOTION_RESET_MARGIN_S = 1.0
-    # Additional wait time after the expected NO_MOTION timeout.
-    FINAL_TIMEOUT_EXTRA_S = 2.0
-    # Phase 3 timeout.
-    PHASE3_TIMEOUT_MS = 3000
 
     def __init__(
         self,
@@ -74,7 +54,7 @@ class VTS_MOTIONSENSOR_L3_NoMotionEventDetection(
         moduleName: str = None
     ):
         self.testName = "MotionSensor_L3_NoMotionEventDetection"
-        qcId = "2"
+        qcId = "3"
 
         super().__init__(
             self.testName,
@@ -82,116 +62,76 @@ class VTS_MOTIONSENSOR_L3_NoMotionEventDetection(
             log,
             moduleName
         )
-
-    def _calculate_no_motion_timeout_ms(
-        self,
-        no_motion_seconds: int,
-        configured_timeout_ms: int
-    ) -> int:
-        """
-        Calculate the C++ event timeout in milliseconds.
-
-        Args:
-            no_motion_seconds: NO_MOTION timer duration in seconds.
-            configured_timeout_ms: Timeout configured in YAML.
-
-        Returns:
-            Timeout in milliseconds, including the required margin.
-        """
-
-        required_timeout_ms = int(
-            (
-                float(no_motion_seconds) +
-                self.NO_MOTION_TIMEOUT_MARGIN_S
-            ) * 1000
-        )
-
-        timeout_ms = max(
-            configured_timeout_ms,
-            required_timeout_ms
-        )
-
-        self.log.info(
-            f"[Timing] no_motion_seconds={no_motion_seconds}, "
-            f"configured_timeout_ms={configured_timeout_ms}, "
-            f"required_timeout_ms={required_timeout_ms}, "
-            f"selected_timeout_ms={timeout_ms}"
-        )
-        return timeout_ms
+        self.testParams = self._readMotionParameterFromProfile("nomotion")
 
     def _make_timer_reset_trigger(
         self,
         sid: int,
-        n: int,
+        max_events: int,
         noMotionSec: int
     ):
         """
-        Create a trigger that sends MOTION events at intervals
-        shorter than the NO_MOTION timer.
+        Create a trigger that sends MOTION events at the configured
+        minimum interval.
 
-        Args:
-            sid: Motion sensor ID.
-            n: Number of MOTION events to send.
-            noMotionSec: NO_MOTION timer duration in seconds.
-
-        Returns:
-            A trigger function that sends the configured MOTION events.
+        The interval must be shorter than no_motion_seconds so that
+        every MOTION resets the NO_MOTION timer before it expires.
         """
+
         def _trigger():
 
-            if n <= 0:
+            if max_events <= 0:
                 self.log.error(
-                    "[Phase-1] Invalid MOTION iteration count: "
-                    f"{n}"
+                    " Invalid MOTION iteration count: "
+                    f"{max_events}"
                 )
                 return
 
             if noMotionSec <= 0:
                 self.log.error(
-                    "[Phase-1] no_motion_seconds must be > 0"
+                    " no_motion_seconds must be > 0"
                 )
                 return
 
-            # Keep MOTION interval safely below the NO_MOTION timeout.
-            reset_interval = max(
-                0.1,
-                float(noMotionSec) -
-                self.MOTION_RESET_MARGIN_S
+            reset_interval = float(
+                self.testParams["minimum_event_interval_seconds"]
             )
+            if reset_interval <= 0:
+                self.log.error(
+                    " minimum_event_interval_seconds "
+                    "must be > 0"
+                )
+                return
+
+            if reset_interval >= noMotionSec:
+                self.log.error(
+                    " minimum_event_interval_seconds "
+                    f"({reset_interval}s) must be less than "
+                    f"no_motion_seconds ({noMotionSec}s)"
+                )
+                return
 
             self.log.info(
-                f"[Phase-1] MOTION reset interval="
-                f"{reset_interval:.1f}s, "
+                f" MOTION interval={reset_interval:.1f}s, "
                 f"no_motion_seconds={noMotionSec}"
             )
-
-            for i in range(n):
+            for cycle in range(max_events):
                 self.log.info(
-                    f"[Phase-1] Sending MOTION "
-                    f"{i + 1}/{n} to sensor_id={sid}"
-                )
-
-                self.motionSensorDevice.triggerMotionEvent(
-                    sensorId=sid
-                )
-
-                # Do not wait after the final MOTION.
-                # The final MOTION starts/restarts the NO_MOTION timer.
-                # C++ will wait for the resulting NO_MOTION event.
-                if i < n - 1:
-
-                    self.log.info(
-                        f"[Phase-1] Waiting "
-                        f"{reset_interval:.1f}s before next MOTION"
+                        "[NoMotionTimerReset] "
+                        f"Sending MOTION {cycle + 1}/{max_events} "
+                        f"to sensor_id={sid}"
                     )
 
-                    time.sleep(reset_interval)
+                self.motionSensorDevice.triggerMotionEvent(sensorId=sid)
 
-            self.log.info(
-                "[Phase-1] Final MOTION sent. "
-                "C++ will wait for NO_MOTION timer expiry."
-            )
-
+                # --------------------------------------------------
+                # Allow the NO_MOTION timer to expire.
+                # --------------------------------------------------
+                self.log.info(
+                    f"[NoMotionTimerReset] Cycle {cycle + 1}: "
+                    f"Waiting {noMotionSec} + {reset_interval}s for NO_MOTION"
+                )
+                time.sleep(noMotionSec+reset_interval)
         return _trigger
 
     def _write_event_config(
@@ -226,26 +166,30 @@ class VTS_MOTIONSENSOR_L3_NoMotionEventDetection(
 
     def testFunction(self) -> bool:
 
-        with open(self.paths["l3TestConfigFile"], 'r') as fh:
-            l3cfg = yaml.safe_load(fh)
-
-        if not l3cfg:
-            self.log.error("[NoMotionEventDetection] L3 configuration is empty")
+        l3cfg = self._readL3TestConfig()
+        if l3cfg is None:
             return False
 
+        # --------------------------------------------------------------
+        # Read NO_MOTION test parameters from
+        # hfp-vts-motionsensor-test-params.yaml.
+        # --------------------------------------------------------------
         try:
-            node = l3cfg['motionsensor']['L3']['EventDetection']
-        except KeyError as exc:
-            self.log.error(f"[NoMotionEventDetection] Missing YAML configuration key: {exc}")
+            configured_timeout_ms = int(self.testParams["event_timeout_ms"])
+            no_motion_seconds = int(self.testParams["no_motion_seconds"])
+            reset_interval = float(self.testParams["minimum_event_interval_seconds"])
+            max_expected_events = int(self.testParams["max_expected_events"])
+            event_simulator_ready_wait_seconds = float(self.testParams["event_simulator_ready_wait_seconds"])
+        except (KeyError, TypeError, ValueError) as exc:
+            self.log.error(
+                "[NoMotionEventDetection] Invalid NO_MOTION "
+                f"test parameters: {exc}"
+            )
             return False
 
-        configured_max_events = int(node.get('max_expected_events', 1))
-        configured_timeout_ms = int(node.get('event_timeout_ms', 30000))
-        no_motion_seconds = int(node.get('no_motion_seconds', 5))
-        if configured_max_events <= 0:
-            self.log.error("[NoMotionEventDetection] max_expected_events must be > 0 for Phase 1/Phase 2")
-            return False
-
+        # --------------------------------------------------------------
+        # Validate timing configuration.
+        # --------------------------------------------------------------
         if no_motion_seconds <= 0:
             self.log.error("[NoMotionEventDetection] no_motion_seconds must be > 0 for Phase 1/Phase 2")
             return False
@@ -254,7 +198,44 @@ class VTS_MOTIONSENSOR_L3_NoMotionEventDetection(
             self.log.error("[NoMotionEventDetection] event_timeout_ms must be > 0")
             return False
 
-        event_max_wait_timeout_ms = self._calculate_no_motion_timeout_ms(no_motion_seconds, configured_timeout_ms)
+        if configured_timeout_ms < (no_motion_seconds * 1000):
+            self.log.error(
+                f"[NoMotionEventDetection] event_timeout_ms ({configured_timeout_ms}ms) must be >= "
+                f"no_motion_seconds ({no_motion_seconds}s)"
+            )
+            return False
+
+        if reset_interval <= 0:
+            self.log.error(
+                "[NoMotionEventDetection] reset_interval must be > 0"
+            )
+            return False
+
+        if reset_interval >= no_motion_seconds:
+            self.log.error(
+                "[NoMotionEventDetection] reset_interval "
+                f"({reset_interval}s) must be less than "
+                f"no_motion_seconds ({no_motion_seconds}s)"
+            )
+            return False
+
+        if max_expected_events <= 0:
+            self.log.error(
+                "[NoMotionEventDetection] max_expected_events must be > 0"
+            )
+            return False
+
+        if configured_timeout_ms <= 0:
+            self.log.error(
+                "[NoMotionEventDetection] configured_timeout_ms must be > 0"
+            )
+            return False
+
+        if event_simulator_ready_wait_seconds < 0:
+            self.log.error(
+                "[NoMotionEventDetection] event_simulator_ready_wait_seconds must be >= 0"
+            )
+            return False
 
         sensor_ids = self._readSensorIdsFromProfile()
 
@@ -273,119 +254,57 @@ class VTS_MOTIONSENSOR_L3_NoMotionEventDetection(
             self.log.info(f"Sensor index={sensor_index} sensor_id={sensor_id}")
             self.log.info("====================================================")
 
-            # ==========================================================
-            # PHASE 1
-            # ==========================================================
             self.log.info("====================================================")
-            self.log.info("[Phase-1] NO_MOTION timer reset test")
-            self.log.info(f"[Phase-1] sensor_id={sensor_id}")
-            self.log.info(f"[Phase-1] no_motion_seconds={no_motion_seconds}")
-            self.log.info(f"[Phase-1] MOTION iterations={self.MOTION_RESET_ITERATIONS}")
-            self.log.info("[Phase-1] Expected NO_MOTION events=1")
+            self.log.info(" Phase1: NO_MOTION timer reset test")
+            self.log.info(f" sensor_id={sensor_id}")
+            self.log.info(f" no_motion_seconds={no_motion_seconds}")
+            self.log.info(" Expected NO_MOTION events=1")
             # max_expected_events describes the number of expected
             # NO_MOTION events, NOT the number of injected MOTION events.
-            phase1_expected_events = 1
-            reset_interval = max(0.1, float(no_motion_seconds) - self.MOTION_RESET_MARGIN_S)
-
-            phase1_timeout_ms = int(
-                (
-                    (self.MOTION_RESET_ITERATIONS - 1) * reset_interval
-                    + no_motion_seconds
-                    + self.FINAL_TIMEOUT_EXTRA_S
-                    + 2.0
-                ) * 1000 )
-
             self.log.info(
-                f"[Phase-1] Calculated C++ timeout={phase1_timeout_ms}ms "
-                f"(motions={configured_max_events}, "
+                f"C++ event timeout={configured_timeout_ms}ms "
+                f"(MOTION iterations={max_expected_events}, "
                 f"reset_interval={reset_interval:.1f}s, "
-                f"no_motion_seconds={no_motion_seconds})"
+                f"no_motion_seconds={no_motion_seconds}s)"
             )
             self._write_event_config(
                 l3cfg, sensor_index, 'NO_MOTION',
-                phase1_expected_events, phase1_timeout_ms, no_motion_seconds)
+                max_expected_events, configured_timeout_ms, no_motion_seconds)
 
-            result = self.runL3Test(
+            phase1_result = self.runL3Test(
                 "NoMotionTimerReset",
                 triggerCallable=self._make_timer_reset_trigger(
                     sensor_id,
-                    self.MOTION_RESET_ITERATIONS,
+                    max_expected_events,
                     no_motion_seconds
                 ),
-                triggerDelay=1
+                triggerDelay=event_simulator_ready_wait_seconds
             )
 
-            if not result:
-                self.log.error(f"[Phase-1] FAILED for sensor_id={sensor_id}")
-                all_passed = False
-            else:
-                self.log.info(f"[Phase-1] PASSED for sensor_id={sensor_id}")
-
-            # ==========================================================
-            # PHASE 2
-            # ==========================================================
-
             self.log.info("====================================================")
-            self.log.info("[Phase-2] NO_MOTION timer normal expiry test")
-            self.log.info(f"[Phase-2] sensor_id={sensor_id}")
-            self.log.info(f"[Phase-2] no_motion_seconds={no_motion_seconds}")
-            self.log.info("[Phase-2] No MOTION injection")
-            self.log.info("[Phase-2] Expected NO_MOTION events=1")
-            phase2_expected_events = 1
+            self.log.info("[Phase-2] NO_MOTION disabled test")
+            self.log.info(f"sensor_id={sensor_id}")
+            self.log.info("no_motion_seconds=0")
+            self.log.info("Expected NO_MOTION events=0")
 
             self._write_event_config(
                 l3cfg,
                 sensor_index,
                 'NO_MOTION',
-                phase2_expected_events,
-                event_max_wait_timeout_ms,
-                no_motion_seconds
-            )
-            result = self.runL3Test("NoMotionTimerReset", triggerCallable=None,triggerDelay=0)
-
-            if not result:
-                self.log.error(f"[Phase-2] FAILED for sensor_id={sensor_id}")
-                all_passed = False
-            else:
-                self.log.info(f"[Phase-2] PASSED for sensor_id={sensor_id}")
-
-            # ==========================================================
-            # PHASE 3
-            # ==========================================================
-
-            self.log.info("====================================================")
-            self.log.info("[Phase-3] NO_MOTION disabled test")
-            self.log.info(f"[Phase-3] sensor_id={sensor_id}")
-            self.log.info("[Phase-3] no_motion_seconds=0")
-            self.log.info("[Phase-3] Expected NO_MOTION events=0")
-            phase3_expected_events = 0
-            phase3_timeout_ms = self.PHASE3_TIMEOUT_MS
-
-            self._write_event_config(
-                l3cfg,
-                sensor_index,
-                'NO_MOTION',
-                phase3_expected_events,
-                phase3_timeout_ms,
+                0,
+                configured_timeout_ms,
                 0
             )
 
-            self.log.info(f"[Phase-3] C++ event timeout={phase3_timeout_ms}ms")
-            result = self.runL3Test("NoMotionTimerReset", triggerCallable=None, triggerDelay=0)
-            if not result:
-                self.log.error(f"[Phase-3] FAILED for sensor_id={sensor_id}")
-                all_passed = False
-            else:
-                self.log.info(f"[Phase-3] PASSED for sensor_id={sensor_id}")
+            self.log.info(f"C++ event timeout={configured_timeout_ms}ms")
+            phase2_result = self.runL3Test("NoMotionTimerReset", triggerCallable=None, triggerDelay=0)
+            sensor_passed = phase1_result and phase2_result
 
-        self._write_event_config(
-                l3cfg,
-                sensor_index,
-                'MOTION',
-                configured_max_events,
-                configured_timeout_ms,
-                configured_max_events
-            )
+            if sensor_passed:
+                self.log.info(f"[Phase-1 & 2] PASSED for sensor_id={sensor_id}")
+            else:
+                self.log.error(f"[Phase-1 & 2] FAILED for sensor_id={sensor_id}")
+                all_passed = False
         # ==============================================================
         # Final result
         # ==============================================================

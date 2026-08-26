@@ -83,10 +83,12 @@ class motionSensorHelperClass(utHelperClass):
         unified_root = os.path.normpath(os.path.join(dir_path, "../../../..")).replace("\\", "/")
 
         if not isUnifiedTest:
+            hfpProfile = os.path.join(dir_path, self.deviceTestSetup.get("profile")).replace("\\", "/")
             self.paths = {
                 "testMenuConfigFile": MOTIONSENSOR_TEST_MENU_CONFIGURATION_FILE,
                 "l3TestConfigFile": MOTIONSENSOR_L3_TEST_CONFIG_FILE,
-                "moduleHFPFile": os.path.join(dir_path, self.deviceTestSetup.get("profile")).replace("\\", "/"),
+                "moduleHFPFile": hfpProfile,
+                "moduleHFPTestParamFile": os.path.join(os.path.dirname(hfpProfile), "hfp-vts-motionsensor-test-params.yaml").replace("\\", "/"),
             }
             artifactBaseDir = dir_path
             targetCfgBase = self.targetWorkspace
@@ -100,6 +102,9 @@ class motionSensorHelperClass(utHelperClass):
                 ).replace("\\", "/"),
                 "moduleHFPFile": os.path.join(
                     component_root, "profiles/hfp-motionsensor.yaml"
+                ).replace("\\", "/"),
+                "moduleHFPTestParamFile": os.path.join(
+                    component_root, "profiles/hfp-vts-motionsensor-test-params.yaml"
                 ).replace("\\", "/"),
             }
             artifactBaseDir = os.path.join(component_root, "host").replace("\\", "/")
@@ -157,6 +162,89 @@ class motionSensorHelperClass(utHelperClass):
             self.cpe.get("prompt"),
             controllerPort)
 
+    def _readMotionParameterFromProfile(self, testMode: str = "motion") -> dict:
+        """Read MotionSensor test parameters from the motion HFP section."""
+        try:
+            with open(self.paths["moduleHFPTestParamFile"], "r") as fh:
+                profile = yaml.safe_load(fh)
+
+            motionTestParams = profile.get("sensor", {}).get(testMode, {})
+
+            if not motionTestParams:
+                self.log.error(
+                    f"[_readMotionConfigFromProfile] "
+                    f"sensor.{testMode} configuration not found"
+                )
+                return {}
+
+            self.log.debug(
+                "[_readMotionConfigFromProfile] Motion config: "
+                f"{motionTestParams}"
+            )
+
+            return motionTestParams
+
+        except Exception as exc:
+            self.log.error(
+                f"[_readMotionConfigFromProfile] "
+                f"Could not read '{self.paths['moduleHFPTestParamFile']}': {exc}"
+            )
+            return {}
+
+    def _readL3TestConfig(self):
+        """Read and validate an L3 test configuration."""
+
+        try:
+            with open(self.paths["l3TestConfigFile"], "r") as fh:
+                l3cfg = yaml.safe_load(fh)
+
+            if not isinstance(l3cfg, dict):
+                self.log.error(
+                    "[L3Config] Invalid L3 YAML: expected a mapping"
+                )
+                return None
+
+        except FileNotFoundError:
+            self.log.error(
+                "[L3Config] L3 config file not found: %s",
+                self.paths["l3TestConfigFile"]
+            )
+            return None
+
+        except yaml.YAMLError as exc:
+            self.log.error(
+                "[L3Config] Failed to parse L3 YAML '%s': %s",
+                self.paths["l3TestConfigFile"],
+                exc
+            )
+            return None
+
+        except OSError as exc:
+            self.log.error(
+                "[L3Config] Failed to read L3 YAML '%s': %s",
+                self.paths["l3TestConfigFile"],
+                exc
+            )
+            return None
+
+        try:
+            testConfig = l3cfg["motionsensor"]["L3"]["EventDetection"]
+
+            if not isinstance(testConfig, dict):
+                self.log.error(
+                    "[L3Config] %s must be a mapping",
+                    "EventDetection"
+                )
+                return None
+
+        except (KeyError, TypeError):
+            self.log.error(
+                "[L3Config] Missing motionsensor.L3.%s in L3 YAML",
+                "EventDetection"
+            )
+            return None
+        return l3cfg
+
     def _readSensorIdsFromProfile(self) -> list:
         """
         Reads sensor IDs from the local HFP profile YAML (``moduleHFPFile``).
@@ -203,7 +291,7 @@ class motionSensorHelperClass(utHelperClass):
             self.hal_session, self.paths["l3TestConfigFile"], self.l3TestConfigFolder)
         self.utMenu.start()
 
-        # Start trigger AFTER the test binary is running (CEC pattern).
+        # Start trigger AFTER the test binary is running.
         triggerThread = None
         if triggerCallable is not None:
             def _run():

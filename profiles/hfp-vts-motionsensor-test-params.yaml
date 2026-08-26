@@ -1,0 +1,75 @@
+#** *****************************************************************************
+# *
+# * If not stated otherwise in this file or this component's LICENSE file the
+# * following copyright and licenses apply:
+# *
+# * Copyright 2026 RDK Management
+# *
+# * Licensed under the Apache License, Version 2.0 (the "License");
+# * you may not use this file except in compliance with the License.
+# * You may obtain a copy of the License at
+# *
+# *
+# * http://www.apache.org/licenses/LICENSE-2.0
+# *
+# * Unless required by applicable law or agreed to in writing, software
+# * distributed under the License is distributed on an "AS IS" BASIS,
+# * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# * See the License for the specific language governing permissions and
+# * limitations under the License.
+# *
+#** ******************************************************************************
+# profiles/hfp-motionsensor-vcomponent.yaml
+# Hardware Feature Profile (HFP) for MotionSensor.
+# Describes the capabilities and default configuration of motion sensors
+# on this platform. Parsed by vts_motionsensor_parse_hfp().
+
+sensor:
+  motion:
+      no_motion_seconds: 5
+      active_start_seconds: 5
+      active_stop_seconds: 5
+      max_expected_events: 5
+
+      # Maximum time the test waits for an expected motion event.
+      # Adjust based on the stimulus generation method and SOS.
+      event_timeout_ms: 30000 # update based on the SOS
+
+      # Minimum interval between consecutive motion stimuli.
+      # For virtual devices/simulators, the host should wait at least
+      # this long before generating the next event.
+      # For real-world stimuli (e.g. human motion or fan ON/OFF),
+      # event timing is naturally variable and this value is only
+      # used as a minimum spacing where applicable.
+      minimum_event_interval_seconds: 2 
+
+      # Time allowed after the sensor starts before the event source
+      # begins generating stimuli.
+      # Applicable to virtual devices/event simulators.
+      # For real-world stimuli (e.g. human motion or fan ON/OFF),
+      # this represents the minimum settling time before the stimulus
+      # is applied.
+      event_simulator_ready_wait_seconds: 3
+  nomotion:
+      no_motion_seconds: 5
+      active_start_seconds: 5
+      active_stop_seconds: 5
+      # max_reset_events * no_motion_seconds + offset
+      event_timeout_ms: 30000
+
+      # Minimum interval between simulated MOTION events.
+      # This is used only by the virtual-device event simulator.
+      # On a real device, human motion or an external stimulus
+      # (for example, turning a fan ON/OFF) naturally determines
+      # when motion events are generated.
+      minimum_event_interval_seconds: 2
+
+      # Additional wait time allowed for the NO_MOTION event to be
+      # delivered after the configured no_motion_seconds expires.
+      # This accounts for sensor processing, scheduling, and event
+      # delivery latency.
+      no_motion_timeout_margin_seconds: 2
+      # No motion timer reset N no of Motion will reset & N no number of No motion will be verified
+      max_expected_events: 5
+      max_reset_events: 3
+      event_simulator_ready_wait_seconds: 3
