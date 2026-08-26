@@ -612,6 +612,13 @@ typedef com::rdk::hal::sensor::motion::IMotionSensor::Id MotionSensorId;
             UT_Control_GetMapString(statusMotionSensorException_mapTable, status.exceptionCode())); \
         UT_ASSERT_TRUE(status.isOk()); \
         UT_ASSERT_EQUAL(status.exceptionCode(), Status::EX_NONE); \
+        for (size_t i = 0; i < windows.size(); ++i) { \
+            UT_LOG_DEBUG( \
+                "  windows[%zu]: startTimeOfDaySeconds=%d, endTimeOfDaySeconds=%d", \
+                i, \
+                windows[i].startTimeOfDaySeconds, \
+                windows[i].endTimeOfDaySeconds); \
+        } \
     } while (0)
 
 #define MOTIONSENSOR_CLEAR_ACTIVE_WINDOWS_SUCCESS(controllerHandle) \
