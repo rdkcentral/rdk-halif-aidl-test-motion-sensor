@@ -120,14 +120,10 @@ UT_status_t vts_motionsensor_parse_deepsleep_config(
     const std::string node = std::string(module) + "." + testGroup + "." + testName;
 
     config.sensorIndex              = (int32_t)ut_kvp_getUInt32Field(kvp, (node + ".sensor_index").c_str());
-    config.deepSleepDurationSeconds = (int32_t)ut_kvp_getUInt32Field(kvp, (node + ".deep_sleep_duration_seconds").c_str());
     config.eventTimeoutMs           = (int32_t)ut_kvp_getUInt32Field(kvp, (node + ".event_timeout_ms").c_str());
-    config.autonomyEnabled          = ut_kvp_getBoolField(kvp, (node + ".autonomy_enabled").c_str());
-    config.expectWakeup             = ut_kvp_getBoolField(kvp, (node + ".expect_wakeup").c_str());
 
-    UT_LOG_INFO("[MOTIONSENSOR_TESTCONFIG] %s: sensorIndex=%d sleepDuration=%d timeoutMs=%d autonomy=%d expectWakeup=%d",
-        testName, config.sensorIndex, config.deepSleepDurationSeconds, config.eventTimeoutMs,
-        (int)config.autonomyEnabled, (int)config.expectWakeup);
+    UT_LOG_INFO("[MOTIONSENSOR_TESTCONFIG] %s: sensorIndex=%d timeoutMs=%d",
+        testName, config.sensorIndex, config.eventTimeoutMs);
 
     kvp_destroy_instance(kvp);
     return UT_STATUS_OK;

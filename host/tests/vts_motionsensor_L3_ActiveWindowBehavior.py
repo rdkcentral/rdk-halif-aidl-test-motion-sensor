@@ -31,15 +31,6 @@ from raft.framework.core.logModule import logModule
 from vts_motionsensor_helper import motionSensorHelperClass
 
 
-# Seconds to wait after Phase-1 finishes before sending the Phase-2 trigger.
-# Must be long enough for the C++ test to complete stop/clearWindows/start.
-_INTER_PHASE_DELAY_S = 5.0
-
-# Minimum triggerDelay (seconds after utMenu.start()) before the first trigger
-# is sent.  Allows the C++ binary time to parse config, call setActiveWindows,
-# start the sensor, and enter getNextEvent.
-_TRIGGER_START_DELAY_S = 3.0
-
 # 10 window scenarios for the ActiveWindowBehavior test.
 # dynamic: false  -> use window_start_seconds / window_end_seconds as-is.
 # dynamic: true   -> compute actual times as (now_secs + offset) % 86400.
@@ -77,6 +68,7 @@ class VTS_MOTIONSENSOR_L3_ActiveWindowBehavior(motionSensorHelperClass):
     def __init__(self, log: logModule = None, moduleName: str = None):
         self.testName = "MotionSensor_L3_ActiveWindowBehavior"
         super().__init__(self.testName, "3", log, moduleName)
+        self.testParams = self._readMotionParameterFromProfile("activewindow")
 
     # ------------------------------------------------------------------
     # Helpers
@@ -187,7 +179,7 @@ class VTS_MOTIONSENSOR_L3_ActiveWindowBehavior(motionSensorHelperClass):
 
         Phase-1 triggers are fired every ``trigger_interval_s`` until Phase-1
         succeeds (event delivered quickly) OR until ``timeout_s`` elapses.  The
-        Phase-2 trigger is then sent ``_INTER_PHASE_DELAY_S`` seconds after the
+        Phase-2 trigger is then sent ``phase_delay`` seconds after the
         Phase-1 period ends.
 
         Timing guarantee:
@@ -195,7 +187,7 @@ class VTS_MOTIONSENSOR_L3_ActiveWindowBehavior(motionSensorHelperClass):
           + ``getNextEvent()`` sequence begins.  The callable runs Phase-1 for the
           full ``timeout_s`` window, which covers both the fast-success path
           (Phase-1 done in <1 s) and the unexpected timeout path.  After
-          ``timeout_s + _INTER_PHASE_DELAY_S`` the Phase-2 stimulus arrives safely
+          ``timeout_s + phase_delay`` the Phase-2 stimulus arrives safely
           inside the Phase-2 ``getNextEvent`` window.
 
         Args:
@@ -210,6 +202,7 @@ class VTS_MOTIONSENSOR_L3_ActiveWindowBehavior(motionSensorHelperClass):
             # Phase 1 — periodic triggers while window is open.
             # Run for the full timeout_s so the callable always finishes at the
             # same wall-clock point regardless of how quickly Phase-1 resolves.
+            phase_delay = float(self.testParams["phase_delay_seconds"])
             deadline = time.monotonic() + timeout_s
             trigger_count = 0
             while True:
@@ -221,10 +214,10 @@ class VTS_MOTIONSENSOR_L3_ActiveWindowBehavior(motionSensorHelperClass):
                 time.sleep(min(trigger_interval_s, remaining))
             self.log.info(
                 f"[trigger] Phase-1 period complete, sent {trigger_count} trigger(s); "
-                f"waiting {_INTER_PHASE_DELAY_S:.1f}s for Phase-2 setup (stop/clear/start)")
+                f"waiting {phase_delay:.1f}s for Phase-2 setup (stop/clear/start)")
             # Wait for C++ to complete stop / clearActiveWindows / resetEventQueue
             # / start / enter getNextEvent before sending the Phase-2 stimulus.
-            time.sleep(_INTER_PHASE_DELAY_S)
+            time.sleep(phase_delay)
             self.motionSensorDevice.triggerMotionEvent(sensorId=sensor_id)
             self.log.info("[trigger] Phase-2 trigger sent")
         return _trigger
@@ -238,7 +231,7 @@ class VTS_MOTIONSENSOR_L3_ActiveWindowBehavior(motionSensorHelperClass):
         The callable fires MOTION events every ``trigger_interval_s`` for the full
         Phase-1 duration (``timeout_s`` seconds).  All events are suppressed by the
         HAL service active-window filter; the C++ ``getNextEvent`` eventually times
-        out.  After the Phase-1 timeout the callable waits ``_INTER_PHASE_DELAY_S``
+        out.  After the Phase-1 timeout the callable waits ``phase_delay``
         for Phase-2 setup, then fires a single Phase-2 trigger (no window -> passes).
 
         Args:
@@ -252,6 +245,7 @@ class VTS_MOTIONSENSOR_L3_ActiveWindowBehavior(motionSensorHelperClass):
         """
         def _trigger():
             # Phase 1 — periodic triggers (all suppressed by window gating)
+            phase_delay = float(self.testParams["phase_delay_seconds"])
             deadline = time.monotonic() + timeout_s
             trigger_count = 0
             while True:
@@ -263,9 +257,9 @@ class VTS_MOTIONSENSOR_L3_ActiveWindowBehavior(motionSensorHelperClass):
                 time.sleep(min(trigger_interval_s, remaining))
             self.log.info(
                 f"[trigger] Phase-1 complete (all suppressed), sent {trigger_count} "
-                f"trigger(s); waiting {_INTER_PHASE_DELAY_S:.1f}s for Phase-2 setup")
+                f"trigger(s); waiting {phase_delay:.1f}s for Phase-2 setup")
             # Wait for C++ Phase-2 (stop + clearWindows + start)
-            time.sleep(_INTER_PHASE_DELAY_S)
+            time.sleep(phase_delay)
             # Phase 2 — single trigger with no window restriction
             self.motionSensorDevice.triggerMotionEvent(sensorId=sensor_id)
             self.log.info("[trigger] Phase-2 trigger sent")
@@ -304,10 +298,10 @@ class VTS_MOTIONSENSOR_L3_ActiveWindowBehavior(motionSensorHelperClass):
         """
         with open(self.paths["l3TestConfigFile"], 'r') as fh:
             l3cfg = yaml.safe_load(fh)
-        test_node  = l3cfg['motionsensor']['L3']['EventDetection']
-        timeout_ms = int(test_node.get('event_timeout_ms', 15000)) or 15000
-        trigger_interval_s = float(test_node.get('trigger_interval_seconds', 3))
-        default_events = int(test_node.get('max_expected_events', 5 )) or 5
+
+        timeout_ms = int(self.testParams["event_timeout_ms"])
+        trigger_interval_s = float(self.testParams["minimum_event_interval_seconds"])
+        start_delay = float(self.testParams["event_simulator_ready_wait_seconds"])
 
         timeout_s         = timeout_ms / 1000.0
         window_scenarios  = _WINDOW_SCENARIOS
@@ -423,7 +417,9 @@ class VTS_MOTIONSENSOR_L3_ActiveWindowBehavior(motionSensorHelperClass):
                     f"expect={'event' if expect_event else 'suppression'}")
 
                 # Write scenario-specific window to YAML
-                l3cfg['motionsensor']['L3']['EventDetection']['sensor_index']          = sensor_index
+                l3cfg['motionsensor']['L3']['EventDetection']['sensor_index']       = sensor_index
+                l3cfg['motionsensor']['L3']['EventDetection']['operational_mode']   = 'MOTION'
+                l3cfg['motionsensor']['L3']['EventDetection']['event_timeout_ms']    = timeout_ms
                 l3cfg['motionsensor']['L3']['EventDetection']['window_start_seconds']  = start
                 l3cfg['motionsensor']['L3']['EventDetection']['window_end_seconds']    = end
                 l3cfg['motionsensor']['L3']['EventDetection']['max_expected_events']   = 1 if expect_event else 0
@@ -445,7 +441,7 @@ class VTS_MOTIONSENSOR_L3_ActiveWindowBehavior(motionSensorHelperClass):
                 cpp_result = self.runL3Test(
                     "ActiveWindowBehavior",
                     triggerCallable=trigger,
-                    triggerDelay=_TRIGGER_START_DELAY_S)
+                    triggerDelay=start_delay)
 
                 # Evaluate result
                 passed = cpp_result
@@ -465,10 +461,6 @@ class VTS_MOTIONSENSOR_L3_ActiveWindowBehavior(motionSensorHelperClass):
 
                 if not passed:
                     all_passed = False
-
-        l3cfg['motionsensor']['L3']['EventDetection']['max_expected_events'] = default_events
-        with open(self.paths["l3TestConfigFile"], 'w') as fh:
-            yaml.dump(l3cfg, fh, default_flow_style=False, sort_keys=False)
 
         return all_passed
 

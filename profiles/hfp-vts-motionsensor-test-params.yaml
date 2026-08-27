@@ -50,6 +50,7 @@ sensor:
       # this represents the minimum settling time before the stimulus
       # is applied.
       event_simulator_ready_wait_seconds: 3
+      phase_delay_seconds: 5
   nomotion:
       no_motion_seconds: 5
       active_start_seconds: 5
@@ -73,3 +74,13 @@ sensor:
       max_expected_events: 5
       max_reset_events: 3
       event_simulator_ready_wait_seconds: 3
+
+  activewindow:
+      no_motion_seconds: 5
+      active_start_seconds: 5
+      active_stop_seconds: 5
+      max_expected_events: 5
+      event_timeout_ms: 15000 # update based on the SOS
+      minimum_event_interval_seconds: 3
+      event_simulator_ready_wait_seconds: 3
+      phase_delay_seconds: 5
