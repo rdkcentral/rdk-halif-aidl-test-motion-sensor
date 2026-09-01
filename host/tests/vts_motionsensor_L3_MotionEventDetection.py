@@ -43,22 +43,23 @@ class VTS_MOTIONSENSOR_L3_MotionEventDetection(motionSensorHelperClass):
     sensor it updates ``sensor_index`` in the L3 YAML, uploads it to the
     target, runs the C++ MotionEventDetection test case, and injects exactly
     ``num_motion_events`` MOTION stimuli via the control-plane one per C++
-    loop iteration, spaced ``INTER_EVENT_DELAY_S`` seconds apart.
+    loop iteration, spaced ``interEventDelay`` seconds apart.
     """
 
-    INTER_EVENT_DELAY_S = 2.0   # seconds between successive event injections
 
     def __init__(self, log: logModule = None, moduleName: str = None):
         self.testName = "MotionSensor_L3_MotionEventDetection"
         qcId = "1"
         super().__init__(self.testName, qcId, log, moduleName)
+        self.testParams = self._readMotionParameterFromProfile("motion")
 
     def _make_trigger(self, sid: int, n: int):
         """Return a no-arg callable that fires *n* MOTION stimuli for sensor *sid*."""
         def _trigger():
+            interEventDelay = float(self.testParams["minimum_event_interval_seconds"])
             for i in range(n):
                 if i > 0:
-                    time.sleep(VTS_MOTIONSENSOR_L3_MotionEventDetection.INTER_EVENT_DELAY_S)
+                    time.sleep(interEventDelay)
                 self.motionSensorDevice.triggerMotionEvent(sensorId=sid)
         return _trigger
 
@@ -80,13 +81,14 @@ class VTS_MOTIONSENSOR_L3_MotionEventDetection(motionSensorHelperClass):
             bool: True if all sensors passed, False otherwise.
         """
         # Read test parameters from the local L3 config YAML.
-        with open(self.paths["l3TestConfigFile"], 'r') as fh:
-            l3cfg = yaml.safe_load(fh)
-        test_node  = l3cfg['motionsensor']['L3']['EventDetection']
-        # Guard against stale 0 written by ActiveWindowBehavior (gated scenarios).
-        max_events = int(test_node.get('max_expected_events', 5)) or 5
-        timeout_ms = int(test_node.get('event_timeout_ms', 15000)) or 15000
-        trigger_delay = 3.0  # fire well within event_timeout_ms
+        l3cfg = self._readL3TestConfig()
+        if l3cfg is None:
+            return False
+
+        max_events = int(self.testParams["max_expected_events"])
+        timeout_ms = int(self.testParams["event_timeout_ms"])
+        trigger_delay = float(self.testParams["event_simulator_ready_wait_seconds"])
+
 
         # Read all sensor IDs from the HFP profile.
         sensor_ids = self._readSensorIdsFromProfile()

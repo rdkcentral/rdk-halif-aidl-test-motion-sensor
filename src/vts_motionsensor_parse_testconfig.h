@@ -63,10 +63,7 @@ typedef struct motionSensorL3ActiveWindowTestConfig
 typedef struct motionSensorL3DeepSleepTestConfig
 {
     int32_t  sensorIndex;
-    int32_t  deepSleepDurationSeconds;
     int32_t  eventTimeoutMs;
-    bool     autonomyEnabled;   /**< Set by Python per run; C++ passes to setAutonomousDuringDeepSleep */
-    bool     expectWakeup;      /**< true = probe trigger must arrive; false = must be gated */
 } motionSensorL3DeepSleepTestConfig_t;
 
 /**
