@@ -19,7 +19,7 @@
 # * limitations under the License.
 # *
 #** ******************************************************************************
-# profiles/hfp-motionsensor-vcomponent.yaml
+# profiles/hfp-motionsensor.yaml
 # Hardware Feature Profile (HFP) for MotionSensor.
 # Describes the capabilities and default configuration of motion sensors
 # on this platform. Parsed by vts_motionsensor_parse_hfp().

@@ -224,25 +224,25 @@ UT_ADD_TEST(VTS_L2_MOTIONSENSOR, ConfigurationMethodsRequireStopped)
         UT_ASSERT_TRUE(idOpt.has_value());
 
         android::sp<IMotionSensor> sensorHandle;
-        android::sp<MotionSensorControllerListener> controllerListener = android::sp<MotionSensorControllerListener>::make();
-        android::sp<IMotionSensorController> controllerHandle;
+        android::sp<MotionSensorControllerListener> controllerListener1 = android::sp<MotionSensorControllerListener>::make();
+        android::sp<IMotionSensorController> controllerHandle1;
         MotionSensorId sensorIdObj;
         sensorIdObj.value = idOpt->value;
 
         MOTIONSENSOR_GET_SENSOR_SUCCESS(gMOTIONSENSORMGRHandle, sensorIdObj, sensorHandle);
-        MOTIONSENSOR_OPEN_SUCCESS(sensorHandle, controllerListener, controllerHandle);
+        MOTIONSENSOR_OPEN_SUCCESS(sensorHandle, controllerListener1, controllerHandle1);
 
         // Retrieve capabilities to get valid sensitivity range
         Capabilities caps;
         MOTIONSENSOR_GET_CAPABILITIES_SUCCESS(sensorHandle, caps);
 
-        // ----------------------------------------------------------------
+        // =================================================================
         // Phase 1: verify all config APIs are rejected while STARTED
-        // ----------------------------------------------------------------
+        // =================================================================
         StartConfig config;
         config.operationalMode = OperationalMode::MOTION;
         config.noMotionSeconds = 30;
-        MOTIONSENSOR_START_SUCCESS(controllerHandle, config);
+        MOTIONSENSOR_START_SUCCESS(controllerHandle1, config);
 
         // Wait for STARTED state before exercising config APIs
         State phaseState;
@@ -250,76 +250,170 @@ UT_ADD_TEST(VTS_L2_MOTIONSENSOR, ConfigurationMethodsRequireStopped)
         UT_ASSERT_EQUAL(phaseState, State::STARTED);
 
         // setSensitivity must fail with EX_ILLEGAL_STATE
-        MOTIONSENSOR_SET_SENSITIVITY_FAILURE(controllerHandle, caps.minSensitivity,
+        MOTIONSENSOR_SET_SENSITIVITY_FAILURE(controllerHandle1, caps.minSensitivity,
                                              Status::EX_ILLEGAL_STATE);
 
         // setActiveWindows must fail with EX_ILLEGAL_STATE
-        std::vector<TimeWindow> windows;
-        TimeWindow w;
-        w.startTimeOfDaySeconds = 28800; // 08:00
-        w.endTimeOfDaySeconds   = 72000; // 20:00
-        windows.push_back(w);
-        MOTIONSENSOR_SET_ACTIVE_WINDOWS_FAILURE(controllerHandle, windows,
+        std::vector<TimeWindow> newSetWindows;
+        TimeWindow window;
+        window.startTimeOfDaySeconds = 28800;
+        window.endTimeOfDaySeconds = 72000;
+        newSetWindows.push_back(window);
+
+        MOTIONSENSOR_SET_ACTIVE_WINDOWS_FAILURE(controllerHandle1, newSetWindows,
                                                 Status::EX_ILLEGAL_STATE);
 
-        // setAutonomousDuringDeepSleep must fail with EX_ILLEGAL_STATE
         ::android::binder::Status status;
         bool retVal;
-        status = controllerHandle->setAutonomousDuringDeepSleep(true, &retVal);
+        status = controllerHandle1->setAutonomousDuringDeepSleep(true, &retVal);
         UT_ASSERT_FALSE(status.isOk());
         UT_ASSERT_EQUAL(status.exceptionCode(), Status::EX_ILLEGAL_STATE);
 
         // Stop to return to STOPPED
-        MOTIONSENSOR_STOP_SUCCESS(controllerHandle);
+        MOTIONSENSOR_STOP_SUCCESS(controllerHandle1);
 
         // Wait for STOPPED state before exercising config APIs
         MOTIONSENSOR_WAIT_FOR_STATE(sensorHandle, State::STOPPED, phaseState);
         UT_ASSERT_EQUAL(phaseState, State::STOPPED);
 
-        // ----------------------------------------------------------------
+        // =================================================================
         // Phase 2: verify all config APIs succeed in STOPPED state
-        // ----------------------------------------------------------------
+        // =================================================================
+        int32_t oldSensitivity, newSensitivity, expectedSensitivity;
+        bool expectedAutonomousState = false, originalAutonomousState = false;
+        std::vector<TimeWindow> defaultWindows, retrieved1, retrieved2, retrieved3;
 
-        // setSensitivity must succeed
-        MOTIONSENSOR_SET_SENSITIVITY_SUCCESS(controllerHandle, caps.minSensitivity);
+        // ------------------------------------------------------------
+        // Controller1: Verify configuration persists across controller reopen
+        // ------------------------------------------------------------
 
-        // Verify getSensitivity reflects the new value
-        int32_t sensitivity;
-        MOTIONSENSOR_GET_SENSITIVITY_SUCCESS(controllerHandle, sensitivity);
-        UT_ASSERT_EQUAL(sensitivity, caps.minSensitivity);
+        // ...............................................................
+        // Sensitivity configuration
+        // ...............................................................
+        // Save current sensitivity and set a new value
+        MOTIONSENSOR_GET_SENSITIVITY_SUCCESS(controllerHandle1, oldSensitivity);
+        newSensitivity = caps.minSensitivity + ((caps.maxSensitivity - caps.minSensitivity) / 2);
 
-        // setActiveWindows must succeed
-        MOTIONSENSOR_SET_ACTIVE_WINDOWS_SUCCESS(controllerHandle, windows);
+        // Verify setSensitivity succeeds in STOPPED state
+        MOTIONSENSOR_SET_SENSITIVITY_SUCCESS(controllerHandle1, newSensitivity);
 
-        // Verify getActiveWindows reflects what was set
-        std::vector<TimeWindow> retrieved;
-        MOTIONSENSOR_GET_ACTIVE_WINDOWS_SUCCESS(controllerHandle, retrieved);
-        UT_ASSERT_EQUAL(retrieved.size(), windows.size());
-        UT_ASSERT_EQUAL(retrieved[0].startTimeOfDaySeconds, w.startTimeOfDaySeconds);
-        UT_ASSERT_EQUAL(retrieved[0].endTimeOfDaySeconds,   w.endTimeOfDaySeconds);
+        // Verify updated sensitivity is returned by getSensitivity
+        MOTIONSENSOR_GET_SENSITIVITY_SUCCESS(controllerHandle1, expectedSensitivity);
+        UT_ASSERT_EQUAL(newSensitivity, expectedSensitivity);
 
-        // clearActiveWindows must succeed and result in an empty window list
-        MOTIONSENSOR_CLEAR_ACTIVE_WINDOWS_SUCCESS(controllerHandle);
+        // ...............................................................
+        // Active windows configuration
+        // ...............................................................
 
-        std::vector<TimeWindow> clearedWindows;
-        MOTIONSENSOR_GET_ACTIVE_WINDOWS_SUCCESS(controllerHandle, clearedWindows);
-        UT_ASSERT_TRUE(clearedWindows.empty());
+        // Save current active-window configuration for restoration later
+        MOTIONSENSOR_GET_ACTIVE_WINDOWS_SUCCESS(controllerHandle1, defaultWindows);
 
-        // setAutonomousDuringDeepSleep must succeed
-        MOTIONSENSOR_SET_AUTONOMOUS_SUCCESS(controllerHandle, true);
+        // Set a new active window configuration
+        MOTIONSENSOR_SET_ACTIVE_WINDOWS_SUCCESS(controllerHandle1, newSetWindows);
+
+        // Verify getActiveWindows reflects the newly configured value
+        MOTIONSENSOR_GET_ACTIVE_WINDOWS_SUCCESS(controllerHandle1, retrieved1);
+        UT_ASSERT_EQUAL(retrieved1.size(), newSetWindows.size());
+        UT_ASSERT_EQUAL(retrieved1[0].startTimeOfDaySeconds, newSetWindows[0].startTimeOfDaySeconds);
+        UT_ASSERT_EQUAL(retrieved1[0].endTimeOfDaySeconds,   newSetWindows[0].endTimeOfDaySeconds);
+
+        // ...............................................................
+        // Autonomous mode configuration
+        // ...............................................................
+
+        // Save current autonomous state and toggle it to verify persistence
+        if (caps.supportsDeepSleepAutonomy)
+        {
+            MOTIONSENSOR_GET_AUTONOMOUS_SUCCESS(controllerHandle1, originalAutonomousState, caps.supportsDeepSleepAutonomy);
+
+            MOTIONSENSOR_SET_AUTONOMOUS_SUCCESS(controllerHandle1, !originalAutonomousState, caps.supportsDeepSleepAutonomy);
+            MOTIONSENSOR_GET_AUTONOMOUS_SUCCESS(controllerHandle1, expectedAutonomousState, caps.supportsDeepSleepAutonomy);
+            UT_ASSERT_EQUAL(expectedAutonomousState, !originalAutonomousState);
+
+        }
+        else
+        {
+            MOTIONSENSOR_SET_AUTONOMOUS_FAILURE(controllerHandle1, true, Status::EX_UNSUPPORTED_OPERATION);
+            MOTIONSENSOR_GET_AUTONOMOUS_SUCCESS(controllerHandle1, expectedAutonomousState, false);
+        }
+        // Close Controller1 after configuration changes
+        MOTIONSENSOR_CLOSE_SUCCESS(sensorHandle, controllerHandle1);
+
+        // ------------------------------------------------------------
+        // Controller2: Verify configuration persists across controller reopen
+        // ------------------------------------------------------------
+        android::sp<MotionSensorControllerListener> controllerListener2 = android::sp<MotionSensorControllerListener>::make();
+        android::sp<IMotionSensorController> controllerHandle2;
+
+        MOTIONSENSOR_OPEN_SUCCESS(sensorHandle, controllerListener2, controllerHandle2);
+
+        // Verify sensitivity persisted from Controller1
+        MOTIONSENSOR_GET_SENSITIVITY_SUCCESS(controllerHandle2, expectedSensitivity);
+        UT_ASSERT_EQUAL(newSensitivity, expectedSensitivity);
+        // Restore sensitivity to minimum value
+        MOTIONSENSOR_SET_SENSITIVITY_SUCCESS(controllerHandle2, caps.minSensitivity);
+        MOTIONSENSOR_GET_SENSITIVITY_SUCCESS(controllerHandle2, expectedSensitivity);
+        UT_ASSERT_EQUAL(caps.minSensitivity, expectedSensitivity);
+
+        // Verify active-window configuration persisted from Controller1
+        MOTIONSENSOR_GET_ACTIVE_WINDOWS_SUCCESS( controllerHandle2, retrieved2);
+        UT_ASSERT_EQUAL(retrieved2.size(), newSetWindows.size());
+        UT_ASSERT_EQUAL(retrieved2[0].startTimeOfDaySeconds, newSetWindows[0].startTimeOfDaySeconds);
+        UT_ASSERT_EQUAL(retrieved2[0].endTimeOfDaySeconds, newSetWindows[0].endTimeOfDaySeconds);
+        MOTIONSENSOR_CLEAR_ACTIVE_WINDOWS_SUCCESS(controllerHandle2);
+        MOTIONSENSOR_GET_ACTIVE_WINDOWS_SUCCESS(controllerHandle2, retrieved2);
+        UT_ASSERT_EQUAL(retrieved2.size(),0);
+
+        MOTIONSENSOR_CLOSE_SUCCESS(sensorHandle, controllerHandle2);
+
+        // ------------------------------------------------------------
+        // Controller3: Verify configuration persists across controller reopen and reset
+        // ------------------------------------------------------------
+
+        android::sp<MotionSensorControllerListener> controllerListener3 = android::sp<MotionSensorControllerListener>::make();
+        android::sp<IMotionSensorController> controllerHandle3;
+        MOTIONSENSOR_OPEN_SUCCESS(sensorHandle, controllerListener3, controllerHandle3);
+
+        // Verify sensitivity change made by Controller2 persisted
+        MOTIONSENSOR_GET_SENSITIVITY_SUCCESS(controllerHandle3, expectedSensitivity);
+        UT_ASSERT_EQUAL(caps.minSensitivity, expectedSensitivity);
+        // Restore original sensitivity
+        MOTIONSENSOR_SET_SENSITIVITY_SUCCESS(controllerHandle3, oldSensitivity);
+        MOTIONSENSOR_GET_SENSITIVITY_SUCCESS(controllerHandle3, expectedSensitivity);
+        UT_ASSERT_EQUAL(oldSensitivity, expectedSensitivity);
+        // Verify cleared active-window configuration persisted
+        MOTIONSENSOR_GET_ACTIVE_WINDOWS_SUCCESS(controllerHandle3, retrieved3);
+        UT_ASSERT_EQUAL(retrieved3.size(),0);
+        MOTIONSENSOR_SET_ACTIVE_WINDOWS_SUCCESS(controllerHandle3, defaultWindows);
+        MOTIONSENSOR_GET_ACTIVE_WINDOWS_SUCCESS(controllerHandle3, retrieved3);
+        UT_ASSERT_EQUAL(retrieved3.size(), defaultWindows.size());
+        for (size_t i = 0; i < defaultWindows.size(); ++i)
+        {
+            UT_ASSERT_EQUAL( retrieved3[i].startTimeOfDaySeconds, defaultWindows[i].startTimeOfDaySeconds);
+            UT_ASSERT_EQUAL( retrieved3[i].endTimeOfDaySeconds, defaultWindows[i].endTimeOfDaySeconds);
+        }
 
         // isAutonomousDuringDeepSleepEnabled must reflect the value set above
-        bool autonomousEnabled = false;
-        MOTIONSENSOR_GET_AUTONOMOUS_SUCCESS(controllerHandle, autonomousEnabled, caps.supportsDeepSleepAutonomy);
+        if (caps.supportsDeepSleepAutonomy)
+        {
+            MOTIONSENSOR_GET_AUTONOMOUS_SUCCESS(controllerHandle3, expectedAutonomousState, caps.supportsDeepSleepAutonomy);
+            UT_ASSERT_EQUAL(expectedAutonomousState, !originalAutonomousState);
 
-        // Disable and re-verify
-        MOTIONSENSOR_SET_AUTONOMOUS_SUCCESS(controllerHandle, false);
-        MOTIONSENSOR_GET_AUTONOMOUS_SUCCESS(controllerHandle, autonomousEnabled, false);
+            MOTIONSENSOR_SET_AUTONOMOUS_SUCCESS(controllerHandle3, originalAutonomousState, caps.supportsDeepSleepAutonomy);
+            MOTIONSENSOR_GET_AUTONOMOUS_SUCCESS(controllerHandle3, expectedAutonomousState, caps.supportsDeepSleepAutonomy);
+            UT_ASSERT_EQUAL(expectedAutonomousState, originalAutonomousState);
 
+        }
+        else
+        {
+            MOTIONSENSOR_GET_AUTONOMOUS_SUCCESS(controllerHandle3, expectedAutonomousState, false);
+            UT_ASSERT_EQUAL(expectedAutonomousState, false);
+        }
         // Cleanup
-        MOTIONSENSOR_CLOSE_SUCCESS(sensorHandle, controllerHandle);
+        MOTIONSENSOR_CLOSE_SUCCESS(sensorHandle, controllerHandle3);
     }
 }
+
 
 /** @} */ // End of MOTION_SENSOR_HALTEST_L2
 /** @} */ // End of MOTION_SENSOR_HALTEST

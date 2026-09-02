@@ -30,6 +30,5 @@ deviceConfig:
         prompt: "~#" # Prompt string on console
         wait_time: 240 # Configurable timeout value to limit the total duration of individual tests
         test:
-            profile: "../../profiles/hfp-motionsensor-vcomponent.yaml" # HFP profile used to meet platform requirements
-            motionsensor_controller_port: 8080 # Port where the vcomponent control plane is listening
-            deep_sleep_duration_seconds: 60 # Seconds to simulate idle before deep sleep
+            profile: "../../profiles/hfp-motionsensor.yaml" # HFP profile used to meet platform requirements
+            motionsensor_controller_port: 8084 # Port where the vcomponent control plane is listening

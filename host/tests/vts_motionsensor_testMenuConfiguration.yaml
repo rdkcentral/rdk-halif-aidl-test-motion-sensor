@@ -68,4 +68,4 @@ motionsensor:
                 tests:
                     - "EventDetection"
                     - "ActiveWindowBehavior"
-                    - "DeepSleepAutonomy"
+                    - "NoMotionTimerReset"

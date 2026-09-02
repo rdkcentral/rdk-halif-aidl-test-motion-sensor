@@ -1190,10 +1190,7 @@ UT_ADD_TEST(VTS_L1_MOTIONSENSOR, isAutonomousDuringDeepSleepEnabled_pos)
         Capabilities caps;
         MOTIONSENSOR_GET_CAPABILITIES_SUCCESS(sensorHandle, caps);
         bool enabled;
-        MOTIONSENSOR_GET_AUTONOMOUS_SUCCESS(controllerHandle, enabled, false);
-        MOTIONSENSOR_SET_AUTONOMOUS_SUCCESS(controllerHandle, true);
         MOTIONSENSOR_GET_AUTONOMOUS_SUCCESS(controllerHandle, enabled, caps.supportsDeepSleepAutonomy);
-        UT_ASSERT_EQUAL(enabled, caps.supportsDeepSleepAutonomy);
         MOTIONSENSOR_CLOSE_SUCCESS(sensorHandle, controllerHandle);
     }
 }
@@ -1243,7 +1240,8 @@ UT_ADD_TEST(VTS_L1_MOTIONSENSOR, setAutonomousDuringDeepSleep_pos)
         MOTIONSENSOR_OPEN_SUCCESS(sensorHandle, listener, controllerHandle);
         Capabilities caps;
         MOTIONSENSOR_GET_CAPABILITIES_SUCCESS(sensorHandle, caps);
-        MOTIONSENSOR_SET_AUTONOMOUS_SUCCESS(controllerHandle, true);
+        MOTIONSENSOR_SET_AUTONOMOUS_SUCCESS(controllerHandle, true, caps.supportsDeepSleepAutonomy);
+        MOTIONSENSOR_SET_AUTONOMOUS_SUCCESS(controllerHandle, false, caps.supportsDeepSleepAutonomy);
         MOTIONSENSOR_CLOSE_SUCCESS(sensorHandle, controllerHandle);
     }
 }

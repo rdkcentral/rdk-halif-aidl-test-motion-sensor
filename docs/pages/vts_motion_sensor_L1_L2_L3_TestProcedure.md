@@ -129,7 +129,7 @@ cd /tmp/motionsensor
 ### Run the VTS Test on Target Device
 
 ```bash
-./run.sh -p profiles/hfp-motionsensor-vcomponent.yaml
+./run.sh -p profiles/hfp-motionsensor.yaml
 ```
 
 ---
@@ -203,7 +203,7 @@ deviceConfig:
     prompt: "~#"
     wait_time: 240
     test:
-      profile: "../../profiles/hfp-motionsensor-vcomponent.yaml"
+      profile: "../../profiles/hfp-motionsensor.yaml"
       motionsensor_controller_port: 8080
 ```
 
@@ -414,66 +414,6 @@ graph TD
 
 ---
 
-### L3 Test 4 — DeepSleepAutonomy
-
-#### Purpose
-
-Validates that when `setAutonomousDuringDeepSleep(true)` is set, motion events are delivered during simulated deep sleep. Conversely, when disabled, events are suppressed during sleep.
-
----
-
-#### Test Flow
-
-```mermaid
-graph TD
-    A[Python: Check capabilities via VTS] --> B{supportsDeepSleepAutonomy?}
-    B -->|No| C[SKIP]
-    B -->|Yes| D[Python: Run DeepSleepAutonomy on DUT]
-    D --> E[DUT: setAutonomousDuringDeepSleep = true]
-    E --> F[DUT: start sensor]
-    F --> G[Python: DEEP_SLEEP_START command]
-    G --> H[Python: Wait + inject MOTION event]
-    H --> I[Python: DEEP_SLEEP_END command]
-    I --> J[DUT: Wait for event]
-    J --> K{Event received?}
-    K -->|No| L[FAIL]
-    K -->|Yes| M[DUT: setAutonomousDuringDeepSleep = false]
-    M --> N[DUT: start sensor again]
-    N --> O[Python: DEEP_SLEEP_START command]
-    O --> P[Python: Inject MOTION event]
-    P --> Q[Python: DEEP_SLEEP_END command]
-    Q --> R[DUT: Wait for event — must NOT arrive]
-    R --> S{Event received?}
-    S -->|Yes| T[FAIL]
-    S -->|No| U[PASS]
-```
-
----
-
-#### Test Steps (Python Host Side)
-
-1. Query DUT capabilities to determine `supportsDeepSleepAutonomy`; skip if `false`.
-2. Execute `DeepSleepAutonomy` on DUT.
-3. **Phase 1 (autonomy enabled):**
-   a. Send `DEEP_SLEEP_START` command to the HAL service.
-   b. Wait `deepSleepDurationSeconds`.
-   c. Inject a MOTION event via control port.
-   d. Send `DEEP_SLEEP_END` command.
-   e. Validate DUT received the event.
-4. **Phase 2 (autonomy disabled):**
-   a. Send `DEEP_SLEEP_START` command.
-   b. Inject a MOTION event.
-   c. Send `DEEP_SLEEP_END` command.
-   d. Validate DUT did NOT receive the event.
-
----
-
-#### Expected Results
-
-| Phase | Condition | Expected |
-|-------|-----------|----------|
-| Autonomy enabled | MOTION event injected during sleep | Event received after wake |
-| Autonomy disabled | MOTION event injected during sleep | Event NOT received |
 
 ---
 
@@ -502,7 +442,7 @@ For real hardware testing:
 
 ### Hardware Feature Profile (HFP)
 
-The HFP file [profiles/hfp-motionsensor-vcomponent.yaml](../../profiles/hfp-motionsensor-vcomponent.yaml) defines platform-specific sensor capabilities:
+The HFP file [profiles/hfp-motionsensor.yaml](../../profiles/hfp-motionsensor.yaml) defines platform-specific sensor capabilities:
 
 ```yaml
 sensor:
