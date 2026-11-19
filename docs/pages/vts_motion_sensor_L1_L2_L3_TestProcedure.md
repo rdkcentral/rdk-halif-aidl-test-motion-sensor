@@ -129,7 +129,7 @@ cd /tmp/motionsensor
 ### Run the VTS Test on Target Device
 
 ```bash
-./run.sh -p profiles/hfp-motionsensor.yaml
+./run.sh -p profiles/hfp-sensor-motion.yaml
 ```
 
 ---
@@ -203,7 +203,7 @@ deviceConfig:
     prompt: "~#"
     wait_time: 240
     test:
-      profile: "../../profiles/hfp-motionsensor.yaml"
+      profile: "../../profiles/hfp-sensor-motion.yaml"
       motionsensor_controller_port: 8080
 ```
 
@@ -442,7 +442,7 @@ For real hardware testing:
 
 ### Hardware Feature Profile (HFP)
 
-The HFP file [profiles/hfp-motionsensor.yaml](../../profiles/hfp-motionsensor.yaml) defines platform-specific sensor capabilities:
+The HFP file [profiles/hfp-sensor-motion.yaml](../../profiles/hfp-sensor-motion.yaml) defines platform-specific sensor capabilities:
 
 ```yaml
 sensor:
