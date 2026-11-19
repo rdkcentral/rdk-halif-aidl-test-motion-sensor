@@ -100,7 +100,7 @@ class motionSensorHelperClass(utHelperClass):
                     component_root, "test_configuration/vts_l3_MotionSensor.yaml"
                 ).replace("\\", "/"),
                 "moduleHFPFile": os.path.join(
-                    component_root, "profiles/hfp-motionsensor.yaml"
+                    component_root, "profiles/hfp-sensor-motion.yaml"
                 ).replace("\\", "/"),
                 "moduleHFPTestParamFile": os.path.join(
                     component_root, "profiles/hfp-vts-motionsensor-test-params.yaml"
