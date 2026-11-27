@@ -302,7 +302,7 @@ UT_ADD_TEST(VTS_L1_MOTIONSENSOR, getCapabilities_pos)
         UT_ASSERT_NOT_EQUAL(hfpEntry, nullptr);
         if (hfpEntry)
         {
-            bool match = std::string(android::String8(capabilities.sensorName).c_str()) == hfpEntry->capabilities.sensorName;
+            bool match = capabilities.sensorName == hfpEntry->capabilities.sensorName;
             UT_ASSERT_TRUE(match);
             UT_ASSERT_EQUAL(capabilities.minSensitivity, hfpEntry->capabilities.minSensitivity);
             UT_ASSERT_EQUAL(capabilities.maxSensitivity, hfpEntry->capabilities.maxSensitivity);
